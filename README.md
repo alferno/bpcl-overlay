@@ -6,7 +6,7 @@ Isolated monorepo for Dota 2 **YouTube** OBS overlays and a **producer** dashboa
 
 1. `cp apps/broadcast-api/env.example .env` and set `BROADCAST_SECRET` (8+ chars).
 2. `npm install`
-3. `npm run heroes:download-cdn-portraits` (and optionally `heroes:download-cdn-webms` for cinematic hero videos)
+3. `npm run heroes:download-cdn-portraits` and `heroes:download-cdn-webms` (commit `apps/overlay-web/public/heroes/` for Netlify — no CDN download on deploy)
 4. Terminal A: `npm run dev:bpc-api`
 5. Terminal B: optional `VITE_SOCKET_TOKEN=<secret> npm run dev:overlay`
 6. Terminal C: optional `npm run dev:admin`

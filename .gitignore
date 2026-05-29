@@ -38,12 +38,5 @@ coverage/
 # Vite
 **/.vite/
 
-# Hero video renders — download via npm run heroes:download-cdn-webms
-apps/overlay-web/public/heroes/renders/*.webm
-!apps/overlay-web/public/heroes/renders/manifest.json
-!apps/overlay-web/public/heroes/renders/.gitkeep
-
-# Hero portrait PNGs — download via npm run heroes:download-cdn-portraits
-apps/overlay-web/public/heroes/portraits/*.png
-!apps/overlay-web/public/heroes/portraits/manifest.json
-!apps/overlay-web/public/heroes/portraits/.gitkeep
+# Hero PNG/WebM live in apps/overlay-web/public/heroes/ — commit for Netlify deploy.
+# Regenerate locally: npm run heroes:download-cdn-portraits && npm run heroes:download-cdn-webms

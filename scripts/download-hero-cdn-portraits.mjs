@@ -56,25 +56,6 @@ async function fetchJson(url) {
   return res.json();
 }
 
-function headStatus(url) {
-  return new Promise((resolve) => {
-    const req = https.request(
-      url,
-      { method: "HEAD", headers: { "User-Agent": "bpc-hero-download/1.0" } },
-      (res) => {
-        res.resume();
-        resolve(res.statusCode ?? 0);
-      },
-    );
-    req.on("error", () => resolve(0));
-    req.setTimeout(20_000, () => {
-      req.destroy();
-      resolve(0);
-    });
-    req.end();
-  });
-}
-
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
     const tmp = `${dest}.part`;
@@ -168,15 +149,6 @@ async function main() {
         return;
       }
 
-      const status = await headStatus(url);
-      if (status !== 200) {
-        missing.push({ slug: hero.slug, localized: hero.localized, status });
-        console.log(
-          `  MISS [${hero.id}] ${hero.localized} (${hero.slug}) HTTP ${status}`,
-        );
-        return;
-      }
-
       try {
         await downloadFile(url, dest);
         ok.push(hero.slug);
@@ -212,7 +184,10 @@ async function main() {
   console.log(`Missing/failed: ${missing.length}`);
   console.log(`Manifest: ${manifestPath}`);
 
-  if (missing.length) process.exit(1);
+  if (missing.length) {
+    console.warn("Some portraits failed; manifest lists successful downloads only.");
+    if (args.includes("--strict")) process.exit(1);
+  }
 }
 
 main().catch((e) => {
