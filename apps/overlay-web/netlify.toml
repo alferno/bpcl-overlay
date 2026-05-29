@@ -1,5 +1,5 @@
-# Overlay Netlify site only — set Base directory to apps/overlay-web in Netlify UI.
+# Overlay site — Netlify cwd is repo root (packagePath: apps/overlay-web). Do not cd ../..
 
 [build]
-  command = "cd ../.. && npm ci && npm run build:overlay"
-  publish = "dist"
+  command = "npm ci && npm run build:overlay"
+  publish = "apps/overlay-web/dist"

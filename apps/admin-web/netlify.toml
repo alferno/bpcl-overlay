@@ -1,5 +1,5 @@
-# Admin Netlify site only — set Base directory to apps/admin-web in Netlify UI.
+# Admin site — Netlify cwd is repo root (packagePath: apps/admin-web). Do not cd ../..
 
 [build]
-  command = "cd ../.. && npm ci && npm run build:admin"
-  publish = "dist"
+  command = "npm ci && npm run build:admin"
+  publish = "apps/admin-web/dist"
