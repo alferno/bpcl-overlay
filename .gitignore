@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+!**/env.example
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test / tooling cache
+coverage/
+.turbo
+.cache/
+*.pid
+*.seed
+
+# Vite
+**/.vite/
+
+# Hero video renders — download via npm run heroes:download-cdn-webms
+apps/overlay-web/public/heroes/renders/*.webm
+!apps/overlay-web/public/heroes/renders/manifest.json
+!apps/overlay-web/public/heroes/renders/.gitkeep
+
+# Hero portrait PNGs — download via npm run heroes:download-cdn-portraits
+apps/overlay-web/public/heroes/portraits/*.png
+!apps/overlay-web/public/heroes/portraits/manifest.json
+!apps/overlay-web/public/heroes/portraits/.gitkeep

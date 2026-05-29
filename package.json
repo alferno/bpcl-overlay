@@ -1,0 +1,28 @@
+{
+  "name": "bpc-broadcast-system",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev:bpc-api": "npm run dev --workspace=broadcast-api",
+    "dev:overlay": "npm run dev --workspace=overlay-web",
+    "dev:admin": "npm run dev --workspace=admin-web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "heroes:copy-webms": "node scripts/copy-hero-webms.mjs",
+    "heroes:download-cdn-webms": "node scripts/download-hero-cdn-webms.mjs",
+    "heroes:download-cdn-portraits": "node scripts/download-hero-cdn-portraits.mjs",
+    "heroes:reencode-webms": "node scripts/reencode-hero-webms.mjs",
+    "heroes:verify-webms": "node scripts/verify-hero-webms.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.10.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
