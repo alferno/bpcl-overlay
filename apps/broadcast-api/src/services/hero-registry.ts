@@ -1,8 +1,10 @@
 import {
   buildHeroSlugIndex,
-  heroPortraitUrlFromInternalName,
+  heroPortraitFieldsFromSlug,
+  normalizeHeroSlug,
   resolveHeroSlug,
   teamLogoPath,
+  type HeroPortraitFields,
   type HeroSlugIndex,
   type HeroSlugResolveInput,
   type HeroSlugResolveResult,
@@ -54,13 +56,13 @@ export function resolveHeroSlugForDraft(
   if (input.heroId != null && input.heroId > 0) {
     const meta = heroById.get(input.heroId);
     if (meta) {
-      const slug = meta.name.replace(/^npc_dota_hero_/, "");
-      return { slug, source: "id" };
+      const slug = normalizeHeroSlug(meta.name);
+      if (slug) return { slug, source: "id" };
     }
   }
 
   if (input.heroClass) {
-    const norm = input.heroClass.replace(/^npc_dota_hero_/, "").trim();
+    const norm = normalizeHeroSlug(input.heroClass);
     if (norm) return { slug: norm, source: "fallback" };
   }
 
@@ -77,10 +79,30 @@ export function getHeroMeta(heroId: number): HeroMeta | undefined {
   return heroById.get(heroId);
 }
 
-export function heroPortraitUrl(heroId: number): string | undefined {
+export function resolveHeroPortraitSlugForHero(
+  heroId: number,
+  heroName?: string,
+): string | undefined {
+  const resolved = resolveHeroSlugForDraft({ heroId, heroName });
+  if (resolved.slug) return resolved.slug;
   const meta = heroById.get(heroId);
   if (!meta) return undefined;
-  return heroPortraitUrlFromInternalName(meta.name);
+  return normalizeHeroSlug(meta.name) || undefined;
+}
+
+/** Canonical slug + local `/heroes/portraits/{slug}.png` for overlay stats. */
+export function heroPortraitFieldsForHero(
+  heroId: number,
+  heroName?: string,
+): HeroPortraitFields {
+  return heroPortraitFieldsFromSlug(
+    resolveHeroPortraitSlugForHero(heroId, heroName),
+  );
+}
+
+/** @deprecated Prefer heroPortraitFieldsForHero for slug + URL */
+export function heroPortraitUrl(heroId: number, heroName?: string): string | undefined {
+  return heroPortraitFieldsForHero(heroId, heroName).heroPortraitUrl;
 }
 
 export function heroDisplayName(heroId: number): string {

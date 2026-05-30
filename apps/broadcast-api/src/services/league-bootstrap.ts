@@ -196,7 +196,7 @@ export async function bootstrapLeagueFromEnv(opts: {
     tournamentAggregator.getProgress().status !== "running";
 
   if (shouldAggregate) {
-    logger.info({ leagueId }, "Starting league aggregation from OpenDota/Steam");
+    logger.info({ leagueId }, "Starting league aggregation (Steam match list + OpenDota details)");
     void runLeagueAggregation({ leagueId, state, opendota, broadcast });
   } else {
     logger.info(

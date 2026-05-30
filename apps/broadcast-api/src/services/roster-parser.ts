@@ -1,4 +1,4 @@
-/** Parse CSV: displayName,steam32,teamName,teamKey[,teamColor] */
+/** Parse CSV: displayName,steam32,teamName,teamKey[,teamColor[,avatarUrl]] */
 import type { RosterPlayer } from "@bpc/shared-types";
 
 export function normalizeTeamColorHex(raw: string | undefined): string | undefined {
@@ -38,21 +38,59 @@ export function parseRosterCsv(text: string): RosterPlayer[] {
     let teamName: string | undefined;
     let teamKey: string | undefined;
     let teamColor: string | undefined;
+    let avatarUrl: string | undefined;
 
     if (parts.length >= 4) {
       teamName = parts[2] || undefined;
       teamKey = parts[3] || undefined;
       if (parts.length >= 5) {
-        teamColor = normalizeTeamColorHex(parts[4]);
+        const fifth = parts[4] ?? "";
+        if (fifth.startsWith("http://") || fifth.startsWith("https://")) {
+          avatarUrl = fifth;
+        } else {
+          teamColor = normalizeTeamColorHex(fifth);
+        }
+      }
+      if (parts.length >= 6) {
+        const sixth = parts[5] ?? "";
+        if (sixth.startsWith("http://") || sixth.startsWith("https://")) {
+          avatarUrl = sixth;
+        }
       }
     } else if (parts.length === 3) {
       teamKey = parts[2] || undefined;
       teamName = teamKey?.replace(/_/g, " ");
     }
 
-    out.push({ displayName, steam32, teamName, teamKey, teamColor });
+    out.push({ displayName, steam32, teamName, teamKey, teamColor, avatarUrl });
   }
   return out;
+}
+
+function escapeCsvField(value: string): string {
+  if (/[",\r\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+/** CSV with avatarUrl column: displayName,steam32,teamName,teamKey,teamColor,avatarUrl */
+export function serializeRosterCsv(roster: RosterPlayer[]): string {
+  const header =
+    "displayName,steam32,teamName,teamKey,teamColor,avatarUrl";
+  const rows = roster.map((p) =>
+    [
+      p.displayName,
+      String(p.steam32),
+      p.teamName ?? "",
+      p.teamKey ?? "",
+      p.teamColor ?? "",
+      p.avatarUrl ?? "",
+    ]
+      .map(escapeCsvField)
+      .join(","),
+  );
+  return `${header}\n${rows.join("\n")}\n`;
 }
 
 /** First valid teamColor per teamKey from roster rows. */

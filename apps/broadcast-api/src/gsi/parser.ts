@@ -73,12 +73,14 @@ function maybeLogHeroSlugResolution(
   });
 }
 
+type HeroMediaWithSlug = HeroPortraitMedia & { slug?: string };
+
 function mediaForHero(
   heroId: number | null,
   heroClass?: string,
   heroName?: string,
   debugSlotKey?: string,
-): HeroPortraitMedia {
+): HeroMediaWithSlug {
   const resolved = resolveHeroSlugForDraft({
     heroId: heroId ?? undefined,
     heroClass,
@@ -91,12 +93,16 @@ function mediaForHero(
 
   const slug = resolved.slug ?? canonicalHeroSlugForDraft({ heroId, heroClass });
   if (slug) {
-    return heroPortraitMediaFromSlug(slug);
+    return { ...heroPortraitMediaFromSlug(slug), slug };
   }
   if (heroId) {
-    const flat = heroPortraitUrl(heroId);
+    const flat = heroPortraitUrl(heroId, heroName);
     if (flat) {
-      return { staticUrl: flat, staticFallbackUrl: flat };
+      return {
+        staticUrl: flat,
+        staticFallbackUrl: flat,
+        slug: resolveHeroSlugForDraft({ heroId, heroName }).slug,
+      };
     }
   }
   return {};
@@ -163,6 +169,7 @@ function parseSideSlots(
       type,
       heroId,
       heroName: displayNameForHero(heroId, heroClass),
+      heroPortraitSlug: media.slug,
       heroPortraitUrl: media.staticUrl,
       heroPortraitAnimatedUrl: media.animatedUrl,
     });
@@ -426,6 +433,7 @@ function applyPlayerHeroLocks(
       ...slot,
       heroId,
       heroName: displayNameForHero(heroId, undefined),
+      heroPortraitSlug: media.slug,
       heroPortraitUrl: media.staticUrl,
       heroPortraitAnimatedUrl: media.animatedUrl,
     };
@@ -491,8 +499,32 @@ function slotToLastPick(
     side,
     heroId: slot.heroId!,
     heroName: slot.heroName,
+    heroPortraitSlug: slot.heroPortraitSlug,
     playerName: slot.playerName,
   };
+}
+
+type PickEntry = { side: "radiant" | "dire"; slot: DraftSlot };
+
+function latestPickInCmOrder(
+  entries: PickEntry[],
+  draftSide: DraftState["side"] | undefined,
+): PickEntry {
+  let best = entries[0]!;
+  let bestIdx = cmPickSequenceIndex(best.side, best.slot.order, draftSide);
+  for (const entry of entries.slice(1)) {
+    const idx = cmPickSequenceIndex(entry.side, entry.slot.order, draftSide);
+    if (idx > bestIdx) {
+      best = entry;
+      bestIdx = idx;
+    }
+  }
+  return best;
+}
+
+function lastPickChanged(a: LastPick | undefined, b: LastPick): boolean {
+  if (!a) return true;
+  return a.heroId !== b.heroId || a.side !== b.side;
 }
 
 /** Newest pick since previous GSI snapshot (not "last dire slot in array"). */
@@ -501,7 +533,6 @@ function detectLastPick(
   dire: DraftSlot[],
   prev: DraftState | null,
 ): LastPick | undefined {
-  type PickEntry = { side: "radiant" | "dire"; slot: DraftSlot };
   const current: PickEntry[] = [];
   for (const s of radiant) {
     if (s.type === "pick" && s.heroId) current.push({ side: "radiant", slot: s });
@@ -525,7 +556,18 @@ function detectLastPick(
     ({ side, slot }) => !prevKeys.has(filledPickKey(side, slot)!),
   );
 
+  const draftSide = prev?.side;
+
   if (newlyFilled.length === 0) {
+    if (
+      draftRosterComplete(radiant, dire) &&
+      prev &&
+      !draftRosterComplete(prev.radiant?.slots ?? [], prev.dire?.slots ?? [])
+    ) {
+      const e = latestPickInCmOrder(current, draftSide);
+      const final = slotToLastPick(e.side, e.slot);
+      if (lastPickChanged(prev.lastPick, final)) return final;
+    }
     return prev?.lastPick;
   }
 
@@ -534,16 +576,7 @@ function detectLastPick(
     return slotToLastPick(one.side, one.slot);
   }
 
-  const draftSide = prev?.side;
-  let best = newlyFilled[0]!;
-  let bestIdx = cmPickSequenceIndex(best.side, best.slot.order, draftSide);
-  for (const entry of newlyFilled.slice(1)) {
-    const idx = cmPickSequenceIndex(entry.side, entry.slot.order, draftSide);
-    if (idx > bestIdx) {
-      best = entry;
-      bestIdx = idx;
-    }
-  }
+  const best = latestPickInCmOrder(newlyFilled, draftSide);
   return slotToLastPick(best.side, best.slot);
 }
 

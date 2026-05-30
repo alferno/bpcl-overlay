@@ -120,6 +120,8 @@ export function attachGsiRoutes(opts: {
                 lp.heroId,
                 player.displayName,
                 current.tournamentHeroIndex ?? {},
+                roster,
+                current.playerHeroIndex,
               )
             : await buildTournamentHeroCard(
                 opendota,

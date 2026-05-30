@@ -35,6 +35,12 @@ export type OpenDotaMatchPlayer = {
   hero_damage?: number;
   gold_per_min?: number;
   last_hits?: number;
+  /** 1 safe · 2 mid · 3 off (OpenDota lane id) */
+  lane?: number;
+  lane_role?: number;
+  lane_efficiency?: number;
+  lane_efficiency_pct?: number;
+  is_roaming?: boolean;
 };
 
 export type OpenDotaMatch = {
@@ -152,9 +158,18 @@ export class OpenDotaClient {
     });
   }
 
+  async playerProfile(
+    accountId: number | string,
+  ): Promise<CachedResponse<Record<string, unknown>>> {
+    return this.getCached<Record<string, unknown>>(
+      `players:${accountId}:profile`,
+      `/players/${accountId}`,
+    );
+  }
+
   async playerHeroStats(accountId: number | string): Promise<
-    CachedResponse<unknown[]
-  >> {
+    CachedResponse<unknown[]>
+  > {
     return this.getCached<unknown[]>(
       `players:${accountId}:heroes`,
       `/players/${accountId}/heroes`,

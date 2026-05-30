@@ -1,4 +1,25 @@
-import type { DraftSlot } from "@bpc/shared-types";
+import type { DraftSlot, DraftState, LastPick } from "@bpc/shared-types";
+
+export function draftTeamSide(
+  side: LastPick["side"],
+): "radiant" | "dire" {
+  return side === "radiant" || side === "A" ? "radiant" : "dire";
+}
+
+/** Draft slot for a lastPick (portrait URLs live on the slot, not on LastPick). */
+export function findPickSlotForLastPick(
+  draft: DraftState | null | undefined,
+  pick: LastPick,
+): DraftSlot | undefined {
+  if (!draft) return undefined;
+  const team =
+    draftTeamSide(pick.side) === "radiant" ? draft.radiant : draft.dire;
+  const matches = (team?.slots ?? []).filter(
+    (s) => s.type === "pick" && s.heroId === pick.heroId,
+  );
+  if (matches.length === 0) return undefined;
+  return matches[matches.length - 1];
+}
 
 /** Captain's Mode: 7 bans and 5 picks per team */
 export const CM_BAN_COUNT = 7;

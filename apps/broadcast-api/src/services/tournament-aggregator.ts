@@ -1,4 +1,7 @@
-import type { TournamentHeroAggregate } from "@bpc/shared-types";
+import type {
+  PlayerHeroLeagueStats,
+  TournamentHeroAggregate,
+} from "@bpc/shared-types";
 import {
   getMatchPickBans,
   type OpenDotaClient,
@@ -12,7 +15,23 @@ import {
 } from "./hero-registry.js";
 import { logger } from "../logger.js";
 import { resolveLeagueMatchIds } from "./league-match-resolver.js";
-import type { LeaguePlayerHeroRow } from "./league-stats-store.js";
+import { computeLaneOutcomesForMatch } from "./lane-outcome.js";
+import {
+  shouldCountPlayerLeagueGame,
+  type LeaguePlayerHeroRow,
+} from "./league-stats-store.js";
+
+/** OpenDota / Valve: 0 and 4294967295 (0xFFFFFFFF) mean anonymous / invalid. */
+const ANONYMOUS_ACCOUNT_ID = 4294967295;
+
+export function steam32FromMatchPlayer(
+  p: OpenDotaMatchPlayer,
+): number | undefined {
+  const id = p.account_id;
+  if (typeof id !== "number" || !Number.isFinite(id)) return undefined;
+  if (id <= 0 || id >= ANONYMOUS_ACCOUNT_ID) return undefined;
+  return id;
+}
 
 export type AggregationProgress = {
   status: "idle" | "running" | "ready" | "error";
@@ -23,19 +42,7 @@ export type AggregationProgress = {
   heroIndex: Record<string, TournamentHeroAggregate>;
 };
 
-export type PlayerHeroLeagueStats = {
-  games: number;
-  wins: number;
-  winRate: number;
-  avgKills: number;
-  avgDeaths: number;
-  avgAssists: number;
-  avgKda: number;
-  maxKills: number;
-  avgHeroDamage: number;
-  avgGpm: number;
-  avgLastHits: number;
-};
+export type { PlayerHeroLeagueStats };
 
 export type PlayerLeagueStats = PlayerHeroLeagueStats;
 
@@ -56,6 +63,9 @@ type PlayerHeroAcc = {
   goldPerMin: number;
   lastHits: number;
   maxKills: number;
+  laneWins: number;
+  laneDraws: number;
+  laneLosses: number;
 };
 
 export class TournamentAggregator {
@@ -104,6 +114,9 @@ export class TournamentAggregator {
       goldPerMin: 0,
       lastHits: 0,
       maxKills: 0,
+      laneWins: 0,
+      laneDraws: 0,
+      laneLosses: 0,
     };
 
     for (const ph of phMap.values()) {
@@ -117,6 +130,9 @@ export class TournamentAggregator {
       acc.goldPerMin += ph.goldPerMin;
       acc.lastHits += ph.lastHits;
       acc.maxKills = Math.max(acc.maxKills, ph.maxKills);
+      acc.laneWins += ph.laneWins;
+      acc.laneDraws += ph.laneDraws;
+      acc.laneLosses += ph.laneLosses;
     }
 
     if (acc.games === 0) return undefined;
@@ -142,6 +158,9 @@ export class TournamentAggregator {
       avgHeroDamage: ph.heroDamage / games,
       avgGpm: ph.goldPerMin / games,
       avgLastHits: ph.lastHits / games,
+      laneWins: ph.laneWins ?? 0,
+      laneDraws: ph.laneDraws ?? 0,
+      laneLosses: ph.laneLosses ?? 0,
     };
   }
 
@@ -169,6 +188,9 @@ export class TournamentAggregator {
         goldPerMin: row.goldPerMin,
         lastHits: row.lastHits,
         maxKills: row.maxKills,
+        laneWins: row.laneWins,
+        laneDraws: row.laneDraws,
+        laneLosses: row.laneLosses,
       });
     }
 
@@ -213,14 +235,18 @@ export class TournamentAggregator {
 
     try {
       await ensureHeroRegistry(client);
-      const resolved = await resolveLeagueMatchIds(leagueId, client, maxMatches);
+      const resolved = await resolveLeagueMatchIds(leagueId, maxMatches);
       const matchIds = resolved.matchIds;
 
       if (matchIds.length === 0) {
         throw new Error(
           resolved.warning ??
-            `No matches found for league ${leagueId}. OpenDota tier "${resolved.tier ?? "unknown"}" may not be indexed — set STEAM_WEB_API_KEY or LEAGUE_MATCH_IDS in .env`,
+            `No matches found for league ${leagueId}. Set STEAM_WEB_API_KEY in apps/broadcast-api/.env and/or LEAGUE_MATCH_IDS.`,
         );
+      }
+
+      if (resolved.warning) {
+        logger.warn({ leagueId, warning: resolved.warning }, "League match resolve");
       }
 
       this.progress.matchTotal = matchIds.length;
@@ -310,6 +336,7 @@ export class TournamentAggregator {
     heroAcc: Map<number, HeroAcc>,
   ): void {
     const radiantWin = match.radiant_win === true;
+    const laneOutcomes = computeLaneOutcomesForMatch(match.players);
 
     for (const pb of this.resolvePickBans(match)) {
       const acc = this.getAcc(heroAcc, pb.hero_id);
@@ -318,7 +345,8 @@ export class TournamentAggregator {
     }
 
     for (const p of match.players ?? []) {
-      if (typeof p.account_id !== "number" || typeof p.hero_id !== "number") {
+      const steam32 = steam32FromMatchPlayer(p);
+      if (steam32 === undefined || typeof p.hero_id !== "number") {
         continue;
       }
       const won =
@@ -329,18 +357,9 @@ export class TournamentAggregator {
       if (won) acc.wins += 1;
       else acc.losses += 1;
 
-      if (!this.countsForPlayerLeagueStats(p)) continue;
-      this.trackPlayerHero(p.account_id, p.hero_id, won, p);
+      if (!shouldCountPlayerLeagueGame(p)) continue;
+      this.trackPlayerHero(steam32, p.hero_id, won, p, laneOutcomes.get(steam32));
     }
-  }
-
-  /** Skip disconnects / abandons and 0/0/0 non-games (Dotabuff-style). */
-  private countsForPlayerLeagueStats(p: OpenDotaMatchPlayer): boolean {
-    if ((p.leaver_status ?? 0) !== 0) return false;
-    const kills = p.kills ?? 0;
-    const deaths = p.deaths ?? 0;
-    const assists = p.assists ?? 0;
-    return !(kills === 0 && deaths === 0 && assists === 0);
   }
 
   private isLeaverLikePlayerHeroAcc(ph: PlayerHeroAcc): boolean {
@@ -357,6 +376,7 @@ export class TournamentAggregator {
     heroId: number,
     won: boolean,
     p: OpenDotaMatchPlayer,
+    laneOutcome?: "win" | "draw" | "loss",
   ): void {
     let phMap = this.playerLeagueHeroes.get(steam32);
     if (!phMap) {
@@ -381,10 +401,16 @@ export class TournamentAggregator {
       goldPerMin: 0,
       lastHits: 0,
       maxKills: 0,
+      laneWins: 0,
+      laneDraws: 0,
+      laneLosses: 0,
     };
 
     cur.games += 1;
     if (won) cur.wins += 1;
+    if (laneOutcome === "win") cur.laneWins += 1;
+    else if (laneOutcome === "draw") cur.laneDraws += 1;
+    else if (laneOutcome === "loss") cur.laneLosses += 1;
     cur.kills += kills;
     cur.deaths += deaths;
     cur.assists += assists;

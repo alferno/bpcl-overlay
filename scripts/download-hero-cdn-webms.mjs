@@ -20,6 +20,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, "apps/overlay-web/public/heroes/renders");
 const manifestPath = path.join(outDir, "manifest.json");
 
+const { normalizeHeroSlug } = await import(
+  path.join(root, "packages/shared-types/dist/hero-assets.js")
+);
+
 const args = process.argv.slice(2);
 const force = args.includes("--force");
 const limitArg = args.find((a) => a.startsWith("--limit="));
@@ -140,27 +144,46 @@ async function main() {
   await mapPool(
     heroes,
     async (hero) => {
-      const url = `${CDN_RENDER_BASE}/${hero.slug}.webm`;
-      const dest = path.join(outDir, `${hero.slug}.webm`);
+      const canonical = normalizeHeroSlug(hero.slug);
+      const candidates = [...new Set([canonical, hero.slug].filter(Boolean))];
+      let savedAs = null;
 
-      if (!force && fs.existsSync(dest) && fs.statSync(dest).size > MIN_BYTES_SKIP) {
-        skipped += 1;
-        ok.push(hero.slug);
-        return;
+      for (const candidate of candidates) {
+        const dest = path.join(outDir, `${candidate}.webm`);
+        if (
+          !force &&
+          fs.existsSync(dest) &&
+          fs.statSync(dest).size > MIN_BYTES_SKIP
+        ) {
+          skipped += 1;
+          ok.push(candidate);
+          return;
+        }
       }
 
-      try {
-        await downloadFile(url, dest);
-        ok.push(hero.slug);
-        const mb = (fs.statSync(dest).size / (1024 * 1024)).toFixed(1);
-        console.log(`  OK   ${hero.slug}.webm (${mb} MB)`);
-      } catch (e) {
+      for (const candidate of candidates) {
+        const url = `${CDN_RENDER_BASE}/${candidate}.webm`;
+        const dest = path.join(outDir, `${candidate}.webm`);
+        try {
+          await downloadFile(url, dest);
+          savedAs = candidate;
+          ok.push(candidate);
+          const mb = (fs.statSync(dest).size / (1024 * 1024)).toFixed(1);
+          console.log(`  OK   ${candidate}.webm (${mb} MB)`);
+          break;
+        } catch {
+          /* try next candidate */
+        }
+      }
+
+      if (!savedAs) {
+        const err = `CDN miss for ${candidates.join(", ")}`;
         missing.push({
           slug: hero.slug,
           localized: hero.localized,
-          error: String(e),
+          error: err,
         });
-        console.log(`  FAIL ${hero.slug}: ${e}`);
+        console.log(`  FAIL ${hero.slug}: ${err}`);
       }
     },
     CONCURRENCY,

@@ -1,6 +1,8 @@
 import type {
   HeroStatsCard,
   MatchupCard,
+  PlayerHeroLeagueStats,
+  RosterPlayer,
   StatCarouselState,
   StatSlide,
   TournamentHeroAggregate,
@@ -10,15 +12,16 @@ import {
   ensureHeroRegistry,
   findRosterPlayer,
   heroDisplayName,
+  heroPortraitFieldsForHero,
   heroPortraitUrl,
   listHeroesSorted,
+  teamLogoUrlForKey,
   type HeroMeta,
 } from "./hero-registry.js";
-import {
-  tournamentAggregator,
-  type PlayerHeroLeagueStats,
-  type PlayerLeagueStats,
-} from "./tournament-aggregator.js";
+import { formatLaneRecord } from "./lane-outcome.js";
+import { summarizePlayerLeagueFromIndex } from "./league-stats-store.js";
+import { fetchSteamAvatarUrl } from "./steam-profile.js";
+import { tournamentAggregator } from "./tournament-aggregator.js";
 
 function pct(n: number | undefined): string {
   if (n === undefined || Number.isNaN(n)) return "—";
@@ -38,6 +41,33 @@ function fmtDamage(n: number | undefined): string {
 
 function wlRecord(wins: number, losses: number): string {
   return `${wins}W / ${losses}L`;
+}
+
+function laneStatSlide(
+  ph: Pick<
+    PlayerHeroLeagueStats,
+    "laneWins" | "laneDraws" | "laneLosses"
+  >,
+): StatSlide | null {
+  const lw = ph.laneWins ?? 0;
+  const ld = ph.laneDraws ?? 0;
+  const ll = ph.laneLosses ?? 0;
+  if (lw + ld + ll === 0) return null;
+  return {
+    label: "Lane",
+    value: formatLaneRecord(lw, ld, ll),
+    sublabel: "win · draw · loss (EFF@10)",
+  };
+}
+
+async function resolvePlayerAvatarUrl(
+  client: OpenDotaClient,
+  steam32: number,
+  roster?: RosterPlayer[],
+): Promise<string | undefined> {
+  const fromRoster = roster?.find((p) => p.steam32 === steam32)?.avatarUrl;
+  if (fromRoster?.trim()) return fromRoster;
+  return fetchSteamAvatarUrl(client, steam32);
 }
 
 function tournamentSlides(agg: TournamentHeroAggregate): StatSlide[] {
@@ -132,6 +162,7 @@ function playerHeroSlides(
       value: fmtDamage(ph.avgHeroDamage),
       sublabel: "avg per game",
     },
+    ...(laneStatSlide(ph) ? [laneStatSlide(ph)!] : []),
     {
       label: "Farm pace",
       value: `${Math.round(ph.avgGpm)} GPM`,
@@ -151,7 +182,7 @@ function playerHeroSlides(
 
 function playerLeagueSlides(
   displayName: string,
-  pl: PlayerLeagueStats | undefined,
+  pl: PlayerHeroLeagueStats | undefined,
 ): StatSlide[] {
   if (!pl || pl.games === 0) {
     return [
@@ -187,6 +218,7 @@ function playerLeagueSlides(
       value: fmtDamage(pl.avgHeroDamage),
       sublabel: "avg per game",
     },
+    ...(laneStatSlide(pl) ? [laneStatSlide(pl)!] : []),
     {
       label: "Farm pace",
       value: `${Math.round(pl.avgGpm)} GPM`,
@@ -212,6 +244,9 @@ function toPlayerHeroPayload(ph: PlayerHeroLeagueStats | undefined) {
     avgHeroDamage: ph.avgHeroDamage,
     avgGpm: ph.avgGpm,
     avgLastHits: ph.avgLastHits,
+    laneWins: ph.laneWins,
+    laneDraws: ph.laneDraws,
+    laneLosses: ph.laneLosses,
   };
 }
 
@@ -233,12 +268,14 @@ export async function buildTournamentHeroCard(
     } as TournamentHeroAggregate);
 
   const name = agg.heroName ?? heroDisplayName(heroId);
+  const portrait = heroPortraitFieldsForHero(heroId, name);
 
   return {
+    statsCardKind: "tournament-hero",
     playerLabel: name,
     heroId,
     heroName: name,
-    heroPortraitUrl: heroPortraitUrl(heroId),
+    ...portrait,
     tournament: {
       pickRate: agg.pickRate,
       winRate: agg.winRate,
@@ -262,18 +299,30 @@ export async function buildPlayerHeroCard(
   heroId: number,
   displayName: string,
   heroIndex: Record<string, TournamentHeroAggregate>,
+  roster?: RosterPlayer[],
+  playerHeroIndex?: Record<string, PlayerHeroLeagueStats>,
 ): Promise<HeroStatsCard> {
   await ensureHeroRegistry(client);
 
-  const leaguePh = tournamentAggregator.getPlayerHeroStats(steam32, heroId);
+  const leaguePh =
+    tournamentAggregator.getPlayerHeroStats(steam32, heroId) ??
+    playerHeroIndex?.[`${steam32}:${heroId}`];
   const agg = heroIndex[String(heroId)];
   const heroName = heroDisplayName(heroId);
+  const portrait = heroPortraitFieldsForHero(heroId, heroName);
+  const playerAvatarUrl = await resolvePlayerAvatarUrl(
+    client,
+    steam32,
+    roster,
+  );
 
   return {
+    statsCardKind: "player-hero",
     playerLabel: displayName,
     heroId,
     heroName,
-    heroPortraitUrl: heroPortraitUrl(heroId),
+    ...portrait,
+    playerAvatarUrl,
     tournament: agg
       ? {
           pickRate: agg.pickRate,
@@ -294,18 +343,92 @@ export async function buildPlayerHeroCard(
   };
 }
 
+function playerLeagueStatsFromIndex(
+  steam32: number,
+  playerHeroIndex?: Record<string, PlayerHeroLeagueStats>,
+): PlayerHeroLeagueStats | undefined {
+  if (summarizePlayerLeagueFromIndex(playerHeroIndex, steam32).games <= 0) {
+    return undefined;
+  }
+  const prefix = `${steam32}:`;
+  const acc = {
+    games: 0,
+    wins: 0,
+    kills: 0,
+    deaths: 0,
+    assists: 0,
+    heroDamage: 0,
+    goldPerMin: 0,
+    lastHits: 0,
+    maxKills: 0,
+    laneWins: 0,
+    laneDraws: 0,
+    laneLosses: 0,
+  };
+  for (const [key, ph] of Object.entries(playerHeroIndex ?? {})) {
+    if (!key.startsWith(prefix) || ph.games <= 0) continue;
+    acc.games += ph.games;
+    acc.wins += ph.wins;
+    acc.kills += ph.avgKills * ph.games;
+    acc.deaths += ph.avgDeaths * ph.games;
+    acc.assists += ph.avgAssists * ph.games;
+    acc.heroDamage += ph.avgHeroDamage * ph.games;
+    acc.goldPerMin += ph.avgGpm * ph.games;
+    acc.lastHits += ph.avgLastHits * ph.games;
+    acc.maxKills = Math.max(acc.maxKills, ph.maxKills);
+    acc.laneWins += ph.laneWins ?? 0;
+    acc.laneDraws += ph.laneDraws ?? 0;
+    acc.laneLosses += ph.laneLosses ?? 0;
+  }
+  const games = acc.games;
+  const kda =
+    acc.deaths > 0
+      ? (acc.kills + acc.assists) / acc.deaths
+      : acc.kills + acc.assists;
+  return {
+    games,
+    wins: acc.wins,
+    winRate: acc.wins / games,
+    avgKills: acc.kills / games,
+    avgDeaths: acc.deaths / games,
+    avgAssists: acc.assists / games,
+    avgKda: kda,
+    maxKills: acc.maxKills,
+    avgHeroDamage: acc.heroDamage / games,
+    avgGpm: acc.goldPerMin / games,
+    avgLastHits: acc.lastHits / games,
+    laneWins: acc.laneWins,
+    laneDraws: acc.laneDraws,
+    laneLosses: acc.laneLosses,
+  };
+}
+
 export async function buildPlayerLeagueCard(
   client: OpenDotaClient,
   steam32: number,
   displayName: string,
+  playerHeroIndex?: Record<string, PlayerHeroLeagueStats>,
+  roster?: RosterPlayer[],
 ): Promise<HeroStatsCard> {
   await ensureHeroRegistry(client);
-  const leaguePl = tournamentAggregator.getPlayerLeagueStats(steam32);
+  const leaguePl =
+    tournamentAggregator.getPlayerLeagueStats(steam32) ??
+    playerLeagueStatsFromIndex(steam32, playerHeroIndex);
+  const playerAvatarUrl = await resolvePlayerAvatarUrl(
+    client,
+    steam32,
+    roster,
+  );
+  const rosterPlayer = findRosterPlayer(roster ?? [], steam32);
 
   return {
+    statsCardKind: "player-league",
     playerLabel: displayName,
     heroId: 0,
     heroName: "League aggregate",
+    playerAvatarUrl,
+    teamLogoUrl: teamLogoUrlForKey(rosterPlayer?.teamKey),
+    teamColor: rosterPlayer?.teamColor,
     playerHero: toPlayerHeroPayload(leaguePl),
     statSlides: playerLeagueSlides(displayName, leaguePl),
     fetchedAt: new Date().toISOString(),
@@ -345,13 +468,18 @@ export async function buildMatchupCard(
     },
   ];
 
+  const portraitA = heroPortraitFieldsForHero(heroAId);
+  const portraitB = heroPortraitFieldsForHero(heroBId);
+
   return {
     heroAId,
     heroBId,
     heroAName: heroDisplayName(heroAId),
     heroBName: heroDisplayName(heroBId),
-    heroAPortraitUrl: heroPortraitUrl(heroAId),
-    heroBPortraitUrl: heroPortraitUrl(heroBId),
+    heroAPortraitSlug: portraitA.heroPortraitSlug,
+    heroBPortraitSlug: portraitB.heroPortraitSlug,
+    heroAPortraitUrl: portraitA.heroPortraitUrl,
+    heroBPortraitUrl: portraitB.heroPortraitUrl,
     matchup: row,
     statLines,
     fetchedAt: new Date().toISOString(),
@@ -384,6 +512,7 @@ export function buildCarouselFromHeroCard(
   return {
     heroId: card.heroId,
     heroName: card.heroName,
+    heroPortraitSlug: card.heroPortraitSlug,
     heroPortraitUrl: card.heroPortraitUrl,
     playerLabel: card.playerLabel,
     slides,
@@ -400,4 +529,9 @@ export async function listHeroesForAdmin(
   return listHeroesSorted();
 }
 
-export { findRosterPlayer, heroDisplayName, heroPortraitUrl };
+export {
+  findRosterPlayer,
+  heroDisplayName,
+  heroPortraitFieldsForHero,
+  heroPortraitUrl,
+};

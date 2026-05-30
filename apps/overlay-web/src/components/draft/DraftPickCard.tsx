@@ -1,5 +1,9 @@
 import type { CSSProperties } from "react";
-import type { DraftSlot, LeagueConfig } from "@bpc/shared-types";
+import type {
+  DraftSlot,
+  LeagueConfig,
+  ProductionSettings,
+} from "@bpc/shared-types";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
@@ -75,6 +79,7 @@ export function DraftPickCard({
   hideHeroUntilCinematic = false,
   heroSelectionMode = false,
   leagueConfig,
+  production,
   teamSide,
 }: {
   slot: DraftSlot | null;
@@ -87,6 +92,7 @@ export function DraftPickCard({
   /** After CM draft — show manually assigned roster name */
   heroSelectionMode?: boolean;
   leagueConfig?: LeagueConfig;
+  production?: ProductionSettings | null;
   teamSide: "radiant" | "dire";
 }) {
   const media = slot ? resolveSlotMedia(slot) : {};
@@ -105,7 +111,7 @@ export function DraftPickCard({
 
   const rosterLabel =
     heroSelectionMode && slot
-      ? pickSlotRosterLabel(slot, leagueConfig, teamSide)
+      ? pickSlotRosterLabel(slot, leagueConfig, teamSide, production)
       : undefined;
 
   const underHeroLabel = heroSelectionMode

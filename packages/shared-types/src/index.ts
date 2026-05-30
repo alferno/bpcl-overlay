@@ -62,6 +62,8 @@ export const rosterPlayerSchema = z.object({
   teamKey: z.string().optional(),
   /** Brand hex from roster CSV (e.g. `#1e4d8c`) */
   teamColor: z.string().optional(),
+  /** Steam avatar; optional CSV column or filled from OpenDota on roster upload */
+  avatarUrl: z.string().optional(),
   /** @deprecated use leagueConfig.matchSetup instead */
   side: z.enum(["radiant", "dire", "A", "B"]).optional(),
 });
@@ -145,6 +147,10 @@ export const playerHeroLeagueStatsSchema = z.object({
   avgHeroDamage: z.number(),
   avgGpm: z.number(),
   avgLastHits: z.number(),
+  /** Lane phase W/D/L in league (EFF@10 vs lane opponent) */
+  laneWins: z.number().optional(),
+  laneDraws: z.number().optional(),
+  laneLosses: z.number().optional(),
 });
 
 export type PlayerHeroLeagueStats = z.infer<typeof playerHeroLeagueStatsSchema>;
@@ -160,6 +166,7 @@ export type StatSlide = z.infer<typeof statSlideSchema>;
 export const statCarouselSchema = z.object({
   heroId: z.number(),
   heroName: z.string().optional(),
+  heroPortraitSlug: z.string().optional(),
   heroPortraitUrl: z.string().optional(),
   playerLabel: z.string().optional(),
   slides: z.array(statSlideSchema),
@@ -175,6 +182,10 @@ export const productionSettingsSchema = z.object({
   autoShowStatsOnPick: z.boolean().default(false),
   gsiLastSeen: z.string().optional(),
   gsiConnected: z.boolean().optional(),
+  /** When true, matchSetup pickPlayers are shown on overlay draft UI */
+  playerMappingPublished: z.boolean().default(false),
+  /** Increment to clear overlay draft reveal queue (OBS cache reset) */
+  overlayDraftEpoch: z.number().optional(),
 });
 
 export type ProductionSettings = z.infer<typeof productionSettingsSchema>;
@@ -194,6 +205,7 @@ export const draftSlotSchema = z.object({
   type: z.enum(["pick", "ban"]),
   heroId: z.number().nullable(),
   heroName: z.string().optional(),
+  heroPortraitSlug: z.string().optional(),
   heroPortraitUrl: z.string().optional(),
   /** Steam CDN render WebM for draft pick cards */
   heroPortraitAnimatedUrl: z.string().optional(),
@@ -216,6 +228,7 @@ export const lastPickSchema = z.object({
   side: z.enum(["radiant", "dire", "A", "B"]),
   heroId: z.number(),
   heroName: z.string().optional(),
+  heroPortraitSlug: z.string().optional(),
   playerName: z.string().optional(),
 });
 
@@ -252,6 +265,7 @@ export const playerStatsCardSchema = z.object({
   playerLabel: z.string(),
   heroId: z.number().optional(),
   heroName: z.string().optional(),
+  heroPortraitSlug: z.string().optional(),
   heroPortraitUrl: z.string().optional(),
   statLines: z
     .array(
@@ -278,11 +292,28 @@ export const heroStatsSliceSchema = z.object({
   games: z.number().optional(),
 });
 
+export const heroStatsCardKindSchema = z.enum([
+  "player-league",
+  "player-hero",
+  "tournament-hero",
+]);
+
+export type HeroStatsCardKind = z.infer<typeof heroStatsCardKindSchema>;
+
 export const heroStatsCardSchema = z.object({
+  /** Drives overlay layout; set when composing league stats cards */
+  statsCardKind: heroStatsCardKindSchema.optional(),
   playerLabel: z.string(),
   heroId: z.number(),
   heroName: z.string().optional(),
+  heroPortraitSlug: z.string().optional(),
   heroPortraitUrl: z.string().optional(),
+  /** Steam profile picture when showing player league stats */
+  playerAvatarUrl: z.string().optional(),
+  /** Team logo watermark for league-aggregate player cards (`/teams/{teamKey}.png`) */
+  teamLogoUrl: z.string().optional(),
+  /** Brand hex from roster for league-aggregate theming */
+  teamColor: z.string().optional(),
   tournament: heroStatsSliceSchema.optional(),
   playerHero: z
     .object({
@@ -315,6 +346,8 @@ export const matchupCardSchema = z.object({
   heroBId: z.number(),
   heroAName: z.string().optional(),
   heroBName: z.string().optional(),
+  heroAPortraitSlug: z.string().optional(),
+  heroBPortraitSlug: z.string().optional(),
   heroAPortraitUrl: z.string().optional(),
   heroBPortraitUrl: z.string().optional(),
   matchup: z.record(z.any()).optional(),
@@ -459,6 +492,8 @@ export function createDefaultEnvelope(): OverlayEnvelope {
       gsiManualOverride: false,
       autoShowStatsOnPick: false,
       gsiConnected: false,
+      playerMappingPublished: false,
+      overlayDraftEpoch: 0,
     },
     statCarousel: null,
     draft: null,

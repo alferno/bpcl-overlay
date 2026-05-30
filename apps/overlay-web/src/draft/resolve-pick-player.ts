@@ -3,12 +3,21 @@ import type {
   LastPick,
   LeagueConfig,
   PlayerHeroLeagueStats,
+  ProductionSettings,
 } from "@bpc/shared-types";
 import {
   manualPickDisplayName,
   manualPickSteam32,
   pickSlotOrderForHero,
 } from "@bpc/shared-types";
+
+import { countPlayerLeagueGames } from "./player-league-games";
+
+export function isPlayerMappingPublished(
+  production?: ProductionSettings | null,
+): boolean {
+  return Boolean(production?.playerMappingPublished);
+}
 
 export function resolvePickSide(
   pick: LastPick,
@@ -21,17 +30,19 @@ export function resolvePickPlayerContext(
   draft: DraftState | null | undefined,
   leagueConfig: LeagueConfig | undefined,
   playerHeroIndex: Record<string, PlayerHeroLeagueStats> | undefined,
-): {
-  side: "radiant" | "dire";
-  slotOrder?: number;
-  steam32?: number | null;
-  playerName?: string;
-  playerHeroStats?: PlayerHeroLeagueStats;
-} {
+  production?: ProductionSettings | null,
+) {
   const side = resolvePickSide(pick);
-  const teamSlots =
-    side === "radiant" ? draft?.radiant?.slots : draft?.dire?.slots;
-  const slotOrder = pickSlotOrderForHero(side, pick.heroId, teamSlots);
+  const slotOrder = pickSlotOrderForHero(
+    side,
+    pick.heroId,
+    side === "radiant" ? draft?.radiant?.slots : draft?.dire?.slots,
+  );
+
+  if (!isPlayerMappingPublished(production)) {
+    return { side, slotOrder, steam32: undefined, playerName: undefined };
+  }
+
   const steam32 =
     slotOrder !== undefined
       ? manualPickSteam32(leagueConfig?.matchSetup, side, slotOrder)
@@ -41,10 +52,28 @@ export function resolvePickPlayerContext(
       ? manualPickDisplayName(leagueConfig, side, slotOrder)
       : undefined;
 
+  const avatarUrl =
+    steam32 != null && steam32 > 0
+      ? leagueConfig?.roster?.find((p) => p.steam32 === steam32)?.avatarUrl
+      : undefined;
+
   const playerHeroStats =
     steam32 != null && steam32 > 0
       ? playerHeroIndex?.[`${steam32}:${pick.heroId}`]
       : undefined;
 
-  return { side, slotOrder, steam32, playerName, playerHeroStats };
+  const playerLeagueGames =
+    steam32 != null && steam32 > 0
+      ? countPlayerLeagueGames(playerHeroIndex, steam32)
+      : 0;
+
+  return {
+    side,
+    slotOrder,
+    steam32,
+    playerName,
+    avatarUrl,
+    playerHeroStats,
+    playerLeagueGames,
+  };
 }

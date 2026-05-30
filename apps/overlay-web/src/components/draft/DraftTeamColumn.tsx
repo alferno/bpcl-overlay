@@ -1,4 +1,8 @@
-import type { DraftSlot, LeagueConfig } from "@bpc/shared-types";
+import type {
+  DraftSlot,
+  LeagueConfig,
+  ProductionSettings,
+} from "@bpc/shared-types";
 
 import { DRAFT_PICK_HEIGHT } from "../../draft/dimensions";
 import {
@@ -25,12 +29,14 @@ export function DraftTeamColumn({
   edge,
   teamSide,
   cinematicPickKey = null,
+  production,
 }: {
   slots: DraftSlot[] | undefined;
   teamLogoUrl?: string;
   isActive: boolean;
   heroSelectionMode?: boolean;
   leagueConfig?: LeagueConfig;
+  production?: ProductionSettings | null;
   teamColor: string;
   turnAction: "pick" | "ban";
   edge?: "start" | "end";
@@ -124,6 +130,7 @@ export function DraftTeamColumn({
                 }
                 heroSelectionMode={heroSelectionMode}
                 leagueConfig={leagueConfig}
+                production={production}
                 teamSide={teamSide}
               />
             </div>

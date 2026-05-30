@@ -30,10 +30,15 @@ const pngs = fs
   .map((f) => f.replace(/\.png$/i, ""))
   .sort((a, b) => a.localeCompare(b));
 
+const allSlugs = [...new Set([...webms, ...pngs])].sort((a, b) =>
+  a.localeCompare(b),
+);
+
 const manifest = {
   generatedAt: new Date().toISOString(),
-  slugs: webms,
+  slugs: allSlugs,
   posters: pngs,
+  webms,
 };
 
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);

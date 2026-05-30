@@ -1,5 +1,5 @@
 import type { LastPick } from "@bpc/shared-types";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { lastPickCinematicKey } from "../draft/cinematic-pick";
 import {
@@ -12,70 +12,108 @@ import { warmHeroWebm } from "../hero-video-pool";
 export const DRAFT_INTRO_VISIBLE_MS = 4000;
 /** Tournament stats panel duration */
 export const DRAFT_STATS_VISIBLE_MS = 8000;
+const MAX_STATS_VISIBLE = 4;
+const STATS_TICK_MS = 250;
 
-export function useDraftPickReveal(lastPick: LastPick | null | undefined) {
+export type StatsQueueItem = {
+  key: string;
+  pick: LastPick;
+  statsUntil: number;
+};
+
+function pickKeyFromPick(pick: LastPick): string | null {
+  if (pick.heroId == null || pick.side == null) return null;
+  return `${pick.side}-${pick.heroId}`;
+}
+
+export function useDraftPickReveal(
+  lastPick: LastPick | null | undefined,
+  overlayDraftEpoch?: number,
+) {
   const [introPick, setIntroPick] = useState<LastPick | null>(null);
-  const [statsPick, setStatsPick] = useState<LastPick | null>(null);
-  const activeKeyRef = useRef<string | null>(null);
+  const [statsQueue, setStatsQueue] = useState<StatsQueueItem[]>([]);
+  const cinematicQueueRef = useRef<LastPick[]>([]);
+  const seenPickKeysRef = useRef<Set<string>>(new Set());
+  const introBusyRef = useRef(false);
   const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const statsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPickRef = useRef(lastPick);
   lastPickRef.current = lastPick;
+
+  const clearAll = useCallback(() => {
+    cinematicQueueRef.current = [];
+    seenPickKeysRef.current = new Set();
+    introBusyRef.current = false;
+    if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    introTimerRef.current = null;
+    setIntroPick(null);
+    setStatsQueue([]);
+  }, []);
+
+  useEffect(() => {
+    clearAll();
+  }, [overlayDraftEpoch, clearAll]);
+
+  const playNextCinematic = useCallback(() => {
+    if (introBusyRef.current) return;
+    const next = cinematicQueueRef.current.shift();
+    if (!next?.heroId) {
+      if (cinematicQueueRef.current.length > 0) playNextCinematic();
+      return;
+    }
+
+    introBusyRef.current = true;
+    setIntroPick(next);
+    void ensureOverlayHeroIndex().then(() => {
+      const slug = getHeroIdToSlugMap().get(next.heroId);
+      if (slug) void warmHeroWebm(slug);
+    });
+
+    if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    introTimerRef.current = setTimeout(() => {
+      introBusyRef.current = false;
+      setIntroPick(null);
+      introTimerRef.current = null;
+      playNextCinematic();
+    }, DRAFT_INTRO_VISIBLE_MS);
+  }, []);
 
   const heroId = lastPick?.heroId;
   const side = lastPick?.side;
   const pickKey =
     heroId != null && side != null ? `${side}-${heroId}` : null;
 
-  // Start intro before paint so the pick card never flashes ahead of cinematic.
   useLayoutEffect(() => {
     if (!pickKey) return;
-    if (activeKeyRef.current === pickKey) return;
+    if (seenPickKeysRef.current.has(pickKey)) return;
 
     const pick = lastPickRef.current;
     if (!pick?.heroId) return;
 
-    activeKeyRef.current = pickKey;
-    setIntroPick(pick);
-    setStatsPick(pick);
+    seenPickKeysRef.current.add(pickKey);
+    cinematicQueueRef.current.push(pick);
+    playNextCinematic();
 
-    void ensureOverlayHeroIndex().then(() => {
-      const slug = getHeroIdToSlugMap().get(pick.heroId);
-      if (slug) void warmHeroWebm(slug);
-    });
+    const statsUntil = Date.now() + DRAFT_STATS_VISIBLE_MS;
+    setStatsQueue((prev) => [
+      ...prev,
+      { key: pickKey, pick, statsUntil },
+    ]);
+  }, [pickKey, playNextCinematic]);
 
-    if (introTimerRef.current) clearTimeout(introTimerRef.current);
-    if (statsTimerRef.current) clearTimeout(statsTimerRef.current);
-
-    introTimerRef.current = setTimeout(() => {
-      setIntroPick(null);
-      introTimerRef.current = null;
-    }, DRAFT_INTRO_VISIBLE_MS);
-
-    statsTimerRef.current = setTimeout(() => {
-      setStatsPick(null);
-      statsTimerRef.current = null;
-    }, DRAFT_STATS_VISIBLE_MS);
-  }, [pickKey]);
-
-  // Enrich labels when GSI adds heroName / playerName for the same pick.
   useEffect(() => {
-    if (!pickKey || activeKeyRef.current !== pickKey) return;
-    const pick = lastPickRef.current;
-    if (!pick?.heroId) return;
-
-    setIntroPick((prev) =>
-      prev && prev.heroId === pick.heroId ? pick : prev,
-    );
-    setStatsPick((prev) =>
-      prev && prev.heroId === pick.heroId ? pick : prev,
-    );
-  }, [pickKey, lastPick?.heroName, lastPick?.playerName]);
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      setStatsQueue((prev) => {
+        const next = prev.filter((item) => item.statsUntil > now);
+        return next.length === prev.length ? prev : next;
+      });
+    }, STATS_TICK_MS);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(
     () => () => {
       if (introTimerRef.current) clearTimeout(introTimerRef.current);
-      if (statsTimerRef.current) clearTimeout(statsTimerRef.current);
     },
     [],
   );
@@ -83,14 +121,24 @@ export function useDraftPickReveal(lastPick: LastPick | null | undefined) {
   const pendingIntro =
     pickKey != null &&
     lastPick?.heroId != null &&
-    activeKeyRef.current !== pickKey;
+    !seenPickKeysRef.current.has(pickKey);
 
   const cinematicPickKey =
     introPick != null
       ? lastPickCinematicKey(introPick)
       : pendingIntro && lastPick
         ? lastPickCinematicKey(lastPick)
-        : null;
+        : cinematicQueueRef.current[0]
+          ? lastPickCinematicKey(cinematicQueueRef.current[0])
+          : null;
 
-  return { introPick, statsPick, cinematicPickKey };
+  const activeStats = statsQueue
+    .filter((item) => item.statsUntil > Date.now())
+    .slice(-MAX_STATS_VISIBLE);
+
+  return {
+    introPick,
+    statsQueue: activeStats,
+    cinematicPickKey,
+  };
 }

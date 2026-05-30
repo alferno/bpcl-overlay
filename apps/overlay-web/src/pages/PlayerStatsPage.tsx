@@ -1,6 +1,10 @@
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { HeroPortrait } from "../components/HeroPortrait";
+import {
+  heroPortraitHintsFromFields,
+  resolveOverlayPortraitForHero,
+} from "../hero-portrait";
 import { StatsOverlayRegion } from "../components/StatsOverlayRegion";
 import { PLAYER_STATS_SHELL_CLASS } from "../overlay-layout";
 import { routeVisible } from "../visibility";
@@ -9,6 +13,13 @@ export default function PlayerStatsPage() {
   const { state } = useOverlayState();
   const visible = routeVisible("playerstats", state);
   const card = state.playerStatsCard;
+  const portraitUrl = card
+    ? resolveOverlayPortraitForHero(
+        card.heroId,
+        card.heroName,
+        heroPortraitHintsFromFields(card),
+      )
+    : undefined;
 
   return (
     <HudCanvas blend>
@@ -18,9 +29,9 @@ export default function PlayerStatsPage() {
             <div
               className={`flex max-w-[640px] items-center gap-6 ${PLAYER_STATS_SHELL_CLASS}`}
             >
-              {card.heroPortraitUrl ? (
+              {portraitUrl ? (
                 <HeroPortrait
-                  url={card.heroPortraitUrl}
+                  url={portraitUrl}
                   heroName={card.heroName}
                   size={112}
                 />

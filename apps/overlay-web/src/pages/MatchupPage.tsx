@@ -1,6 +1,10 @@
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { HeroPortrait } from "../components/HeroPortrait";
+import {
+  heroPortraitHintsFromFields,
+  resolveOverlayPortraitForHero,
+} from "../hero-portrait";
 import { routeVisible } from "../visibility";
 
 export default function MatchupPage() {
@@ -9,6 +13,26 @@ export default function MatchupPage() {
   const m = state.matchupCard;
 
   const lines = m?.statLines ?? [];
+  const portraitA = m
+    ? resolveOverlayPortraitForHero(
+        m.heroAId,
+        m.heroAName,
+        heroPortraitHintsFromFields({
+          heroPortraitSlug: m.heroAPortraitSlug,
+          heroPortraitUrl: m.heroAPortraitUrl,
+        }),
+      )
+    : undefined;
+  const portraitB = m
+    ? resolveOverlayPortraitForHero(
+        m.heroBId,
+        m.heroBName,
+        heroPortraitHintsFromFields({
+          heroPortraitSlug: m.heroBPortraitSlug,
+          heroPortraitUrl: m.heroBPortraitUrl,
+        }),
+      )
+    : undefined;
 
   return (
     <HudCanvas blend>
@@ -18,7 +42,7 @@ export default function MatchupPage() {
             <>
               <div className="flex flex-col items-center gap-4">
                 <HeroPortrait
-                  url={m.heroAPortraitUrl}
+                  url={portraitA}
                   heroName={m.heroAName}
                   size={200}
                 />
@@ -48,7 +72,7 @@ export default function MatchupPage() {
 
               <div className="flex flex-col items-center gap-4">
                 <HeroPortrait
-                  url={m.heroBPortraitUrl}
+                  url={portraitB}
                   heroName={m.heroBName}
                   size={200}
                 />

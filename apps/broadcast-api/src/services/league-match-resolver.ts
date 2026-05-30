@@ -1,14 +1,15 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { env } from "../env.js";
 import { logger } from "../logger.js";
-import type { OpenDotaClient } from "../opendota-client.js";
 
-export type LeagueMatchSource = "opendota" | "steam" | "env" | "mixed";
+/** Amateur / private leagues: Steam match history + optional env IDs only. */
+export type LeagueMatchSource = "steam" | "env" | "mixed";
 
 export type LeagueMatchResolveResult = {
   matchIds: number[];
   source: LeagueMatchSource;
-  leagueName?: string;
-  tier?: string;
   warning?: string;
 };
 
@@ -16,6 +17,7 @@ type SteamMatchHistoryResponse = {
   result?: {
     status?: number;
     matches?: Array<{ match_id?: number }>;
+    total_results?: number;
   };
 };
 
@@ -32,7 +34,7 @@ async function fetchSteamLeagueMatchIds(
   leagueId: number,
   maxMatches: number,
 ): Promise<number[]> {
-  const key = env.STEAM_WEB_API_KEY;
+  const key = env.STEAM_WEB_API_KEY?.trim();
   if (!key) return [];
 
   const ids: number[] = [];
@@ -56,7 +58,15 @@ async function fetchSteamLeagueMatchIds(
     }
 
     const body = (await res.json()) as SteamMatchHistoryResponse;
+    const status = body.result?.status;
     const batch = body.result?.matches ?? [];
+
+    if (status !== undefined && status !== 1 && batch.length === 0) {
+      throw new Error(
+        `Steam GetMatchHistory status ${status} for league ${leagueId} (no matches in response)`,
+      );
+    }
+
     if (batch.length === 0) break;
 
     for (const m of batch) {
@@ -70,67 +80,42 @@ async function fetchSteamLeagueMatchIds(
     startAt = last - 1;
   }
 
-  return [...new Set(ids)].slice(0, maxMatches);
+  const unique = [...new Set(ids)].slice(0, maxMatches);
+  logger.info({ leagueId, count: unique.length }, "Steam league match IDs loaded");
+  return unique;
 }
 
+/**
+ * Resolve league match IDs for amateur/private leagues via Steam Web API.
+ * OpenDota does not publish match lists for excluded-tier leagues.
+ */
 export async function resolveLeagueMatchIds(
   leagueId: number,
-  client: OpenDotaClient,
   maxMatches = 80,
 ): Promise<LeagueMatchResolveResult> {
-  let leagueName: string | undefined;
-  let tier: string | undefined;
-  let warning: string | undefined;
-
-  const leagueRes = await client.leagueInfo(leagueId);
-  if (leagueRes.ok && leagueRes.data && typeof leagueRes.data === "object") {
-    const info = leagueRes.data as { name?: string; tier?: string };
-    leagueName = info.name;
-    tier = info.tier;
-  }
-
-  const opendotaRes = await client.leagueMatches(leagueId);
-  const opendotaIds =
-    opendotaRes.ok && Array.isArray(opendotaRes.data)
-      ? (opendotaRes.data as Array<{ match_id?: number }>)
-          .map((m) => m.match_id)
-          .filter((id): id is number => typeof id === "number")
-      : [];
-
   const envIds = parseEnvMatchIds();
-  let steamIds: number[] = [];
+  const warnings: string[] = [];
 
-  if (opendotaIds.length > 0) {
-    const matchIds = [...new Set([...envIds, ...opendotaIds])].slice(0, maxMatches);
+  if (!env.STEAM_WEB_API_KEY?.trim() && envIds.length === 0) {
     return {
-      matchIds,
-      source: envIds.length > 0 ? "mixed" : "opendota",
-      leagueName,
-      tier,
+      matchIds: [],
+      source: "env",
+      warning:
+        "Set STEAM_WEB_API_KEY in apps/broadcast-api/.env and/or LEAGUE_MATCH_IDS (comma-separated match IDs).",
     };
   }
 
-  if (tier === "excluded" || tier === "amateur") {
-    warning =
-      `OpenDota does not index match lists for tier "${tier}" leagues. ` +
-      "Using Steam Web API or LEAGUE_MATCH_IDS instead.";
-  } else if (opendotaIds.length === 0) {
-    warning = "OpenDota returned 0 matches for this league.";
-  }
-
-  try {
-    steamIds = await fetchSteamLeagueMatchIds(leagueId, maxMatches);
-  } catch (err) {
-    logger.warn(err, "Steam league match history failed");
-    if (!env.STEAM_WEB_API_KEY) {
-      warning =
-        (warning ? warning + " " : "") +
-        "Set STEAM_WEB_API_KEY in .env to load amateur league matches from Steam.";
-    } else {
-      warning =
-        (warning ? warning + " " : "") +
-        (err instanceof Error ? err.message : String(err));
+  let steamIds: number[] = [];
+  if (env.STEAM_WEB_API_KEY?.trim()) {
+    try {
+      steamIds = await fetchSteamLeagueMatchIds(leagueId, maxMatches);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn({ err, leagueId }, "Steam league match history failed");
+      warnings.push(msg);
     }
+  } else if (envIds.length === 0) {
+    warnings.push("STEAM_WEB_API_KEY is not set — cannot load match list from Steam.");
   }
 
   const combined = [...new Set([...envIds, ...steamIds])].slice(0, maxMatches);
@@ -138,19 +123,30 @@ export async function resolveLeagueMatchIds(
   if (combined.length === 0) {
     return {
       matchIds: [],
-      source: envIds.length > 0 ? "env" : "opendota",
-      leagueName,
-      tier,
+      source: envIds.length > 0 ? "env" : "steam",
       warning:
-        (warning ? warning + " " : "") +
-        "No match IDs found. Add STEAM_WEB_API_KEY and/or comma-separated LEAGUE_MATCH_IDS.",
+        warnings.join(" ") ||
+        `No matches returned for league ${leagueId}. Add LEAGUE_MATCH_IDS or verify the Steam key and league ID.`,
     };
   }
 
   let source: LeagueMatchSource = "steam";
   if (envIds.length > 0 && steamIds.length > 0) source = "mixed";
   else if (envIds.length > 0 && steamIds.length === 0) source = "env";
-  else if (steamIds.length > 0) source = "steam";
 
-  return { matchIds: combined, source, leagueName, tier, warning };
+  if (steamIds.length === 0 && envIds.length > 0) {
+    warnings.push(`Using ${envIds.length} match ID(s) from LEAGUE_MATCH_IDS only.`);
+  }
+
+  return {
+    matchIds: combined,
+    source,
+    warning: warnings.length > 0 ? warnings.join(" ") : undefined,
+  };
+}
+
+/** Hint for error messages — where broadcast-api expects .env */
+export function broadcastApiEnvPath(): string {
+  const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+  return path.resolve(moduleDir, "../../.env");
 }

@@ -1,13 +1,22 @@
-import type { DraftState, LastPick, LeagueConfig } from "@bpc/shared-types";
+import type {
+  DraftState,
+  LastPick,
+  LeagueConfig,
+  ProductionSettings,
+} from "@bpc/shared-types";
 import { motion } from "framer-motion";
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 import {
   heroCardInnerGlow,
   neonSlotShadow,
   neonTextShadow,
 } from "../../draft/neon-effects";
-import { resolveSlotFlatPortraitUrl } from "../../hero-portrait";
+import {
+  ensureOverlayHeroIndex,
+  resolveOverlayPortraitForHero,
+} from "../../hero-portrait";
+import { findPickSlotForLastPick } from "../../draft/slot-utils";
 import { colorAlpha, resolveDraftTeamColors } from "../../draft/team-colors";
 import { resolvePickPlayerContext } from "../../draft/resolve-pick-player";
 
@@ -48,10 +57,12 @@ export function DraftHeroIntro({
   draft,
   pick,
   leagueConfig,
+  production,
 }: {
   draft: DraftState;
   pick: LastPick;
   leagueConfig?: LeagueConfig;
+  production?: ProductionSettings | null;
 }) {
   const teamColors = resolveDraftTeamColors(draft, leagueConfig);
   const isRadiant = pick.side === "radiant" || pick.side === "A";
@@ -64,15 +75,36 @@ export function DraftHeroIntro({
     draft,
     leagueConfig,
     undefined,
+    production,
   );
 
-  const slot = {
-    order: 0,
-    type: "pick" as const,
-    heroId: pick.heroId,
-    heroName: pick.heroName,
-  };
-  const portraitUrl = resolveSlotFlatPortraitUrl(slot);
+  const pickSlot = findPickSlotForLastPick(draft, pick);
+  const [portraitUrl, setPortraitUrl] = useState<string | undefined>(() =>
+    resolveOverlayPortraitForHero(pick.heroId, pick.heroName, {
+      heroPortraitSlug: pick.heroPortraitSlug ?? pickSlot?.heroPortraitSlug,
+      heroPortraitUrl: pickSlot?.heroPortraitUrl,
+      heroPortraitAnimatedUrl: pickSlot?.heroPortraitAnimatedUrl,
+    }),
+  );
+
+  useEffect(() => {
+    const resolve = () =>
+      resolveOverlayPortraitForHero(pick.heroId, pick.heroName, {
+        heroPortraitSlug: pick.heroPortraitSlug ?? pickSlot?.heroPortraitSlug,
+        heroPortraitUrl: pickSlot?.heroPortraitUrl,
+        heroPortraitAnimatedUrl: pickSlot?.heroPortraitAnimatedUrl,
+      });
+    setPortraitUrl(resolve());
+    void ensureOverlayHeroIndex().then(() => setPortraitUrl(resolve()));
+  }, [
+    pick.heroId,
+    pick.heroName,
+    pick.heroPortraitSlug,
+    pick.side,
+    pickSlot?.heroPortraitSlug,
+    pickSlot?.heroPortraitUrl,
+    pickSlot?.heroPortraitAnimatedUrl,
+  ]);
 
   return (
     <motion.div

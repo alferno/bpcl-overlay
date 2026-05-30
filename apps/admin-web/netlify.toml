@@ -1,4 +1,4 @@
-# Admin site — Netlify cwd is repo root (packagePath: apps/admin-web). Do not cd ../..
+# Admin site — Netlify cwd is usually repo root (no base dir). If base is apps/admin-web, use cd ../.. in command.
 
 [build]
   command = "npm ci && npm run build:admin"

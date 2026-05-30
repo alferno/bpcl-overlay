@@ -3,6 +3,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 import { HeroPortrait } from "./HeroPortrait";
+import {
+  ensureOverlayHeroIndex,
+  heroPortraitHintsFromFields,
+  resolveOverlayPortraitForHero,
+} from "../hero-portrait";
 
 export function StatCarouselPanel({
   carousel,
@@ -10,6 +15,26 @@ export function StatCarouselPanel({
   carousel: StatCarouselState | null | undefined;
 }) {
   const [index, setIndex] = useState(0);
+  const heroId = carousel?.heroId;
+  const heroName = carousel?.heroName;
+  const portraitHints = heroPortraitHintsFromFields({
+    heroPortraitSlug: carousel?.heroPortraitSlug,
+    heroPortraitUrl: carousel?.heroPortraitUrl,
+  });
+
+  const [portraitUrl, setPortraitUrl] = useState<string | undefined>(() =>
+    heroId != null
+      ? resolveOverlayPortraitForHero(heroId, heroName, portraitHints)
+      : undefined,
+  );
+
+  useEffect(() => {
+    if (heroId == null) return;
+    const resolve = () =>
+      resolveOverlayPortraitForHero(heroId, heroName, portraitHints);
+    setPortraitUrl(resolve());
+    void ensureOverlayHeroIndex().then(() => setPortraitUrl(resolve()));
+  }, [heroId, heroName, carousel?.heroPortraitSlug, carousel?.heroPortraitUrl]);
 
   useEffect(() => {
     if (!carousel?.slides.length) return undefined;
@@ -28,7 +53,7 @@ export function StatCarouselPanel({
   return (
     <div className="flex items-center gap-6">
       <HeroPortrait
-        url={carousel.heroPortraitUrl}
+        url={portraitUrl}
         heroName={carousel.heroName}
         size={112}
       />

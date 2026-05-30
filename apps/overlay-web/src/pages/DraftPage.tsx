@@ -5,7 +5,7 @@ import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { DraftBlastBar } from "../components/draft/DraftBlastBar";
 import { DraftPickRevealLayer } from "../components/draft/DraftPickRevealLayer";
-import { DraftPickStatsPanel } from "../components/draft/DraftPickStatsPanel";
+import { DraftPickStatsStack } from "../components/draft/DraftPickStatsStack";
 import { DraftStartingPanel } from "../components/draft/DraftStartingPanel";
 import { useDraftPickReveal } from "../hooks/useDraftPickReveal";
 import { useDraftHeroWarmup } from "../hooks/useDraftHeroWarmup";
@@ -25,14 +25,10 @@ export default function DraftPage() {
   const visible = routeVisible("draft", state);
   const draft = state.draft;
   useDraftHeroWarmup(draft);
-  const { introPick, statsPick, cinematicPickKey } = useDraftPickReveal(
-    draft?.phase === "done" ? null : draft?.lastPick,
+  const { introPick, statsQueue, cinematicPickKey } = useDraftPickReveal(
+    draft?.lastPick,
+    state.production?.overlayDraftEpoch,
   );
-
-  const heroStats =
-    statsPick?.heroId != null
-      ? state.tournamentHeroIndex?.[String(statsPick.heroId)]
-      : undefined;
 
   return (
     <HudCanvas blend>
@@ -48,6 +44,7 @@ export default function DraftPage() {
               <DraftBlastBar
                 draft={draft}
                 leagueConfig={state.leagueConfig}
+                production={state.production}
                 cinematicPickKey={cinematicPickKey}
               />
             )
@@ -58,29 +55,25 @@ export default function DraftPage() {
           )}
 
           <AnimatePresence>
-            {draft && (introPick || statsPick) ? (
+            {draft && introPick ? (
               <DraftPickRevealLayer
-                key={`reveal-${statsPick?.side ?? introPick?.side}-${statsPick?.heroId ?? introPick?.heroId}`}
+                key={`reveal-${introPick.side}-${introPick.heroId}`}
                 draft={draft}
                 introPick={introPick}
-                statsPick={statsPick}
                 leagueConfig={state.leagueConfig}
+                production={state.production}
               />
             ) : null}
           </AnimatePresence>
 
-          <AnimatePresence>
-            {draft && statsPick ? (
-              <DraftPickStatsPanel
-                key={`stats-${statsPick.side}-${statsPick.heroId}`}
-                pick={statsPick}
-                draft={draft}
-                leagueConfig={state.leagueConfig}
-                tournamentStats={heroStats}
-                playerHeroIndex={state.playerHeroIndex}
-              />
-            ) : null}
-          </AnimatePresence>
+          <DraftPickStatsStack
+            items={statsQueue}
+            draft={draft}
+            leagueConfig={state.leagueConfig}
+            tournamentHeroIndex={state.tournamentHeroIndex}
+            playerHeroIndex={state.playerHeroIndex}
+            production={state.production}
+          />
         </div>
       </FadePanel>
     </HudCanvas>

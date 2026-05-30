@@ -2,7 +2,10 @@ import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { TournamentHeroAggregate, PlayerHeroLeagueStats } from "@bpc/shared-types";
+import type {
+  PlayerHeroLeagueStats,
+  TournamentHeroAggregate,
+} from "@bpc/shared-types";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
 
@@ -18,6 +21,9 @@ export type LeaguePlayerHeroRow = {
   goldPerMin: number;
   lastHits: number;
   maxKills: number;
+  laneWins: number;
+  laneDraws: number;
+  laneLosses: number;
 };
 
 export type LeagueStatsMeta = {
@@ -120,6 +126,25 @@ function optNum(row: string[], idx: number): number | undefined {
   return Number.isFinite(v) ? v : undefined;
 }
 
+/**
+ * Whether a match player row counts toward league player×hero stats.
+ * Dotabuff keeps games with real K/D/A even when leaver_status is 1–2 (brief DC).
+ * Excludes 0/0/0 and abandon/AFK (leaver_status ≥ 3).
+ */
+export function shouldCountPlayerLeagueGame(p: {
+  leaver_status?: number;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+}): boolean {
+  const kills = p.kills ?? 0;
+  const deaths = p.deaths ?? 0;
+  const assists = p.assists ?? 0;
+  if (kills === 0 && deaths === 0 && assists === 0) return false;
+  if ((p.leaver_status ?? 0) >= 3) return false;
+  return true;
+}
+
 /** Single-game row with 0/0/0 — typically a disconnect that should not count. */
 export function isLeaverLikePlayerHeroRow(row: LeaguePlayerHeroRow): boolean {
   return (
@@ -134,6 +159,23 @@ export function filterLeaverLikePlayerHeroRows(
   rows: LeaguePlayerHeroRow[],
 ): LeaguePlayerHeroRow[] {
   return rows.filter((row) => !isLeaverLikePlayerHeroRow(row));
+}
+
+/** Sum all player×hero rows for one steam32 (total league games in CSV/index). */
+export function summarizePlayerLeagueFromIndex(
+  index: Record<string, PlayerHeroLeagueStats> | undefined,
+  steam32: number,
+): { games: number; wins: number } {
+  if (!index || steam32 <= 0) return { games: 0, wins: 0 };
+  const prefix = `${steam32}:`;
+  let games = 0;
+  let wins = 0;
+  for (const [key, row] of Object.entries(index)) {
+    if (!key.startsWith(prefix) || row.games <= 0) continue;
+    games += row.games;
+    wins += row.wins;
+  }
+  return { games, wins };
 }
 
 export function buildPlayerHeroIndex(
@@ -158,6 +200,9 @@ export function buildPlayerHeroIndex(
       avgHeroDamage: row.heroDamage / row.games,
       avgGpm: row.goldPerMin / row.games,
       avgLastHits: row.lastHits / row.games,
+      laneWins: row.laneWins,
+      laneDraws: row.laneDraws,
+      laneLosses: row.laneLosses,
     };
   }
   return index;
@@ -215,6 +260,9 @@ export async function loadLeagueStatsFromDisk(
           goldPerMin: num(row, 8),
           lastHits: num(row, 9),
           maxKills: num(row, 10),
+          laneWins: num(row, 11),
+          laneDraws: num(row, 12),
+          laneLosses: num(row, 13),
         });
       }
       playerHeroes = filterLeaverLikePlayerHeroRows(playerHeroes);
@@ -272,7 +320,7 @@ export async function saveLeagueStatsToDisk(
   await writeFile(paths.heroes, `# BPC league hero stats — league ${leagueId}\n${heroLines.join("\n")}\n`, "utf8");
 
   const playerHeader =
-    "steam32,heroId,games,wins,kills,deaths,assists,heroDamage,goldPerMin,lastHits,maxKills";
+    "steam32,heroId,games,wins,kills,deaths,assists,heroDamage,goldPerMin,lastHits,maxKills,laneWins,laneDraws,laneLosses";
   const playerLines = [playerHeader];
   for (const row of snapshot.playerHeroes.sort(
     (a, b) => a.steam32 - b.steam32 || a.heroId - b.heroId,
@@ -290,6 +338,9 @@ export async function saveLeagueStatsToDisk(
         row.goldPerMin,
         row.lastHits,
         row.maxKills,
+        row.laneWins,
+        row.laneDraws,
+        row.laneLosses,
       ].join(","),
     );
   }

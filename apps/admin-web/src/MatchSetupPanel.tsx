@@ -1,5 +1,5 @@
 import type { OverlayEnvelope } from "@bpc/shared-types";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { apiFetch } from "./api";
 
@@ -13,17 +13,23 @@ function Btn({
   children,
   onClick,
   disabled,
+  variant = "primary",
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
+  variant?: "primary" | "ghost";
 }) {
+  const cls =
+    variant === "ghost"
+      ? "border border-white/20 bg-transparent text-slate-300 hover:bg-white/5"
+      : "bg-violet-600 text-white hover:bg-violet-500";
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-40"
+      className={`rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-40 ${cls}`}
     >
       {children}
     </button>
@@ -122,6 +128,7 @@ export function MatchSetupPanel({
     () => [...EMPTY_PICK_PLAYERS],
   );
   const [busy, setBusy] = useState(false);
+  const pickPlayersDirtyRef = useRef(false);
 
   const matchSetup = state?.leagueConfig?.matchSetup;
   const roster = state?.leagueConfig?.roster ?? [];
@@ -146,11 +153,15 @@ export function MatchSetupPanel({
     if (matchSetup?.scoreA !== undefined) setScoreA(matchSetup.scoreA);
     if (matchSetup?.scoreB !== undefined) setScoreB(matchSetup.scoreB);
     if (matchSetup?.stageLabel !== undefined) setStageLabel(matchSetup.stageLabel);
-    if (matchSetup?.pickPlayers?.radiant) {
-      setRadiantPickPlayers(normalizePickPlayers(matchSetup.pickPlayers.radiant));
-    }
-    if (matchSetup?.pickPlayers?.dire) {
-      setDirePickPlayers(normalizePickPlayers(matchSetup.pickPlayers.dire));
+    if (!pickPlayersDirtyRef.current) {
+      if (matchSetup?.pickPlayers?.radiant) {
+        setRadiantPickPlayers(
+          normalizePickPlayers(matchSetup.pickPlayers.radiant),
+        );
+      }
+      if (matchSetup?.pickPlayers?.dire) {
+        setDirePickPlayers(normalizePickPlayers(matchSetup.pickPlayers.dire));
+      }
     }
   }, [
     matchSetup?.radiantTeamKey,
@@ -180,6 +191,32 @@ export function MatchSetupPanel({
     [teams, direKey],
   );
 
+  async function applyPlayerMapping() {
+    setBusy(true);
+    try {
+      const r = await apiFetch(origin, token, "/api/match/apply-player-mapping", {
+        method: "POST",
+        body: JSON.stringify({
+          pickPlayers: {
+            radiant: radiantPickPlayers,
+            dire: direPickPlayers,
+          },
+        }),
+      });
+      const t = await r.text();
+      if (!r.ok) {
+        setErr(t.slice(0, 400));
+        return;
+      }
+      pickPlayersDirtyRef.current = false;
+      setErr(null);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function applySetup() {
     if (!radiantKey || !direKey) return;
     setBusy(true);
@@ -205,6 +242,7 @@ export function MatchSetupPanel({
         setErr(t.slice(0, 400));
         return;
       }
+      pickPlayersDirtyRef.current = false;
       setErr(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -343,7 +381,7 @@ export function MatchSetupPanel({
             />
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2">
             <Btn
               disabled={
                 busy ||
@@ -355,7 +393,28 @@ export function MatchSetupPanel({
             >
               apply match setup
             </Btn>
+            <Btn
+              variant="ghost"
+              disabled={
+                busy ||
+                !matchSetup ||
+                state?.draft?.phase !== "done"
+              }
+              onClick={() => void applyPlayerMapping()}
+            >
+              apply player mapping to overlay
+            </Btn>
           </div>
+
+          {state?.production?.playerMappingPublished ? (
+            <p className="mt-2 text-xs text-emerald-400">
+              Player names are live on the draft overlay.
+            </p>
+          ) : state?.draft?.phase === "done" ? (
+            <p className="mt-2 text-xs text-amber-400">
+              Draft complete — click “apply player mapping” when pick slots are final.
+            </p>
+          ) : null}
 
           {matchSetup ? (
             <p className="mt-3 text-xs text-emerald-400">
@@ -378,7 +437,10 @@ export function MatchSetupPanel({
                   label={`${radiantTeam.teamName} — Radiant pick slots`}
                   players={radiantTeam.players}
                   values={radiantPickPlayers}
-                  onChange={setRadiantPickPlayers}
+                  onChange={(next) => {
+                    pickPlayersDirtyRef.current = true;
+                    setRadiantPickPlayers(next);
+                  }}
                 />
               ) : null}
               {direTeam ? (
@@ -386,7 +448,10 @@ export function MatchSetupPanel({
                   label={`${direTeam.teamName} — Dire pick slots`}
                   players={direTeam.players}
                   values={direPickPlayers}
-                  onChange={setDirePickPlayers}
+                  onChange={(next) => {
+                    pickPlayersDirtyRef.current = true;
+                    setDirePickPlayers(next);
+                  }}
                 />
               ) : null}
             </div>

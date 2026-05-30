@@ -44,7 +44,10 @@ export function DraftBroadcastHeader({
           >
             Series
           </p>
-          <p className="font-heading text-xs font-semibold uppercase tracking-[0.22em] text-white/90">
+          <p
+            className="font-heading text-sm font-bold uppercase tracking-[0.32em] text-white/90"
+            style={{ textShadow: "0 0 14px rgb(255 255 255 / 0.4)" }}
+          >
             {boLabel} · Game {game}
           </p>
         </div>

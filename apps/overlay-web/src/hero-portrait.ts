@@ -1,14 +1,23 @@
-import type { DraftSlot } from "@bpc/shared-types";
+import type { DraftSlot, LastPick, TournamentHeroAggregate } from "@bpc/shared-types";
 import {
   buildHeroSlugIndex,
-  heroAnimatedRenderUrlFromSlug,
+  displayNameToKey,
+  extractSlugFromHeroMediaUrl,
   heroesListFromConstants,
+  normalizeHeroSlug,
   resolveHeroSlug,
   type HeroSlugIndex,
 } from "@bpc/shared-types";
 
-import { resolveOverlayHeroAnimatedUrl } from "./hero-render-manifest";
-import { resolveOverlayHeroPortraitUrl } from "./hero-portrait-manifest";
+import {
+  loadHeroRenderManifest,
+  resolveOverlayHeroAnimatedUrl,
+} from "./hero-render-manifest";
+import {
+  getLocalHeroPortraitSlugs,
+  loadHeroPortraitManifest,
+  resolveOverlayHeroPortraitUrl,
+} from "./hero-portrait-manifest";
 
 export type HeroMedia = {
   slug?: string;
@@ -20,9 +29,43 @@ export type HeroMedia = {
 
 let heroSlugIndex: HeroSlugIndex | null = null;
 let flatCacheWarmStarted = false;
+let indexLoadPromise: Promise<void> | null = null;
 
-/** Load OpenDota hero constants for id → slug mapping and display aliases. */
-export async function ensureOverlayHeroIndex(): Promise<void> {
+type BundledHeroIndexFile = {
+  byId?: Record<string, string>;
+  byDisplay?: Record<string, string>;
+};
+
+function applyBundledHeroIndex(data: BundledHeroIndexFile): void {
+  const byId = new Map<number, string>();
+  for (const [id, slug] of Object.entries(data.byId ?? {})) {
+    const n = Number(id);
+    if (Number.isFinite(n) && n > 0 && slug) {
+      byId.set(n, normalizeHeroSlug(slug));
+    }
+  }
+  const byDisplayKey = new Map<string, string>();
+  for (const [key, slug] of Object.entries(data.byDisplay ?? {})) {
+    if (key && slug) byDisplayKey.set(key, normalizeHeroSlug(slug));
+  }
+  const byInternalSlug = new Set<string>([
+    ...byId.values(),
+    ...byDisplayKey.values(),
+  ]);
+  heroSlugIndex = { byId, byInternalSlug, byDisplayKey };
+}
+
+async function loadBundledHeroIndex(): Promise<void> {
+  try {
+    const res = await fetch("/heroes/hero-index.json");
+    if (!res.ok) return;
+    applyBundledHeroIndex((await res.json()) as BundledHeroIndexFile);
+  } catch {
+    /* offline */
+  }
+}
+
+async function loadOpenDotaHeroIndex(): Promise<void> {
   if (heroSlugIndex) return;
   try {
     const res = await fetch("https://api.opendota.com/api/constants/heroes");
@@ -30,8 +73,19 @@ export async function ensureOverlayHeroIndex(): Promise<void> {
     const heroes = heroesListFromConstants(await res.json());
     heroSlugIndex = buildHeroSlugIndex(heroes);
   } catch {
-    /* offline / CORS */
+    /* CORS / offline */
   }
+}
+
+/** Bundled hero-index.json + portrait manifest — no CDN, no OpenDota required for stats overlay. */
+export async function ensureOverlayHeroIndex(): Promise<void> {
+  if (indexLoadPromise) return indexLoadPromise;
+  indexLoadPromise = (async () => {
+    await Promise.all([loadHeroPortraitManifest(), loadHeroRenderManifest()]);
+    if (!heroSlugIndex) await loadBundledHeroIndex();
+    await loadOpenDotaHeroIndex();
+  })();
+  return indexLoadPromise;
 }
 
 export function getHeroSlugIndex(): HeroSlugIndex | null {
@@ -51,8 +105,11 @@ export async function warmHeroFlatPortraitCache(): Promise<void> {
   const batch = (start: number) => {
     const slice = slugs.slice(start, start + 12);
     for (const slug of slice) {
-      const img = new Image();
-      img.src = resolveOverlayHeroPortraitUrl(slug);
+      const url = resolveOverlayHeroPortraitUrl(slug);
+      if (url) {
+        const img = new Image();
+        img.src = url;
+      }
     }
     if (start + 12 < slugs.length) {
       window.setTimeout(() => batch(start + 12), 80);
@@ -62,9 +119,7 @@ export async function warmHeroFlatPortraitCache(): Promise<void> {
 }
 
 function slugFromPortraitUrl(url: string): string | undefined {
-  const m = url.match(/\/heroes\/(?:renders\/)?([^/?#.]+)/i);
-  if (!m?.[1]) return undefined;
-  return m[1].replace(/^npc_dota_hero_/, "");
+  return extractSlugFromHeroMediaUrl(url);
 }
 
 function classFromSlotUrls(slot: DraftSlot): string | undefined {
@@ -74,76 +129,138 @@ function classFromSlotUrls(slot: DraftSlot): string | undefined {
   );
 }
 
-export function resolveSlotSlug(slot: DraftSlot): string | undefined {
-  if (heroSlugIndex) {
+export type HeroPortraitResolveHints = {
+  heroPortraitSlug?: string | null;
+  heroPortraitUrl?: string | null;
+  heroPortraitAnimatedUrl?: string | null;
+  heroClass?: string | null;
+};
+
+export function heroPortraitHintsFromFields(fields: {
+  heroPortraitSlug?: string | null;
+  heroPortraitUrl?: string | null;
+  heroPortraitAnimatedUrl?: string | null;
+}): HeroPortraitResolveHints {
+  return {
+    heroPortraitSlug: fields.heroPortraitSlug,
+    heroPortraitUrl: fields.heroPortraitUrl,
+    heroPortraitAnimatedUrl: fields.heroPortraitAnimatedUrl,
+  };
+}
+
+/** Canonical portrait slug — local assets only. */
+export function resolveHeroPortraitSlug(
+  heroId: number | null | undefined,
+  heroName?: string | null,
+  hints?: HeroPortraitResolveHints,
+): string | undefined {
+  if (hints?.heroPortraitSlug) {
+    const fromSlug = normalizeHeroSlug(hints.heroPortraitSlug);
+    if (fromSlug) return fromSlug;
+  }
+
+  const index = heroSlugIndex;
+  if (index && heroId != null && heroId > 0) {
     const { slug } = resolveHeroSlug(
       {
-        heroId: slot.heroId,
-        heroClass: classFromSlotUrls(slot),
-        heroName: slot.heroName,
-        urlSlug: classFromSlotUrls(slot),
+        heroId,
+        heroClass: hints?.heroClass ?? undefined,
+        heroName: heroName ?? undefined,
       },
-      heroSlugIndex,
+      index,
     );
     if (slug) return slug;
   }
 
-  if (slot.heroId !== null && slot.heroId !== undefined) {
-    const fromId = heroSlugIndex?.byId.get(slot.heroId);
+  if (heroId != null && heroId > 0) {
+    const fromId = heroSlugIndex?.byId.get(heroId);
     if (fromId) return fromId;
   }
 
-  const fromUrl = classFromSlotUrls(slot);
-  if (fromUrl) return fromUrl;
+  if (heroName && index) {
+    const key = displayNameToKey(heroName);
+    const fromDisplay = index.byDisplayKey.get(key);
+    if (fromDisplay) return fromDisplay;
+  }
+
+  if (heroName) {
+    const norm = normalizeHeroSlug(heroName);
+    if (norm) {
+      const manifest = getLocalHeroPortraitSlugs();
+      if (manifest.size === 0 || manifest.has(norm)) return norm;
+    }
+  }
+
+  for (const raw of [
+    hints?.heroPortraitUrl,
+    hints?.heroPortraitAnimatedUrl,
+  ]) {
+    if (raw) {
+      const fromUrl = extractSlugFromHeroMediaUrl(raw);
+      if (fromUrl) return fromUrl;
+    }
+  }
 
   return undefined;
 }
 
-function isVideoUrl(url: string): boolean {
-  const lower = url.toLowerCase();
-  return lower.endsWith(".webm") || lower.endsWith(".mp4");
+export function resolveSlotSlug(slot: DraftSlot): string | undefined {
+  return resolveHeroPortraitSlug(slot.heroId, slot.heroName, {
+    heroPortraitSlug: slot.heroPortraitSlug,
+    heroPortraitUrl: slot.heroPortraitUrl,
+    heroPortraitAnimatedUrl: slot.heroPortraitAnimatedUrl,
+    heroClass: classFromSlotUrls(slot) ?? undefined,
+  });
 }
 
-/** Pick cards: local or CDN WebM + flat PNG poster/fallback. */
+/** Resolve flat PNG path under /heroes/portraits (never a CDN URL). */
+export function resolveOverlayPortraitForHero(
+  heroId: number | null | undefined,
+  heroName?: string | null,
+  hints?: HeroPortraitResolveHints,
+): string | undefined {
+  const slug = resolveHeroPortraitSlug(heroId, heroName, hints);
+  if (!slug) return undefined;
+  return resolveOverlayHeroPortraitUrl(slug);
+}
+
+/** Stats panel beside Steam avatar — use draft slot media when LastPick has no URLs. */
+export function resolvePickStatsPortrait(
+  pick: LastPick,
+  slot: DraftSlot | undefined,
+  tournamentStats?: TournamentHeroAggregate,
+): string | undefined {
+  const heroName = pick.heroName ?? tournamentStats?.heroName;
+  return resolveOverlayPortraitForHero(pick.heroId, heroName, {
+    heroPortraitSlug:
+      pick.heroPortraitSlug ?? slot?.heroPortraitSlug,
+    heroPortraitUrl: slot?.heroPortraitUrl,
+    heroPortraitAnimatedUrl: slot?.heroPortraitAnimatedUrl,
+  });
+}
+
+/** Pick cards: local WebM + flat PNG poster/fallback. */
 export function resolveSlotMedia(slot: DraftSlot): HeroMedia {
   const slug = resolveSlotSlug(slot);
 
-  const animated =
-    slug
-      ? resolveOverlayHeroAnimatedUrl(slug)
-      : slot.heroPortraitAnimatedUrl && isVideoUrl(slot.heroPortraitAnimatedUrl)
-        ? slot.heroPortraitAnimatedUrl
-        : undefined;
+  const animated = slug ? resolveOverlayHeroAnimatedUrl(slug) : undefined;
 
   if (!slug && !animated) return {};
 
   const flat = slug ? resolveOverlayHeroPortraitUrl(slug) : undefined;
   return {
     slug,
-    animated: animated ?? (slug ? heroAnimatedRenderUrlFromSlug(slug) : undefined),
+    animated,
     static: flat,
     staticFallback: flat,
   };
 }
 
-/** Flat Steam CDN hero icon PNG — bans, stats panels, thumbnails. */
+/** Flat hero icon PNG from public/heroes/portraits (never Steam CDN). */
 export function resolveSlotFlatPortraitUrl(slot: DraftSlot): string | undefined {
   const slug = resolveSlotSlug(slot);
-  if (slug) {
-    const flat = resolveOverlayHeroPortraitUrl(slug);
-    if (flat) return flat;
-  }
-
-  if (slot.heroPortraitUrl && !isVideoUrl(slot.heroPortraitUrl)) {
-    const url = slot.heroPortraitUrl;
-    const renderMatch = url.match(/\/heroes\/(?:renders\/)?([^/?#]+)/i);
-    if (renderMatch?.[1]) {
-      return resolveOverlayHeroPortraitUrl(renderMatch[1]);
-    }
-    if (url.includes("/dota_react/heroes/")) return url;
-  }
-
-  return undefined;
+  if (!slug) return undefined;
+  return resolveOverlayHeroPortraitUrl(slug);
 }
 
 export function resolveSlotAnimatedUrl(slot: DraftSlot): string | undefined {

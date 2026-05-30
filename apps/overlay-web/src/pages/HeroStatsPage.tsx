@@ -2,6 +2,7 @@ import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { HeroStatsCardPanel } from "../components/HeroStatsCardPanel";
 import { StatCarouselPanel } from "../components/StatCarousel";
+import { StatsPanelShell } from "../components/StatsPanelShell";
 import { StatsOverlayRegion } from "../components/StatsOverlayRegion";
 import { STATS_PANEL_SHELL_CLASS } from "../overlay-layout";
 import { routeVisible } from "../visibility";
@@ -21,9 +22,9 @@ export default function HeroStatsPage() {
               <StatCarouselPanel carousel={carousel} />
             </div>
           ) : card ? (
-            <div className={STATS_PANEL_SHELL_CLASS}>
+            <StatsPanelShell card={card} leagueConfig={state.leagueConfig}>
               <HeroStatsCardPanel card={card} />
-            </div>
+            </StatsPanelShell>
           ) : (
             <span className="text-2xl text-neutral-600">Awaiting hero card</span>
           )}

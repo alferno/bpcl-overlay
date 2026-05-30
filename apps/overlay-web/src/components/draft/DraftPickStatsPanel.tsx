@@ -3,14 +3,21 @@ import type {
   LastPick,
   LeagueConfig,
   PlayerHeroLeagueStats,
+  ProductionSettings,
   TournamentHeroAggregate,
 } from "@bpc/shared-types";
 import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 
 import { resolvePickPlayerContext } from "../../draft/resolve-pick-player";
+import { findPickSlotForLastPick } from "../../draft/slot-utils";
 import { HeroPortrait } from "../HeroPortrait";
+import { PlayerAvatar } from "../PlayerAvatar";
 import { StatTile } from "../StatTile";
-import { resolveSlotFlatPortraitUrl } from "../../hero-portrait";
+import {
+  ensureOverlayHeroIndex,
+  resolvePickStatsPortrait,
+} from "../../hero-portrait";
 import { STATS_PANEL_SHELL_CLASS } from "../../overlay-layout";
 import {
   buildDraftPlayerHeroSlides,
@@ -23,27 +30,48 @@ export function DraftPickStatsPanel({
   leagueConfig,
   tournamentStats,
   playerHeroIndex,
+  production,
+  stacked = false,
 }: {
   pick: LastPick;
   draft?: DraftState | null;
   leagueConfig?: LeagueConfig;
   tournamentStats?: TournamentHeroAggregate;
   playerHeroIndex?: Record<string, PlayerHeroLeagueStats>;
+  production?: ProductionSettings | null;
+  /** Inside DraftPickStatsStack — no absolute positioning */
+  stacked?: boolean;
 }) {
   const heroName =
     pick.heroName ?? tournamentStats?.heroName ?? `#${pick.heroId}`;
-  const portraitUrl = resolveSlotFlatPortraitUrl({
-    order: 0,
-    type: "pick",
-    heroId: pick.heroId,
-    heroName: pick.heroName,
-  });
+  const pickSlot = useMemo(
+    () => findPickSlotForLastPick(draft, pick),
+    [draft, pick],
+  );
+  const [portraitUrl, setPortraitUrl] = useState<string | undefined>(() =>
+    resolvePickStatsPortrait(pick, pickSlot, tournamentStats),
+  );
 
-  const { playerName, playerHeroStats, steam32 } = resolvePickPlayerContext(
+  useEffect(() => {
+    setPortraitUrl(resolvePickStatsPortrait(pick, pickSlot, tournamentStats));
+    void ensureOverlayHeroIndex().then(() => {
+      setPortraitUrl(resolvePickStatsPortrait(pick, pickSlot, tournamentStats));
+    });
+  }, [
+    pick.heroId,
+    pick.heroName,
+    pick.side,
+    pickSlot,
+    tournamentStats?.heroName,
+  ]);
+
+  const { playerName, playerHeroStats, steam32, playerLeagueGames, avatarUrl } =
+    resolvePickPlayerContext(
     pick,
     draft,
     leagueConfig,
     playerHeroIndex,
+    production,
   );
 
   const showingPlayer = Boolean(
@@ -56,6 +84,7 @@ export function DraftPickStatsPanel({
         heroName,
         playerHeroStats,
         tournamentStats,
+        playerLeagueGames,
       )
     : buildDraftTournamentHeroSlides(tournamentStats);
 
@@ -65,16 +94,23 @@ export function DraftPickStatsPanel({
 
   return (
     <motion.div
-      className="pointer-events-none absolute right-8 top-8 z-[55]"
+      className={
+        stacked
+          ? "pointer-events-none w-full max-w-[440px]"
+          : "pointer-events-none absolute right-8 top-8 z-[55]"
+      }
       initial={{ opacity: 0, x: 24, y: -8 }}
       animate={{ opacity: 1, x: 0, y: 0 }}
       exit={{ opacity: 0, x: 16, y: -4 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className={STATS_PANEL_SHELL_CLASS}>
-        <div className="flex items-center gap-6">
-          <HeroPortrait url={portraitUrl} heroName={heroName} size={128} />
-          <div className="min-w-[300px] max-w-[360px]">
+        <div className="flex items-center gap-5">
+          {showingPlayer ? (
+            <PlayerAvatar url={avatarUrl} name={playerName} size={88} />
+          ) : null}
+          <HeroPortrait url={portraitUrl} heroName={heroName} size={112} />
+          <div className="min-w-[280px] max-w-[360px]">
             <p className="text-xs uppercase tracking-[0.35em] text-purple-300">
               {headerLabel}
             </p>

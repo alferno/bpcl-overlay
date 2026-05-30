@@ -1,4 +1,8 @@
-import type { DraftState, LeagueConfig } from "@bpc/shared-types";
+import type {
+  DraftState,
+  LeagueConfig,
+  ProductionSettings,
+} from "@bpc/shared-types";
 
 import { resolveTurnAction } from "../../draft/slot-utils";
 import { resolveDraftTeamColors } from "../../draft/team-colors";
@@ -9,10 +13,12 @@ import { DraftTeamColumn } from "./DraftTeamColumn";
 export function DraftBlastBar({
   draft,
   leagueConfig,
+  production,
   cinematicPickKey = null,
 }: {
   draft: DraftState;
   leagueConfig?: LeagueConfig;
+  production?: ProductionSettings | null;
   /** Hide newest pick on board until cinematic ends */
   cinematicPickKey?: string | null;
 }) {
@@ -39,6 +45,7 @@ export function DraftBlastBar({
           edge="start"
           teamSide="radiant"
           cinematicPickKey={cinematicPickKey}
+          production={production}
         />
 
         <DraftCenterHub
@@ -58,6 +65,7 @@ export function DraftBlastBar({
           edge="end"
           teamSide="dire"
           cinematicPickKey={cinematicPickKey}
+          production={production}
         />
       </div>
     </DraftBroadcastShell>

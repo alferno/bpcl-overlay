@@ -199,17 +199,21 @@ export function applyOverlayPatch(
     typeof patch.heroStatsCard === "object"
   ) {
     const hc = patch.heroStatsCard as HeroStatsCard;
-    nextHero = {
-      ...nextHero,
-      ...hc,
-      tournament: hc.tournament
-        ? { ...(nextHero.tournament ?? {}), ...hc.tournament }
-        : nextHero.tournament,
-      playerHero: hc.playerHero
-        ? { ...(nextHero.playerHero ?? {}), ...hc.playerHero }
-        : nextHero.playerHero,
-      statSlides: hc.statSlides ?? nextHero.statSlides,
-    };
+    if (hc.fetchedAt) {
+      nextHero = { ...hc };
+    } else {
+      nextHero = {
+        ...nextHero,
+        ...hc,
+        tournament: hc.tournament
+          ? { ...(nextHero.tournament ?? {}), ...hc.tournament }
+          : nextHero.tournament,
+        playerHero: hc.playerHero
+          ? { ...(nextHero.playerHero ?? {}), ...hc.playerHero }
+          : nextHero.playerHero,
+        statSlides: hc.statSlides ?? nextHero.statSlides,
+      };
+    }
   }
 
   if (

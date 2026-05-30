@@ -21,12 +21,21 @@ function wlRecord(wins: number, losses: number): string {
   return `${wins}W / ${losses}L`;
 }
 
+function laneRecord(ph: PlayerHeroLeagueStats): string | null {
+  const lw = ph.laneWins ?? 0;
+  const ld = ph.laneDraws ?? 0;
+  const ll = ph.laneLosses ?? 0;
+  if (lw + ld + ll === 0) return null;
+  return `${lw}W · ${ld}D · ${ll}L`;
+}
+
 /** Compact player×hero slides for draft pick stats panel (max 4 tiles). */
 export function buildDraftPlayerHeroSlides(
   playerName: string,
   heroName: string,
   ph: PlayerHeroLeagueStats | undefined,
   tournament?: TournamentHeroAggregate,
+  playerLeagueGames?: number,
 ): StatSlide[] {
   if (!ph || ph.games === 0) {
     const slides: StatSlide[] = [
@@ -53,12 +62,22 @@ export function buildDraftPlayerHeroSlides(
 
   const losses = ph.games - ph.wins;
   const kdaLine = `${fmt1(ph.avgKills)} / ${fmt1(ph.avgDeaths)} / ${fmt1(ph.avgAssists)}`;
+  const leagueTotal =
+    playerLeagueGames != null &&
+    playerLeagueGames > 0 &&
+    playerLeagueGames !== ph.games
+      ? ` · ${playerLeagueGames} in league`
+      : "";
+  const gameLabel =
+    playerLeagueGames != null && playerLeagueGames > ph.games
+      ? `${ph.games} on ${heroName}${leagueTotal}`
+      : `${ph.games} game${ph.games === 1 ? "" : "s"}${leagueTotal}`;
 
   return [
     {
       label: "League record",
       value: wlRecord(ph.wins, losses),
-      sublabel: `${formatPct(ph.winRate)} · ${ph.games} game${ph.games === 1 ? "" : "s"}`,
+      sublabel: `${formatPct(ph.winRate)} · ${gameLabel}`,
     },
     {
       label: "Avg KDA",
@@ -70,6 +89,15 @@ export function buildDraftPlayerHeroSlides(
       value: fmtDamage(ph.avgHeroDamage),
       sublabel: "avg per game",
     },
+    ...(laneRecord(ph)
+      ? [
+          {
+            label: "Lane",
+            value: laneRecord(ph)!,
+            sublabel: "win · draw · loss",
+          },
+        ]
+      : []),
     {
       label: "Farm pace",
       value: `${Math.round(ph.avgGpm)} GPM`,

@@ -1,8 +1,63 @@
-import type { DraftState, MatchSetup, RosterPlayer } from "@bpc/shared-types";
+import type {
+  DraftSlot,
+  DraftState,
+  LeagueConfig,
+  MatchSetup,
+  RosterPlayer,
+} from "@bpc/shared-types";
+import { manualPickDisplayName, manualPickSteam32 } from "@bpc/shared-types";
 import {
   getTeamByKey,
   teamLogoUrl,
 } from "./roster-teams.js";
+
+function mapPickPlayersOntoSlots(
+  slots: DraftSlot[] | undefined,
+  side: "radiant" | "dire",
+  leagueConfig: LeagueConfig,
+): DraftSlot[] | undefined {
+  if (!slots) return slots;
+  return slots.map((slot) => {
+    if (slot.type !== "pick") return slot;
+    const steam32 = manualPickSteam32(leagueConfig.matchSetup, side, slot.order);
+    const playerName = manualPickDisplayName(leagueConfig, side, slot.order);
+    if (steam32 == null && !playerName) {
+      const { playerName: _pn, steam32: _s, ...rest } = slot;
+      return rest as DraftSlot;
+    }
+    return {
+      ...slot,
+      steam32: steam32 ?? undefined,
+      playerName,
+    };
+  });
+}
+
+/** Apply admin pickPlayers onto filled draft pick slots (post-draft). */
+export function applyPickPlayersToDraft(
+  draft: DraftState,
+  leagueConfig: LeagueConfig,
+): DraftState {
+  return {
+    ...draft,
+    radiant: draft.radiant
+      ? {
+          ...draft.radiant,
+          slots: mapPickPlayersOntoSlots(
+            draft.radiant.slots,
+            "radiant",
+            leagueConfig,
+          ),
+        }
+      : draft.radiant,
+    dire: draft.dire
+      ? {
+          ...draft.dire,
+          slots: mapPickPlayersOntoSlots(draft.dire.slots, "dire", leagueConfig),
+        }
+      : draft.dire,
+  };
+}
 
 /** Seed draft series / side logos from producer match setup */
 export function draftPatchFromMatchSetup(

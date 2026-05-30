@@ -2,6 +2,7 @@ import type {
   DraftState,
   LastPick,
   LeagueConfig,
+  ProductionSettings,
 } from "@bpc/shared-types";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -16,40 +17,34 @@ const DIM_VEIL_MAX = 0.4;
 const VEIL_EASE = [0.16, 1, 0.3, 1] as const;
 
 /**
- * Full-screen dim + centered hero cinematic (4s). Stats render separately top-right.
+ * Full-screen dim + centered hero cinematic (4s only). Stats use DraftPickStatsPanel without dim.
  */
 export function DraftPickRevealLayer({
   draft,
   introPick,
-  statsPick,
   leagueConfig,
+  production,
 }: {
   draft: DraftState;
-  introPick: LastPick | null;
-  statsPick: LastPick | null;
+  introPick: LastPick;
   leagueConfig?: LeagueConfig;
+  production?: ProductionSettings | null;
 }) {
-  const pick = introPick ?? statsPick;
-  if (!pick) return null;
-
   const teamColors = resolveDraftTeamColors(draft, leagueConfig);
-  const isRadiant = pick.side === "radiant" || pick.side === "A";
+  const isRadiant = introPick.side === "radiant" || introPick.side === "A";
   const accent = isRadiant ? teamColors.radiant : teamColors.dire;
-  const showSpotlight = Boolean(introPick);
 
-  const veilBackground = showSpotlight
-    ? [
-        `radial-gradient(ellipse 42% 36% at 50% 46%, ${colorAlpha(accent, 0.42)} 0%, ${colorAlpha(accent, 0.12)} 42%, transparent 68%)`,
-        `radial-gradient(ellipse 52% 46% at 50% 46%, transparent 0%, transparent 32%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 100%)`,
-        `radial-gradient(ellipse 120% 100% at 50% 48%, rgb(0 0 0 / 0.12) 0%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 78%)`,
-        `radial-gradient(ellipse 80% 40% at 50% 100%, rgb(0 0 0 / 0.28) 0%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 100%)`,
-      ].join(", ")
-    : `radial-gradient(ellipse 100% 100% at 50% 40%, rgb(0 0 0 / 0.22) 0%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 100%)`;
+  const veilBackground = [
+    `radial-gradient(ellipse 42% 36% at 50% 46%, ${colorAlpha(accent, 0.42)} 0%, ${colorAlpha(accent, 0.12)} 42%, transparent 68%)`,
+    `radial-gradient(ellipse 52% 46% at 50% 46%, transparent 0%, transparent 32%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 100%)`,
+    `radial-gradient(ellipse 120% 100% at 50% 48%, rgb(0 0 0 / 0.12) 0%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 78%)`,
+    `radial-gradient(ellipse 80% 40% at 50% 100%, rgb(0 0 0 / 0.28) 0%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 100%)`,
+  ].join(", ");
 
   return (
     <motion.div
       className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center"
-      style={{ bottom: showSpotlight ? -CINEMATIC_OVERLAP_DRAFT_PX : 0 }}
+      style={{ bottom: -CINEMATIC_OVERLAP_DRAFT_PX }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -66,14 +61,13 @@ export function DraftPickRevealLayer({
 
       <div className="relative z-[1] flex items-center justify-center px-8">
         <AnimatePresence mode="wait">
-          {introPick ? (
-            <DraftHeroIntro
-              key={`intro-${introPick.side}-${introPick.heroId}`}
-              draft={draft}
-              pick={introPick}
-              leagueConfig={leagueConfig}
-            />
-          ) : null}
+          <DraftHeroIntro
+            key={`intro-${introPick.side}-${introPick.heroId}`}
+            draft={draft}
+            pick={introPick}
+            leagueConfig={leagueConfig}
+            production={production}
+          />
         </AnimatePresence>
       </div>
     </motion.div>

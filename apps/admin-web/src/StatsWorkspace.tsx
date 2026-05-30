@@ -85,6 +85,14 @@ export function StatsWorkspace({
   const [carouselHero, setCarouselHero] = useState("");
   const [busy, setBusy] = useState(false);
   const [rosterExpanded, setRosterExpanded] = useState(false);
+  const [resolveReport, setResolveReport] = useState<{
+    missingSteam32?: number[];
+    rosterCount?: number;
+    csvPlayerCount?: number;
+    indexKeyCount?: number;
+    matchedRosterCount?: number;
+    indexEmpty?: string;
+  } | null>(null);
 
   const roster = state?.leagueConfig?.roster ?? [];
   const matchSetup = state?.leagueConfig?.matchSetup;
@@ -198,7 +206,7 @@ export function StatsWorkspace({
           <h3 className="text-sm font-semibold uppercase text-slate-400">League</h3>
           <p className="text-xs text-slate-500">
             Stats are loaded from <strong className="text-sky-300">CSV on disk</strong> by
-            default (no OpenDota calls). Use fetch only when you need fresh data after new
+            default (no API calls). Use fetch only when you need fresh data after new
             matches.
           </p>
           {lc?.aggregationSource ? (
@@ -226,12 +234,13 @@ export function StatsWorkspace({
           ) : null}
           {!leagueInfo?.steamApiConfigured ? (
             <p className="text-xs text-amber-400">
-              <code className="text-sky-300">STEAM_WEB_API_KEY</code> required only when
-              fetching from OpenDota/Steam (amateur leagues).
+              <code className="text-sky-300">STEAM_WEB_API_KEY</code> in{" "}
+              <code className="text-sky-300">apps/broadcast-api/.env</code> is required to
+              list league matches from Steam.
             </p>
           ) : null}
           <div>
-            <label className="text-xs uppercase text-slate-500">OpenDota league ID</label>
+            <label className="text-xs uppercase text-slate-500">League ID</label>
             <input
               className="mt-1 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-slate-400"
               value={leagueId}
@@ -261,12 +270,12 @@ export function StatsWorkspace({
             >
               {lc?.aggregationStatus === "running" || aggBusy
                 ? "fetching…"
-                : "fetch from OpenDota"}
+                : "fetch league stats"}
             </Btn>
           </div>
           {lc?.aggregationStatus !== "ready" && lc?.aggregationStatus !== "running" && !aggBusy ? (
             <p className="text-xs text-amber-400">
-              No stats loaded yet — click <strong>fetch from OpenDota</strong> once
+              No stats loaded yet — click <strong>fetch league stats</strong> once
               (takes ~1–2 min for 33 matches), or <strong>reload CSV</strong> if files
               exist.
             </p>
@@ -297,7 +306,7 @@ export function StatsWorkspace({
         <div className="space-y-4 rounded-xl border border-white/10 bg-slate-950/60 p-4">
           <h3 className="text-sm font-semibold uppercase text-slate-400">Roster CSV</h3>
           <p className="text-xs text-slate-500">
-            displayName,steam32,teamName,teamKey,teamColor — logo: /teams/&#123;teamKey&#125;.png;
+            displayName,steam32,teamName,teamKey,teamColor[,avatarUrl] — avatars auto-fetched from Steam on upload, or paste image URLs in CSV.
             teamColor is optional hex (e.g. #5b8fd4) for draft overlay accents.
           </p>
           <textarea
@@ -316,9 +325,53 @@ export function StatsWorkspace({
               void f.text().then(setCsvText);
             }}
           />
-          <Btn disabled={busy || !csvText.trim()} onClick={() => void post("/api/roster/upload", { csv: csvText })}>
-            upload roster
-          </Btn>
+          <div className="flex flex-wrap gap-2">
+            <Btn
+              disabled={busy || !csvText.trim()}
+              onClick={() => void post("/api/roster/upload", { csv: csvText })}
+            >
+              upload roster
+            </Btn>
+            <Btn
+              variant="ghost"
+              disabled={busy || roster.length === 0}
+              onClick={() =>
+                void post("/api/league/stats/resolve").then((data) => {
+                  if (data && typeof data === "object") {
+                    setResolveReport(data as typeof resolveReport);
+                  }
+                })
+              }
+            >
+              resolve stats
+            </Btn>
+          </div>
+          {resolveReport ? (
+            <p
+              className={`text-xs ${
+                (resolveReport.missingSteam32?.length ?? 0) === 0
+                  ? "text-emerald-400"
+                  : "text-amber-400"
+              }`}
+            >
+              Stats resolved: {resolveReport.indexKeyCount ?? 0} index keys ·{" "}
+              {resolveReport.csvPlayerCount ?? 0} players in CSV ·{" "}
+              {resolveReport.matchedRosterCount ?? 0}/
+              {resolveReport.rosterCount ?? 0} roster matched
+              {resolveReport.indexEmpty ? (
+                <span className="block text-rose-400">{resolveReport.indexEmpty}</span>
+              ) : null}
+              {(resolveReport.missingSteam32?.length ?? 0) > 0 ? (
+                <span className="block text-amber-300/90">
+                  No league stats for {resolveReport.missingSteam32!.length} roster
+                  steam32 (not in league CSV or no games played in league{" "}
+                  {leagueId || "—"})
+                </span>
+              ) : (
+                " · all roster steam32 matched"
+              )}
+            </p>
+          ) : null}
           {roster.length > 0 ? (
             <div className="space-y-2">
               <p className="text-xs text-slate-400">
@@ -545,20 +598,26 @@ export function GsiDraftControls({
 }) {
   const [manualHero, setManualHero] = useState("");
   const [heroes, setHeroes] = useState<HeroMeta[]>([]);
+  const [busy, setBusy] = useState(false);
   const prod = state?.production;
   const lastPick = state?.draft?.lastPick;
 
   const post = async (path: string, body?: Record<string, unknown>) => {
-    const r = await apiFetch(origin, token, path, {
-      method: "POST",
-      body: JSON.stringify(body ?? {}),
-    });
-    const t = await r.text();
-    if (!r.ok) {
-      setErr(t.slice(0, 400));
-      return;
+    setBusy(true);
+    try {
+      const r = await apiFetch(origin, token, path, {
+        method: "POST",
+        body: JSON.stringify(body ?? {}),
+      });
+      const t = await r.text();
+      if (!r.ok) {
+        setErr(t.slice(0, 400));
+        return;
+      }
+      setErr(null);
+    } finally {
+      setBusy(false);
     }
-    setErr(null);
   };
 
   useEffect(() => {
@@ -595,6 +654,25 @@ export function GsiDraftControls({
           />
           auto-show stats on pick
         </label>
+        <Btn
+          variant="ghost"
+          disabled={busy}
+          onClick={() => {
+            if (
+              !window.confirm(
+                "Clear overlay draft cache? Removes draft picks and reveal state on OBS.",
+              )
+            ) {
+              return;
+            }
+            void post("/api/draft/reset-overlay");
+          }}
+        >
+          clear overlay draft cache
+        </Btn>
+        {prod?.playerMappingPublished ? (
+          <span className="text-xs text-emerald-400">Player mapping published</span>
+        ) : null}
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

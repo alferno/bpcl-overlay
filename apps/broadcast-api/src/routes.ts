@@ -209,15 +209,6 @@ export function attachRestRoutes(opts: {
     },
   );
 
-  app.post(
-    "/api/opendota/league/:id/matches",
-    requireBroadcastAuth,
-    async (req, res) => {
-      const matches = await opendota.leagueMatches(Number(req.params.id));
-      res.json(matches);
-    },
-  );
-
   /** Producer-triggered aggregation that writes overlay cards */
   app.post("/api/opendota/compose/hero-card", requireBroadcastAuth, async (req, res) => {
     const schema = z.object({
