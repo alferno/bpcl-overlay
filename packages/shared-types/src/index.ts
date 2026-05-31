@@ -521,6 +521,8 @@ export function createDefaultEnvelope(): OverlayEnvelope {
   };
 }
 
+export * from "./league-player-stats.js";
+
 export const SOCKET_EVENTS = {
   STATE_FULL: "state:full",
   STATE_PATCH: "state:patch",

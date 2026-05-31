@@ -6,6 +6,10 @@ import type {
   PlayerHeroLeagueStats,
   TournamentHeroAggregate,
 } from "@bpc/shared-types";
+export {
+  aggregatePlayerLeagueFromIndex,
+  summarizePlayerLeagueFromIndex,
+} from "@bpc/shared-types";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
 
@@ -202,23 +206,6 @@ export function filterLeaverLikePlayerHeroRows(
   rows: LeaguePlayerHeroRow[],
 ): LeaguePlayerHeroRow[] {
   return rows.filter((row) => !isLeaverLikePlayerHeroRow(row));
-}
-
-/** Sum all player×hero rows for one steam32 (total league games in CSV/index). */
-export function summarizePlayerLeagueFromIndex(
-  index: Record<string, PlayerHeroLeagueStats> | undefined,
-  steam32: number,
-): { games: number; wins: number } {
-  if (!index || steam32 <= 0) return { games: 0, wins: 0 };
-  const prefix = `${steam32}:`;
-  let games = 0;
-  let wins = 0;
-  for (const [key, row] of Object.entries(index)) {
-    if (!key.startsWith(prefix) || row.games <= 0) continue;
-    games += row.games;
-    wins += row.wins;
-  }
-  return { games, wins };
 }
 
 export function buildPlayerHeroIndex(

@@ -46,6 +46,8 @@ export type OpenDotaMatchPlayer = {
 export type OpenDotaMatch = {
   match_id: number;
   radiant_win?: boolean;
+  /** When set and non-zero, must match the league being aggregated */
+  leagueid?: number;
   /** Legacy / alternate API spelling */
   pick_bans?: OpenDotaPickBan[];
   /** OpenDota match detail uses this field name */

@@ -161,18 +161,12 @@ export function applyOverlayPatch(
 
   let tournamentHeroIndex = prev.tournamentHeroIndex;
   if (patch.tournamentHeroIndex !== undefined) {
-    tournamentHeroIndex = {
-      ...(prev.tournamentHeroIndex ?? {}),
-      ...patch.tournamentHeroIndex,
-    };
+    tournamentHeroIndex = { ...patch.tournamentHeroIndex };
   }
 
   let playerHeroIndex = prev.playerHeroIndex;
   if (patch.playerHeroIndex !== undefined) {
-    playerHeroIndex = {
-      ...(prev.playerHeroIndex ?? {}),
-      ...patch.playerHeroIndex,
-    };
+    playerHeroIndex = { ...patch.playerHeroIndex };
   }
 
   let nextHero = mergeNullableNested(

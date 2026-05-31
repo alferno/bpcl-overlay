@@ -3,6 +3,7 @@ import {
   buildRunningGameStartCountdown,
   DEFAULT_GAME_START_LABEL,
   gameStartCountdownRemaining,
+  leaguePlayerHeroFromIndex,
   NAMESPACES,
   SOCKET_EVENTS,
   createDefaultEnvelope,
@@ -308,18 +309,46 @@ export function attachRestRoutes(opts: {
     if (!parsed.success)
       return res.status(400).json({ error: parsed.error.flatten() });
 
-    let playerHeroAgg: Record<string, unknown> | undefined;
-    let source: "opendota_cached" | "stale" = "opendota_cached";
+    const snap = await state.getState();
+    const leaguePh =
+      parsed.data.accountId !== undefined
+        ? leaguePlayerHeroFromIndex(
+            snap.playerHeroIndex,
+            parsed.data.accountId,
+            parsed.data.heroId,
+          )
+        : undefined;
 
-    if (parsed.data.accountId !== undefined) {
+    let source: "league" | "opendota_cached" | "stale" = "league";
+    let playerHeroPayload:
+      | { games: number; wins: number; losses: number }
+      | undefined;
+
+    if (leaguePh && leaguePh.games > 0) {
+      playerHeroPayload = {
+        games: leaguePh.games,
+        wins: leaguePh.wins,
+        losses: leaguePh.games - leaguePh.wins,
+      };
+    } else if (parsed.data.accountId !== undefined) {
+      source = "opendota_cached";
       const ph = await opendota.playerHeroStats(parsed.data.accountId);
       if (ph.ok && Array.isArray(ph.data)) {
-        playerHeroAgg = ph.data.find(
+        const row = ph.data.find(
           (entry) =>
             entry &&
             typeof entry === "object" &&
             (entry as { hero_id?: unknown }).hero_id === parsed.data.heroId,
-        ) as Record<string, unknown> | undefined;
+        ) as { games?: number; win?: number } | undefined;
+        if (row && typeof row.games === "number") {
+          playerHeroPayload = {
+            games: row.games,
+            wins: typeof row.win === "number" ? row.win : 0,
+            losses:
+              row.games -
+              (typeof row.win === "number" ? row.win : 0),
+          };
+        }
       }
       if (!ph.ok) source = "stale";
     }
@@ -327,13 +356,7 @@ export function attachRestRoutes(opts: {
     const card = {
       playerLabel: parsed.data.playerLabel,
       heroId: parsed.data.heroId,
-      playerHero:
-        typeof playerHeroAgg === "object" && playerHeroAgg
-          ? {
-              games: typeof playerHeroAgg.games === "number" ? playerHeroAgg.games : undefined,
-              wins: typeof playerHeroAgg.win === "number" ? playerHeroAgg.win : undefined,
-            }
-          : undefined,
+      playerHero: playerHeroPayload,
       tournament: {},
       matchup: {},
       fetchedAt: new Date().toISOString(),

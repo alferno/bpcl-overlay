@@ -269,8 +269,23 @@ export class TournamentAggregator {
           detail = await client.matchDetails(matchId);
         }
         if (detail.ok && detail.data) {
-          this.ingestMatch(detail.data, heroAcc);
-          ingested += 1;
+          if (
+            detail.data.leagueid != null &&
+            detail.data.leagueid !== 0 &&
+            detail.data.leagueid !== leagueId
+          ) {
+            logger.warn(
+              {
+                matchId,
+                expectedLeague: leagueId,
+                actualLeague: detail.data.leagueid,
+              },
+              "Skipping match — leagueid mismatch",
+            );
+          } else {
+            this.ingestMatch(detail.data, heroAcc);
+            ingested += 1;
+          }
         }
 
         this.progress.matchDone = i + 1;

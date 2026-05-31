@@ -62,16 +62,10 @@ export function buildDraftPlayerHeroSlides(
 
   const losses = ph.games - ph.wins;
   const kdaLine = `${fmt1(ph.avgKills)} / ${fmt1(ph.avgDeaths)} / ${fmt1(ph.avgAssists)}`;
-  const leagueTotal =
-    playerLeagueGames != null &&
-    playerLeagueGames > 0 &&
-    playerLeagueGames !== ph.games
-      ? ` · ${playerLeagueGames} in league`
-      : "";
   const gameLabel =
     playerLeagueGames != null && playerLeagueGames > ph.games
-      ? `${ph.games} on ${heroName}${leagueTotal}`
-      : `${ph.games} game${ph.games === 1 ? "" : "s"}${leagueTotal}`;
+      ? `${ph.games} on ${heroName} · ${playerLeagueGames} league`
+      : `${ph.games} league game${ph.games === 1 ? "" : "s"}`;
 
   return [
     {
