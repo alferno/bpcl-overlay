@@ -22,6 +22,15 @@ export default defineConfig({
         onstart(options) {
           options.reload()
         },
+        vite: {
+          build: {
+            rollupOptions: {
+              output: {
+                format: 'cjs'
+              }
+            }
+          }
+        }
       },
     ]),
     renderer(),
