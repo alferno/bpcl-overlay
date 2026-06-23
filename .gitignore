@@ -40,3 +40,23 @@ coverage/
 
 # Hero PNG/WebM live in apps/overlay-web/public/heroes/ — commit for Netlify deploy.
 # Regenerate locally: npm run heroes:download-cdn-portraits && npm run heroes:download-cdn-webms
+
+# Electron build output (large binaries — distribute separately)
+apps/streamer-desktop/release/
+apps/streamer-desktop/dist/
+apps/streamer-desktop/dist-electron/
+
+# Replay preview video cache (generated at runtime)
+apps/broadcast-api/public-preview-cache/
+
+# Scratch / dev outputs
+apps/broadcast-api/bpc_api_out.json
+apps/broadcast-api/bpc_api_raw_output.json
+
+# Steam32 vanity cache (generated at runtime, no need to version)
+steam32-vanity-cache.json
+**/steam32-vanity-cache.json
+
+# Broadcast API runtime data
+apps/broadcast-api/league-stats/
+apps/broadcast-api/replays/
