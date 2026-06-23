@@ -11,7 +11,7 @@ export function HudCanvas({
 }) {
   return (
     <div
-      className={`box-border h-[1080px] w-[1920px] text-white antialiased shadow-2xl ${
+      className={`relative overflow-hidden box-border h-[1080px] w-[1920px] text-white antialiased shadow-2xl ${
         blend ? "bg-transparent" : "bg-slate-950/60"
       }`}
     >
@@ -22,17 +22,19 @@ export function HudCanvas({
 
 export function FadePanel({
   show,
+  panelKey = "panel",
   children,
 }: {
   show: boolean;
+  panelKey?: string;
   children?: ReactNode;
 }) {
   return (
     <AnimatePresence>
       {show ? (
         <motion.div
-          key="panel"
-          className="h-full w-full"
+          key={panelKey}
+          className="absolute inset-0 h-full w-full"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}

@@ -124,3 +124,39 @@ export function buildDraftTournamentHeroSlides(
   }
   return slides.slice(0, 4);
 }
+
+/** Ban-specific slides: times banned, picked, contested, win rate when picked */
+export function buildDraftBanHeroSlides(
+  stats?: TournamentHeroAggregate,
+): StatSlide[] {
+  const slides: StatSlide[] = [];
+  if (stats?.bans != null && stats.bans > 0) {
+    slides.push({
+      label: "Times Banned",
+      value: String(stats.bans),
+      sublabel: stats.banRate != null ? `${formatPctRounded(stats.banRate)} ban rate` : undefined,
+    });
+  }
+  if (stats?.picks != null) {
+    slides.push({
+      label: "Times Picked",
+      value: String(stats.picks),
+      sublabel: stats.pickRate != null ? `${formatPctRounded(stats.pickRate)} pick rate` : undefined,
+    });
+  }
+  if (stats?.contestRate != null) {
+    slides.push({
+      label: "Contested",
+      value: formatPctRounded(stats.contestRate),
+      sublabel: `${(stats.picks ?? 0) + (stats.bans ?? 0)} total contests`,
+    });
+  }
+  if (stats?.winRate != null && (stats.games ?? 0) > 0) {
+    slides.push({
+      label: "Win Rate",
+      value: formatPctRounded(stats.winRate),
+      sublabel: `${stats.games} game${stats.games === 1 ? "" : "s"} played`,
+    });
+  }
+  return slides.slice(0, 4);
+}

@@ -10,10 +10,12 @@ import PlayerStatsPage from "./pages/PlayerStatsPage";
 import PostgamePage from "./pages/PostgamePage";
 import SponsorsPage from "./pages/SponsorsPage";
 import StartingSoonPage from "./pages/StartingSoonPage";
+import VersusPage from "./pages/VersusPage";
+import ReplayPage from "./pages/ReplayPage";
 
 export default function OverlayAppRoutes() {
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/draft" element={<DraftPage />} />
         <Route path="/game" element={<GameCanvas />} />
@@ -25,6 +27,8 @@ export default function OverlayAppRoutes() {
         <Route path="/startingsoon" element={<StartingSoonPage />} />
         <Route path="/postgame" element={<PostgamePage />} />
         <Route path="/sponsors" element={<SponsorsPage />} />
+        <Route path="/versus" element={<VersusPage />} />
+        <Route path="/replay" element={<ReplayPage />} />
         <Route path="*" element={<GameCanvas />} />
       </Routes>
     </Router>

@@ -128,6 +128,9 @@ export function MatchSetupPanel({
     () => [...EMPTY_PICK_PLAYERS],
   );
   const [busy, setBusy] = useState(false);
+  const [bpcMatches, setBpcMatches] = useState<any[]>([]);
+  const [selectedBpcMatchId, setSelectedBpcMatchId] = useState("");
+  const [playerMemes, setPlayerMemes] = useState<Record<string, string>>({});
   const pickPlayersDirtyRef = useRef(false);
   const matchSetupDirtyRef = useRef(false);
 
@@ -146,6 +149,23 @@ export function MatchSetupPanel({
       .catch(() => setTeams([]));
   }, [origin, token, roster.length, state?.updatedAt]);
 
+  useEffect(() => {
+    if (!token.trim() || roster.length === 0) {
+      setBpcMatches([]);
+      return;
+    }
+    const currentSeason = state?.leagueConfig?.seasonSlug || "season-1";
+    // Fetch matches from bpcleague.in API
+    void apiFetch(origin, token, `/api/league/bpc-matches?seasonSlug=${currentSeason}`)
+      .then((r) => r.json())
+      .then((list) => {
+        if (Array.isArray(list)) {
+          setBpcMatches(list);
+        }
+      })
+      .catch(() => setBpcMatches([]));
+  }, [origin, token, roster.length, state?.leagueConfig?.seasonSlug]);
+
   // Sync teams/scores from server. Do not depend on pickPlayers arrays — live
   // STATE_FULL snapshots clone them every tick and would reset unsaved edits.
   useEffect(() => {
@@ -157,6 +177,7 @@ export function MatchSetupPanel({
     if (matchSetup?.scoreA !== undefined) setScoreA(matchSetup.scoreA);
     if (matchSetup?.scoreB !== undefined) setScoreB(matchSetup.scoreB);
     if (matchSetup?.stageLabel !== undefined) setStageLabel(matchSetup.stageLabel);
+    if (matchSetup?.playerMemes) setPlayerMemes(matchSetup.playerMemes);
   }, [
     matchSetup?.radiantTeamKey,
     matchSetup?.direTeamKey,
@@ -165,6 +186,7 @@ export function MatchSetupPanel({
     matchSetup?.scoreA,
     matchSetup?.scoreB,
     matchSetup?.stageLabel,
+    matchSetup?.playerMemes,
   ]);
 
   const serverRadiantPickPlayers = JSON.stringify(
@@ -246,6 +268,7 @@ export function MatchSetupPanel({
             radiant: radiantPickPlayers,
             dire: direPickPlayers,
           },
+          playerMemes,
         }),
       });
       const t = await r.text();
@@ -278,6 +301,54 @@ export function MatchSetupPanel({
         <p className="mt-4 text-sm text-slate-500">No roster loaded yet.</p>
       ) : (
         <>
+          {/* Auto-Import from bpcleague.in */}
+          {bpcMatches.length > 0 && (
+            <div className="mt-4 border-b border-white/5 pb-5">
+              <label className="text-xs uppercase text-slate-500 font-bold text-violet-300">
+                ⚡ Auto-Import Matchup (bpcleague.in)
+              </label>
+              <select
+                className={`${selectClass} mt-1 border-violet-500/30 bg-violet-950/20`}
+                value={selectedBpcMatchId}
+                onChange={(e) => {
+                  const matchId = e.target.value;
+                  setSelectedBpcMatchId(matchId);
+                  const m = bpcMatches.find((x) => x.id === matchId);
+                  if (m) {
+                    matchSetupDirtyRef.current = true;
+                    
+                    const keyify = (name: string) => name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+                    const key1 = keyify(m.team1);
+                    const key2 = keyify(m.team2);
+
+                    setRadiantKey(key1);
+                    setDireKey(key2);
+                    
+                    if (m.seriesType === "bo1") setSeriesBestOf(1);
+                    else if (m.seriesType === "bo3") setSeriesBestOf(3);
+                    else if (m.seriesType === "bo5") setSeriesBestOf(5);
+                    
+                    setScoreA(m.team1Score ?? 0);
+                    setScoreB(m.team2Score ?? 0);
+                    
+                    const playedGames = (m.team1Score ?? 0) + (m.team2Score ?? 0);
+                    const maxGame = m.seriesType === "bo1" ? 1 : m.seriesType === "bo3" ? 3 : 5;
+                    setSeriesGame(Math.min(maxGame, playedGames + 1));
+                    
+                    setStageLabel(m.stageKey || "");
+                  }
+                }}
+              >
+                <option value="">— select bpcleague.in match —</option>
+                {bpcMatches.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.stageKey ? `[${m.stageKey.toUpperCase()}] ` : ""}{m.team1} vs {m.team2} ({m.seriesType.toUpperCase()} · {m.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-xs uppercase text-slate-500">
@@ -487,18 +558,40 @@ export function MatchSetupPanel({
           {(radiantTeam || direTeam) && (
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {radiantTeam ? (
-                <TeamRosterPreview
-                  label="Radiant roster"
-                  team={radiantTeam}
-                  teamColor={teamColors[radiantTeam.teamKey]}
-                />
+                <div>
+                  <TeamRosterPreview
+                    label="Radiant roster"
+                    team={radiantTeam}
+                    teamColor={teamColors[radiantTeam.teamKey]}
+                  />
+                  <PlayerMemeInputs
+                    label="Radiant Custom Data"
+                    team={radiantTeam}
+                    memes={playerMemes}
+                    onChange={(id, val) => {
+                      matchSetupDirtyRef.current = true;
+                      setPlayerMemes(prev => ({ ...prev, [id]: val }));
+                    }}
+                  />
+                </div>
               ) : null}
               {direTeam ? (
-                <TeamRosterPreview
-                  label="Dire roster"
-                  team={direTeam}
-                  teamColor={teamColors[direTeam.teamKey]}
-                />
+                <div>
+                  <TeamRosterPreview
+                    label="Dire roster"
+                    team={direTeam}
+                    teamColor={teamColors[direTeam.teamKey]}
+                  />
+                  <PlayerMemeInputs
+                    label="Dire Custom Data"
+                    team={direTeam}
+                    memes={playerMemes}
+                    onChange={(id, val) => {
+                      matchSetupDirtyRef.current = true;
+                      setPlayerMemes(prev => ({ ...prev, [id]: val }));
+                    }}
+                  />
+                </div>
               ) : null}
             </div>
           )}
@@ -534,14 +627,48 @@ function TeamRosterPreview({
           {teamColor}
         </p>
       ) : null}
-      <ul className="mt-2 space-y-1 text-sm text-slate-300">
+      <ul className="mt-2 space-y-2 text-sm text-slate-300">
         {team.players.map((p) => (
           <li key={p.steam32}>
-            {p.displayName}{" "}
-            <span className="text-slate-600">({p.steam32})</span>
+            <div>
+              {p.displayName}{" "}
+              <span className="text-slate-600">({p.steam32})</span>
+            </div>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function PlayerMemeInputs({
+  label,
+  team,
+  memes,
+  onChange,
+}: {
+  label: string;
+  team: TeamInfo;
+  memes: Record<string, string>;
+  onChange: (steam32: number, value: string) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-slate-950/60 p-4 mt-4">
+      <p className="text-xs uppercase text-slate-500 mb-2">{label}</p>
+      <div className="space-y-2">
+        {team.players.map((p) => (
+          <div key={p.steam32} className="flex flex-col">
+            <label className="text-xs text-slate-400 mb-1">{p.displayName}</label>
+            <input
+              type="text"
+              className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white"
+              placeholder="Custom Data (e.g. Meme, Hometown)"
+              value={memes[String(p.steam32)] ?? ""}
+              onChange={(e) => onChange(p.steam32, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

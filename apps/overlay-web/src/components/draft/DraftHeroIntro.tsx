@@ -5,20 +5,18 @@ import type {
   ProductionSettings,
 } from "@bpc/shared-types";
 import { motion } from "framer-motion";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
-  heroCardInnerGlow,
-  neonSlotShadow,
   neonTextShadow,
 } from "../../draft/neon-effects";
 import {
-  ensureOverlayHeroIndex,
-  resolveOverlayPortraitForHero,
+  resolveSlotMedia,
 } from "../../hero-portrait";
 import { findPickSlotForLastPick } from "../../draft/slot-utils";
 import { colorAlpha, resolveDraftTeamColors } from "../../draft/team-colors";
 import { resolvePickPlayerContext } from "../../draft/resolve-pick-player";
+import { whenHeroWebmReady } from "../../hero-video-pool";
 
 function resolveSideLogo(
   draft: DraftState,
@@ -40,18 +38,7 @@ function resolveSideName(
     : (draft.dire?.name ?? draft.series.teamB);
 }
 
-function introCardFrameStyle(accent: string): CSSProperties {
-  const a = (n: number) => colorAlpha(accent, n);
-  return {
-    border: `1px solid ${a(0.75)}`,
-    boxShadow: [
-      neonSlotShadow(accent, true),
-      `inset 0 0 32px ${a(0.2)}`,
-      `0 0 28px ${a(0.38)}`,
-      `0 24px 64px rgb(0 0 0 / 0.65)`,
-    ].join(", "),
-  };
-}
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
 export function DraftHeroIntro({
   draft,
@@ -79,96 +66,134 @@ export function DraftHeroIntro({
   );
 
   const pickSlot = findPickSlotForLastPick(draft, pick);
-  const [portraitUrl, setPortraitUrl] = useState<string | undefined>(() =>
-    resolveOverlayPortraitForHero(pick.heroId, pick.heroName, {
-      heroPortraitSlug: pick.heroPortraitSlug ?? pickSlot?.heroPortraitSlug,
-      heroPortraitUrl: pickSlot?.heroPortraitUrl,
-      heroPortraitAnimatedUrl: pickSlot?.heroPortraitAnimatedUrl,
-    }),
-  );
+
+  // Resolve animated WebM for full hero model
+  const slotMedia = pickSlot ? resolveSlotMedia(pickSlot) : undefined;
+  const [videoUrl, setVideoUrl] = useState<string | undefined>(slotMedia?.animated);
+  const [videoReady, setVideoReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const resolve = () =>
-      resolveOverlayPortraitForHero(pick.heroId, pick.heroName, {
-        heroPortraitSlug: pick.heroPortraitSlug ?? pickSlot?.heroPortraitSlug,
-        heroPortraitUrl: pickSlot?.heroPortraitUrl,
-        heroPortraitAnimatedUrl: pickSlot?.heroPortraitAnimatedUrl,
-      });
-    setPortraitUrl(resolve());
-    void ensureOverlayHeroIndex().then(() => setPortraitUrl(resolve()));
-  }, [
-    pick.heroId,
-    pick.heroName,
-    pick.heroPortraitSlug,
-    pick.side,
-    pickSlot?.heroPortraitSlug,
-    pickSlot?.heroPortraitUrl,
-    pickSlot?.heroPortraitAnimatedUrl,
-  ]);
+    setVideoReady(false);
+    const slug = slotMedia?.slug;
+    if (!slug) return;
+    let cancelled = false;
+    void whenHeroWebmReady(slug).then((url) => {
+      if (!cancelled && url) setVideoUrl(url);
+    });
+    return () => { cancelled = true; };
+  }, [slotMedia?.slug, slotMedia?.animated]);
+
+  const heroDisplayName = (pick.heroName ?? `HERO ${pick.heroId}`).toUpperCase();
 
   return (
     <motion.div
-      className="relative flex shrink-0 flex-col items-center"
-      initial={{ scale: 0.88, y: 32, opacity: 0, filter: "blur(6px)" }}
-      animate={{ scale: 1, y: 0, opacity: 1, filter: "blur(0px)" }}
-      exit={{ scale: 0.94, y: -16, opacity: 0, filter: "blur(4px)" }}
-      transition={{
-        duration: 0.6,
-        delay: 0.2,
-        ease: [0.16, 1, 0.3, 1],
-      }}
+      className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
     >
-        <div className="mb-5 flex items-center gap-3">
+      {/* ─── Accent spotlight behind hero ─── */}
+      <motion.div
+        className="pointer-events-none absolute inset-0"
+        initial={{ opacity: 0, scale: 1.2 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1, delay: 0.1 }}
+        style={{
+          background: [
+            `radial-gradient(ellipse 45% 50% at 50% 40%, ${colorAlpha(accent, 0.30)} 0%, transparent 70%)`,
+            `radial-gradient(ellipse 25% 35% at 50% 38%, ${colorAlpha(accent, 0.12)} 0%, transparent 55%)`,
+          ].join(", "),
+        }}
+      />
+
+      {/* ─── Hero WebM model — positioned in upper-center ─── */}
+      <div className="absolute inset-x-0 top-0 bottom-[35%] flex items-end justify-center">
+        {videoUrl ? (
+          <motion.video
+            ref={videoRef}
+            key={videoUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="draft-hero-portrait h-full w-auto max-w-[55%] object-contain object-bottom"
+            style={{
+              opacity: videoReady ? 1 : 0,
+              ["--hero-glow" as string]: colorAlpha(accent, 0.4),
+            }}
+            onCanPlayThrough={() => setVideoReady(true)}
+            initial={{ scale: 1.08, y: 24 }}
+            animate={{ scale: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
+          >
+            <source src={videoUrl} type="video/webm" />
+          </motion.video>
+        ) : null}
+      </div>
+
+      {/* ─── Bottom text area ─── */}
+      <div className="absolute inset-x-0 bottom-[36%] z-[3] flex flex-col items-center">
+        {/* Team badge */}
+        <motion.div
+          className="mb-3 flex items-center gap-2.5"
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.45, delay: 0.25, ease: EASE_OUT_EXPO }}
+        >
           {logo ? (
-            <img src={logo} alt="" className="h-10 w-10 object-contain opacity-90" />
+            <img
+              src={logo}
+              alt=""
+              className="h-7 w-7 object-contain"
+              style={{ filter: `drop-shadow(0 0 8px ${colorAlpha(accent, 0.5)})` }}
+            />
           ) : null}
           <p
-            className="font-heading text-sm font-bold uppercase tracking-[0.24em]"
+            className="font-heading text-[11px] font-bold uppercase tracking-[0.25em]"
             style={{ color: accent }}
           >
             {teamName}
-          </p>
-        </div>
-
-        <div
-          className="draft-pick-card draft-pick-card--filled relative h-[340px] w-[280px] overflow-hidden rounded-xl"
-          style={introCardFrameStyle(accent)}
-        >
-          <div className="pointer-events-none absolute inset-0 bg-black" />
-          <div
-            className="pointer-events-none absolute inset-0 z-[1]"
-            style={{ background: heroCardInnerGlow(accent, true) }}
-          />
-          {portraitUrl ? (
-            <div
-              className="draft-hero-contained-stage pointer-events-none absolute inset-0 z-[2] overflow-hidden"
-              style={{ ["--hero-glow" as string]: colorAlpha(accent, 0.5) }}
-            >
-              <div className="draft-hero-contained-fig">
-                <img
-                  src={portraitUrl}
-                  alt={pick.heroName ?? "hero"}
-                  className="draft-hero-portrait h-full w-full max-w-none object-cover object-[center_18%]"
-                />
-              </div>
-            </div>
-          ) : null}
-          <div className="draft-hero-card-vignette pointer-events-none absolute inset-0 z-[3]" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-2/5 bg-gradient-to-t from-black via-black/80 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 z-[5] px-4 pb-5 pt-8 text-center">
-            <p
-              className="font-display text-4xl tracking-wide text-white"
-              style={{ textShadow: neonTextShadow(accent) }}
-            >
-              {(pick.heroName ?? `HERO ${pick.heroId}`).toUpperCase()}
-            </p>
             {playerName ? (
-              <p className="mt-1 font-heading text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-                {playerName}
-              </p>
+              <span className="ml-3 text-slate-400">{playerName}</span>
             ) : null}
-          </div>
-        </div>
+          </p>
+        </motion.div>
+
+        {/* Hero name */}
+        <motion.div
+          className="text-center"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.3, ease: EASE_OUT_EXPO }}
+        >
+          <p
+            className="font-display text-5xl tracking-[0.06em] text-white"
+            style={{
+              textShadow: [
+                neonTextShadow(accent),
+                `0 0 40px ${colorAlpha(accent, 0.35)}`,
+                `0 4px 16px rgb(0 0 0 / 0.8)`,
+              ].join(", "),
+            }}
+          >
+            {heroDisplayName}
+          </p>
+          {/* Accent underline */}
+          <motion.div
+            className="mx-auto mt-2 h-[2px] rounded-full"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+              boxShadow: `0 0 12px ${colorAlpha(accent, 0.45)}`,
+            }}
+            initial={{ width: 0 }}
+            animate={{ width: "50%" }}
+            transition={{ duration: 0.6, delay: 0.45, ease: EASE_OUT_EXPO }}
+          />
+        </motion.div>
+      </div>
     </motion.div>
   );
 }

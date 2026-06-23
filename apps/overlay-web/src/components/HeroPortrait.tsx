@@ -34,6 +34,7 @@ export function HeroPortrait({
         src={url}
         alt={heroName ?? "hero"}
         className={`h-full w-full object-cover ${banned ? "scale-[0.92] object-[center_12%] grayscale-[0.65] saturate-50 opacity-75" : ""}`}
+        style={{ filter: "url(#hero-luma-key)" }}
       />
       {banned ? (
         <div

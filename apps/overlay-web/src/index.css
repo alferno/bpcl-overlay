@@ -168,7 +168,7 @@ body,
   }
 
   .draft-hero-portrait {
-    filter: drop-shadow(0 0 10px var(--hero-glow, rgb(255 255 255 / 0.15)))
+    filter: url(#hero-luma-key) drop-shadow(0 0 10px var(--hero-glow, rgb(255 255 255 / 0.15)))
       drop-shadow(0 4px 12px rgb(0 0 0 / 0.5));
   }
 

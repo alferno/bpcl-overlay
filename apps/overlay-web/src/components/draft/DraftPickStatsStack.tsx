@@ -45,6 +45,7 @@ export function DraftPickStatsStack({
               playerHeroIndex={playerHeroIndex}
               production={production}
               stacked
+              isBan={item.isBan}
             />
           );
         })}

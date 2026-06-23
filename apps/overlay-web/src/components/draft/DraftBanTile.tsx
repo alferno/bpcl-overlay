@@ -1,11 +1,10 @@
 import type { DraftSlot } from "@bpc/shared-types";
 import { motion } from "framer-motion";
 
-import { DRAFT_BAN_TILE_SCALE } from "../../draft/dimensions";
 import { neonSlotShadow } from "../../draft/neon-effects";
 import { resolveSlotFlatPortraitUrl } from "../../hero-portrait";
 
-const BAN_TILE_CLASS = "mx-auto aspect-square rounded-sm bg-black";
+const BAN_TILE_CLASS = "mx-auto w-full h-full aspect-square rounded-sm bg-black";
 
 export function DraftBanTile({
   slot,
@@ -20,7 +19,7 @@ export function DraftBanTile({
   const filled = Boolean(slot?.heroId || portraitUrl);
   const accent = teamColor ?? "#ffffff";
   const glow = neonSlotShadow(accent, isActive);
-  const sizeStyle = { width: `${DRAFT_BAN_TILE_SCALE * 100}%`, boxShadow: glow };
+  const sizeStyle = { boxShadow: glow };
 
   if (!filled) {
     return (

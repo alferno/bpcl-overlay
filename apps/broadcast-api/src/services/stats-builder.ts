@@ -322,6 +322,7 @@ export async function buildPlayerHeroCard(
 
   return {
     statsCardKind: "player-hero",
+    steam32,
     playerLabel: displayName,
     heroId,
     heroName,
@@ -372,6 +373,7 @@ export async function buildPlayerLeagueCard(
 
   return {
     statsCardKind: "player-league",
+    steam32,
     playerLabel: displayName,
     heroId: 0,
     heroName: "League aggregate",

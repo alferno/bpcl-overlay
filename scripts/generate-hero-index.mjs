@@ -5,7 +5,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outPath = path.join(
@@ -14,7 +14,7 @@ const outPath = path.join(
 );
 
 const { buildHeroSlugIndex, heroesListFromConstants } = await import(
-  path.join(root, "packages/shared-types/dist/hero-slug.js")
+  pathToFileURL(path.join(root, "packages/shared-types/dist/hero-slug.js")).href
 );
 
 const res = await fetch("https://api.opendota.com/api/constants/heroes");

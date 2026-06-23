@@ -1,6 +1,8 @@
 import { HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { routeVisible } from "../visibility";
+import { H2HMatchupGraphic } from "../components/H2HMatchupGraphic";
+import { PowerSpikeAlert } from "../components/PowerSpikeAlert";
 
 export default function GameCanvas() {
   const { state } = useOverlayState();
@@ -9,11 +11,10 @@ export default function GameCanvas() {
 
   return (
     <HudCanvas blend={!visible}>
-      {visible ? (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-8 py-4 text-xl text-white backdrop-blur">
-          BPC LIVE
-        </div>
-      ) : null}
+
+      
+      <H2HMatchupGraphic />
+      <PowerSpikeAlert />
     </HudCanvas>
   );
 }

@@ -30,8 +30,7 @@ export function useOverlayState(): Ctx {
 
 function resolveOrigin(): string {
   return (
-    import.meta.env.VITE_BROADCAST_API_ORIGIN ??
-    `${window.location.protocol}//${window.location.hostname}:8080`
+    import.meta.env.VITE_BROADCAST_API_ORIGIN ?? window.location.origin
   );
 }
 

@@ -22,6 +22,7 @@ import { STATS_PANEL_SHELL_CLASS } from "../../overlay-layout";
 import {
   buildDraftPlayerHeroSlides,
   buildDraftTournamentHeroSlides,
+  buildDraftBanHeroSlides,
 } from "../../player-hero-slides";
 
 export function DraftPickStatsPanel({
@@ -32,6 +33,7 @@ export function DraftPickStatsPanel({
   playerHeroIndex,
   production,
   stacked = false,
+  isBan = false,
 }: {
   pick: LastPick;
   draft?: DraftState | null;
@@ -41,6 +43,8 @@ export function DraftPickStatsPanel({
   production?: ProductionSettings | null;
   /** Inside DraftPickStatsStack — no absolute positioning */
   stacked?: boolean;
+  /** Whether this is a ban (affects header label and accent) */
+  isBan?: boolean;
 }) {
   const heroName =
     pick.heroName ?? tournamentStats?.heroName ?? `#${pick.heroId}`;
@@ -78,19 +82,26 @@ export function DraftPickStatsPanel({
     playerName && steam32 != null && steam32 > 0,
   );
 
-  const slides = showingPlayer
-    ? buildDraftPlayerHeroSlides(
-        playerName!,
-        heroName,
-        playerHeroStats,
-        tournamentStats,
-        playerLeagueGames,
-      )
-    : buildDraftTournamentHeroSlides(tournamentStats);
+  const slides = isBan
+    ? buildDraftBanHeroSlides(tournamentStats)
+    : showingPlayer
+      ? buildDraftPlayerHeroSlides(
+          playerName!,
+          heroName,
+          playerHeroStats,
+          tournamentStats,
+          playerLeagueGames,
+        )
+      : buildDraftTournamentHeroSlides(tournamentStats);
 
-  const headerLabel = showingPlayer ? "Player spotlight" : "Tournament hero";
+  const headerLabel = isBan
+    ? "Banned hero"
+    : showingPlayer
+      ? "Player spotlight"
+      : "Tournament hero";
   const titleLabel = showingPlayer ? playerName! : heroName;
   const subtitleLabel = showingPlayer ? heroName : undefined;
+  const headerAccentClass = isBan ? "text-red-400" : "text-purple-300";
 
   return (
     <motion.div
@@ -111,7 +122,7 @@ export function DraftPickStatsPanel({
           ) : null}
           <HeroPortrait url={portraitUrl} heroName={heroName} size={112} />
           <div className="min-w-[280px] max-w-[360px]">
-            <p className="text-xs uppercase tracking-[0.35em] text-purple-300">
+            <p className={`text-xs uppercase tracking-[0.35em] ${headerAccentClass}`}>
               {headerLabel}
             </p>
             <p className="mt-1 text-2xl font-black text-white">{titleLabel}</p>

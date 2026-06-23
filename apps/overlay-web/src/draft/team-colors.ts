@@ -38,11 +38,11 @@ export function colorAlpha(hex: string, alpha: number): string {
 
 export function resolveDraftTeamColor(
   side: DraftSide,
-  draft: DraftState,
+  draft?: DraftState | null,
   leagueConfig?: LeagueConfig,
 ): string {
   const fromState =
-    side === "radiant" ? draft.radiant?.color : draft.dire?.color;
+    side === "radiant" ? draft?.radiant?.color : draft?.dire?.color;
   if (fromState) return fromState;
 
   const key =
@@ -56,7 +56,7 @@ export function resolveDraftTeamColor(
 }
 
 export function resolveDraftTeamColors(
-  draft: DraftState,
+  draft?: DraftState | null,
   leagueConfig?: LeagueConfig,
 ): { radiant: string; dire: string } {
   return {

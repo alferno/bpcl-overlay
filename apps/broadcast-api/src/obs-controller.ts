@@ -124,6 +124,81 @@ export class OBSController {
     }
   }
 
+  async triggerHotkeyByName(
+    hotkeyName: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.client.call("TriggerHotkeyByName", { hotkeyName });
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  async triggerHotkeyBySequence(
+    keyId: string,
+    keyModifiers: { shift?: boolean; control?: boolean; alt?: boolean; command?: boolean }
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.client.call("TriggerHotkeyByKeySequence", { keyId, keyModifiers });
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  async setInputSettings(
+    inputName: string,
+    inputSettings: any,
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.client.call("SetInputSettings", { inputName, inputSettings });
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  async restartMediaInput(
+    inputName: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.client.call("TriggerMediaInputAction", {
+        inputName,
+        mediaAction: "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART",
+      });
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  async setCurrentScene(
+    sceneName: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.client.call("SetCurrentProgramScene", { sceneName });
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
   scheduleReconnect(delayMs = 3000): void {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = setTimeout(() => {

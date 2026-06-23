@@ -7,7 +7,7 @@ import { createAppState } from "./state-setup.js";
 import { ensureHeroRegistry } from "./services/hero-registry.js";
 import { bootstrapLeagueFromEnv } from "./services/league-bootstrap.js";
 
-async function bootstrap(): Promise<void> {
+export async function bootstrapBroadcastServer() {
   const state = await createAppState();
   const obs = new OBSController();
   const opendota = new OpenDotaClient();
@@ -44,9 +44,13 @@ async function bootstrap(): Promise<void> {
 
   process.on("SIGINT", () => void shutdown());
   process.on("SIGTERM", () => void shutdown());
+
+  return { obs, opendota, state, shutdown };
 }
 
-void bootstrap().catch((err) => {
-  logger.error(err, "fatal startup");
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  void bootstrapBroadcastServer().catch((err) => {
+    logger.error(err, "fatal startup");
+    process.exit(1);
+  });
+}

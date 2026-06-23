@@ -11,7 +11,7 @@
 import fs from "node:fs";
 import https from "node:https";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const CDN_PORTRAIT_BASE =
   "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes";
@@ -21,7 +21,7 @@ const outDir = path.join(root, "apps/overlay-web/public/heroes/portraits");
 const manifestPath = path.join(outDir, "manifest.json");
 
 const { normalizeHeroSlug } = await import(
-  path.join(root, "packages/shared-types/dist/hero-assets.js")
+  pathToFileURL(path.join(root, "packages/shared-types/dist/hero-assets.js")).href
 );
 
 const args = process.argv.slice(2);

@@ -20,11 +20,12 @@ import {
   runLeagueAggregation,
 } from "./services/league-bootstrap.js";
 import {
-  leagueStatsCsvLoadFailedPayload,
-  leagueStatsCsvMissingPayload,
   leagueStatsDir,
   leagueStatsFileInfo,
+  aggregatePlayerLeagueFromIndex,
   summarizePlayerLeagueFromIndex,
+  leagueStatsCsvLoadFailedPayload,
+  leagueStatsCsvMissingPayload,
 } from "./services/league-stats-store.js";
 import {
   assertLeagueStatsReady,
@@ -37,7 +38,9 @@ import {
   draftPatchFromMatchSetup,
 } from "./services/match-setup.js";
 import { enrichRosterAvatars } from "./services/steam-profile.js";
+import { fetchRosterFromBpcLeague, fetchMatchesFromBpcLeague, fetchSeasonsFromBpcLeague } from "./services/bpcleague-sync.js";
 import { tournamentAggregator } from "./services/tournament-aggregator.js";
+import { autopilotManager } from "./services/autopilot.js";
 import {
   buildCarouselFromHeroCard,
   buildMatchupCard,
@@ -63,7 +66,10 @@ export function attachLeagueAndStatsRoutes(opts: {
   broadcast: BroadcastFns;
   opendota: OpenDotaClient;
 }): void {
-  const { app, state, broadcast, opendota } = opts;
+  const { app, state, broadcast, opendota, io } = opts;
+
+  // Initialize and configure autopilot
+  autopilotManager.configure({}, { state, opendota, broadcast });
 
   app.get("/api/league/info", requireBroadcastAuth, async (_req, res) => {
     const snap = await state.getState();
@@ -176,6 +182,35 @@ export function attachLeagueAndStatsRoutes(opts: {
     });
     await broadcast.broadcastFull(next);
     res.json({ ok: true, count: roster.length, teamColors, roster });
+  });
+
+  app.post("/api/roster/sync-bpcleague", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ seasonSlug: z.string().optional() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success)
+      return res.status(400).json({ error: parsed.error.flatten() });
+
+    try {
+      const seasonSlug = parsed.data.seasonSlug || "season-1";
+      const rawRoster = await fetchRosterFromBpcLeague({
+        seasonSlug,
+        steamApiKey: env.STEAM_WEB_API_KEY,
+      });
+
+      const roster = await enrichRosterAvatars(rawRoster, opendota);
+      const teamColors = teamColorsFromRoster(roster);
+
+      const next = await state.patchState({
+        leagueConfig: { roster, teamColors, leagueId: env.LEAGUE_ID, seasonSlug },
+      });
+      await broadcast.broadcastFull(next);
+
+      res.json({ ok: true, count: roster.length, teamColors, roster });
+    } catch (err) {
+      res.status(500).json({
+        error: err instanceof Error ? err.message : "Internal Server Error during sync",
+      });
+    }
   });
 
   app.get("/api/roster", requireBroadcastAuth, async (_req, res) => {
@@ -604,9 +639,10 @@ export function attachLeagueAndStatsRoutes(opts: {
       persist: z.boolean().optional(),
     });
     const parsed = schema.safeParse(req.body);
-    if (!parsed.success)
-      return res.status(400).json({ error: parsed.error.flatten() });
-
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    const snap = await state.getState();
     const card = await buildMatchupCard(
       opendota,
       parsed.data.heroAId,
@@ -619,6 +655,45 @@ export function attachLeagueAndStatsRoutes(opts: {
       return res.json({ ok: true, card, persisted: next });
     }
     res.json({ ok: true, card });
+  });
+
+  app.post("/api/producer/h2h", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({
+      player1Steam32: z.number(),
+      player2Steam32: z.number(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    
+    const snap = await state.getState();
+    const roster = snap.leagueConfig?.roster ?? [];
+    
+    const p1 = findRosterPlayer(roster, parsed.data.player1Steam32);
+    const p2 = findRosterPlayer(roster, parsed.data.player2Steam32);
+    
+    if (!p1 || !p2) {
+      return res.status(404).json({ error: "Players not found in roster" });
+    }
+
+    try {
+      assertLeagueStatsReady(snap);
+    } catch (err: any) {
+      return res.status(503).json({ error: err.message });
+    }
+
+    const p1Stats = aggregatePlayerLeagueFromIndex(snap.playerHeroIndex!, parsed.data.player1Steam32);
+    const p2Stats = aggregatePlayerLeagueFromIndex(snap.playerHeroIndex!, parsed.data.player2Steam32);
+
+    const payload = {
+      player1: { ...p1, stats: p1Stats },
+      player2: { ...p2, stats: p2Stats },
+    };
+
+    io.of("/overlay").emit("SHOW_H2H", payload);
+    
+    res.json({ ok: true, payload });
   });
 
   app.post("/api/stats/carousel", requireBroadcastAuth, async (req, res) => {
@@ -748,6 +823,47 @@ export function attachLeagueAndStatsRoutes(opts: {
     const next = await state.patchState({ production: parsed.data });
     await broadcast.broadcastFull(next);
     res.json(next.production);
+  });
+
+  app.get("/api/league/bpc-matches", requireBroadcastAuth, async (req, res) => {
+    const seasonSlug = req.query.seasonSlug as string | undefined;
+    const matches = await fetchMatchesFromBpcLeague(seasonSlug);
+    res.json(matches);
+  });
+
+  app.get("/api/league/bpc-seasons", requireBroadcastAuth, async (_req, res) => {
+    const seasons = await fetchSeasonsFromBpcLeague();
+    res.json(seasons);
+  });
+
+  app.get("/api/autopilot/config", requireBroadcastAuth, (_req, res) => {
+    res.json({
+      config: autopilotManager.getConfig(),
+      isActive: autopilotManager.isActive()
+    });
+  });
+
+  app.post("/api/autopilot/config", requireBroadcastAuth, (req, res) => {
+    const schema = z.object({
+      enabled: z.boolean().optional(),
+      intervalMinutes: z.number().min(1).optional(),
+      durationSeconds: z.number().min(5).optional(),
+      cardTypes: z.array(z.enum(["player-league", "player-hero", "tournament-hero", "matchup"])).optional()
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.flatten() });
+    }
+    autopilotManager.configure(parsed.data);
+    res.json({
+      config: autopilotManager.getConfig(),
+      isActive: autopilotManager.isActive()
+    });
+  });
+
+  app.post("/api/autopilot/trigger", requireBroadcastAuth, async (_req, res) => {
+    await autopilotManager.triggerNow();
+    res.json({ ok: true, msg: "Autopilot triggered successfully" });
   });
 }
 

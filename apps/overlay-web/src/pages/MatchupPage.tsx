@@ -5,11 +5,11 @@ import {
   heroPortraitHintsFromFields,
   resolveOverlayPortraitForHero,
 } from "../hero-portrait";
-import { routeVisible } from "../visibility";
+import { useRouteVisible } from "../hooks/useRouteVisible";
 
 export default function MatchupPage() {
   const { state } = useOverlayState();
-  const visible = routeVisible("matchup", state);
+  const visible = useRouteVisible("matchup", state);
   const m = state.matchupCard;
 
   const lines = m?.statLines ?? [];
@@ -36,7 +36,7 @@ export default function MatchupPage() {
 
   return (
     <HudCanvas blend>
-      <FadePanel show={visible}>
+      <FadePanel show={visible} panelKey={`matchup-${m?.heroAId}-${m?.heroBId}`}>
         <div className="flex h-full items-center justify-center gap-16 p-14">
           {m ? (
             <>

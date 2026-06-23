@@ -11,6 +11,7 @@ import {
   type OverlayPatch,
 } from "@bpc/shared-types";
 import type { StateManager } from "@bpc/state-manager";
+import express from "express";
 import type { Express, Request, Response } from "express";
 import type { Server as IOServer } from "socket.io";
 import { z } from "zod";
@@ -19,6 +20,8 @@ import { logger } from "./logger.js";
 import type { OBSController } from "./obs-controller.js";
 import type { OpenDotaClient } from "./opendota-client.js";
 import { parseOverlayPatch } from "./state-setup.js";
+import { ReplayManager } from "./services/replay-manager.js";
+import { env } from "./env.js";
 
 export type BroadcastFns = {
   broadcastFull(envelope?: OverlayEnvelope): Promise<void>;
@@ -33,6 +36,15 @@ export function attachRestRoutes(opts: {
   opendota: OpenDotaClient;
 }): void {
   const { app, state, io, broadcast, obs, opendota } = opts;
+
+  const replayManager = new ReplayManager();
+
+  // Serve original replays directly to avoid remuxing
+  app.use(
+    "/api/replays/media",
+    requireBroadcastAuth,
+    express.static(env.REPLAY_FOLDER)
+  );
 
   app.get("/health/live", (_req: Request, res: Response) => {
     res.json({
@@ -409,5 +421,68 @@ export function attachRestRoutes(opts: {
   app.post("/api/opendota/cache/clear-memory", requireBroadcastAuth, (_req, res) => {
     opendota.purgeMemory();
     res.json({ ok: true });
+  });
+
+  // --- REPLAY CHANNELS AND DATABASE INTERFACES ---
+  app.get("/api/replays", requireBroadcastAuth, async (_req, res) => {
+    try {
+      const data = await replayManager.getReplayState();
+      res.json(data);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
+  app.post("/api/replays/hotkey", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ hotkeyName: z.string() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const result = await obs.triggerHotkeyByName(parsed.data.hotkeyName);
+    res.json(result);
+  });
+
+  app.post("/api/replays/hotkey-sequence", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({
+      keyId: z.string(),
+      keyModifiers: z.object({
+        shift: z.boolean().optional(),
+        control: z.boolean().optional(),
+        alt: z.boolean().optional(),
+        command: z.boolean().optional(),
+      }).optional()
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const result = await obs.triggerHotkeyBySequence(parsed.data.keyId, parsed.data.keyModifiers || {});
+    res.json(result);
+  });
+
+  app.post("/api/replays/favorite", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ file: z.string(), favorite: z.boolean() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const ok = await replayManager.toggleFavorite(parsed.data.file, parsed.data.favorite);
+    res.json({ ok });
+  });
+
+  app.post("/api/replays/play", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ file: z.string() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const result = await replayManager.playReplay(parsed.data.file, obs);
+    res.json(result);
+  });
+
+  app.post("/api/replays/generate-preview", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ file: z.string() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const result = await replayManager.generatePreview(parsed.data.file);
+    res.json(result);
   });
 }

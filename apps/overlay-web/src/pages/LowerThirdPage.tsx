@@ -1,18 +1,18 @@
 import { motion } from "framer-motion";
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
-import { routeVisible } from "../visibility";
+import { useRouteVisible } from "../hooks/useRouteVisible";
 
 export default function LowerThirdPage() {
   const { state } = useOverlayState();
-  const visible = routeVisible("lowerthird", state);
+  const visible = useRouteVisible("lowerthird", state);
 
   const lt = state.lowerThirds;
 
   return (
     <HudCanvas blend>
       <FadePanel show={visible}>
-        <div className="flex h-full items-end pb-28 pl-28">
+        <div className="flex h-full items-end pb-32 pl-28">
           {lt ? (
             <LowerThirdAnimated
               headline={lt.headline}

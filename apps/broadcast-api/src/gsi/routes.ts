@@ -2,6 +2,7 @@ import type { Express } from "express";
 import type { Server as IOServer } from "socket.io";
 import type { StateManager } from "@bpc/state-manager";
 import { parseGsiToDraft } from "./parser.js";
+import { detectPowerSpikes } from "./power-spikes.js";
 import { ensureHeroRegistry } from "../services/hero-registry.js";
 import type { BroadcastFns } from "../routes.js";
 import { logger } from "../logger.js";
@@ -27,8 +28,9 @@ export function attachGsiRoutes(opts: {
   state: StateManager;
   broadcast: BroadcastFns;
   opendota: OpenDotaClient;
+  io: IOServer;
 }): void {
-  const { app, state, broadcast, opendota } = opts;
+  const { app, state, broadcast, opendota, io } = opts;
 
   app.post("/gsi", async (req, res) => {
     const token =
@@ -41,6 +43,13 @@ export function attachGsiRoutes(opts: {
     const payload = req.body as Record<string, unknown>;
     lastGsiAt = Date.now();
     await ensureHeroRegistry(opendota);
+
+    // Trigger power spike evaluation
+    try {
+      detectPowerSpikes(payload, io);
+    } catch (err) {
+      logger.error(err, "Power spike evaluation failed");
+    }
 
     const snap = await state.getState();
     const roster = snap.leagueConfig?.roster ?? [];

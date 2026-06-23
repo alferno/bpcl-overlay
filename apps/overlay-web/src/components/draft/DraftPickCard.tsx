@@ -144,9 +144,9 @@ export function DraftPickCard({
             } as CSSProperties)
           : {}),
       }}
-      initial={showHeroVisual ? { scale: 0.94, opacity: 0 } : false}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      initial={showHeroVisual ? { y: 30, scale: 0.92, opacity: 0 } : false}
+      animate={{ y: 0, scale: 1, opacity: 1 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
       <PickCardTeamHueEdge
         accent={accent}

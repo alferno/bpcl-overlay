@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { apiFetch, formatApiErrorBody } from "./api";
 import { HeroSearchSelect, type HeroMeta } from "./HeroSearchSelect";
+import { AutopilotPanel } from "./components/AutopilotPanel";
+import { ActiveMatchPlayers } from "./components/ActiveMatchPlayers";
 
 const selectClass =
   "w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white";
@@ -75,7 +77,6 @@ export function StatsWorkspace({
     steamApiConfigured?: boolean;
   } | null>(null);
   const [leagueId, setLeagueId] = useState("");
-  const [csvText, setCsvText] = useState("");
   const [heroes, setHeroes] = useState<HeroMeta[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const [selectedHero, setSelectedHero] = useState("");
@@ -84,15 +85,6 @@ export function StatsWorkspace({
   const [tournamentHero, setTournamentHero] = useState("");
   const [carouselHero, setCarouselHero] = useState("");
   const [busy, setBusy] = useState(false);
-  const [rosterExpanded, setRosterExpanded] = useState(false);
-  const [resolveReport, setResolveReport] = useState<{
-    missingSteam32?: number[];
-    rosterCount?: number;
-    csvPlayerCount?: number;
-    indexKeyCount?: number;
-    matchedRosterCount?: number;
-    indexEmpty?: string;
-  } | null>(null);
 
   const roster = state?.leagueConfig?.roster ?? [];
   const matchSetup = state?.leagueConfig?.matchSetup;
@@ -201,227 +193,133 @@ export function StatsWorkspace({
     <section className="space-y-8 rounded-2xl border border-sky-500/40 bg-slate-900/80 p-6">
       <h2 className="text-lg font-semibold text-sky-300">Stats & League</h2>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-4 rounded-xl border border-white/10 bg-slate-950/60 p-4">
-          <h3 className="text-sm font-semibold uppercase text-slate-400">League</h3>
-          <p className="text-xs text-slate-500">
-            Stats are loaded from <strong className="text-sky-300">CSV on disk</strong> by
-            default (no API calls). Use fetch only when you need fresh data after new
-            matches.
+      <div className="space-y-4 rounded-xl border border-white/10 bg-slate-950/60 p-4">
+        <h3 className="text-sm font-semibold uppercase text-slate-400">League Stats Database</h3>
+        <p className="text-xs text-slate-500">
+          Stats are loaded from <strong className="text-sky-300">CSV on disk</strong> by
+          default (no API calls). Use fetch only when you need fresh data after new
+          matches.
+        </p>
+        {lc?.aggregationSource ? (
+          <p className="text-xs text-slate-400">
+            Loaded from:{" "}
+            <span className="text-sky-300">{lc.aggregationSource.toUpperCase()}</span>
+            {lc.aggregatedAt ? ` · ${new Date(lc.aggregatedAt).toLocaleString()}` : ""}
           </p>
-          {lc?.aggregationSource ? (
-            <p className="text-xs text-slate-400">
-              Loaded from:{" "}
-              <span className="text-sky-300">{lc.aggregationSource.toUpperCase()}</span>
-              {lc.aggregatedAt ? ` · ${new Date(lc.aggregatedAt).toLocaleString()}` : ""}
-            </p>
-          ) : null}
-          {leagueInfo?.statsStorage ? (
-            <p className="text-xs text-slate-500">
-              CSV:{" "}
-              {leagueInfo.statsStorage.heroesExists ? (
-                <span className="text-emerald-400">heroes file found</span>
-              ) : (
-                <span className="text-amber-400">no heroes CSV yet</span>
-              )}
-              {leagueInfo.statsStorage.playerHeroesExists ? (
-                <span className="text-emerald-400"> · player×hero file found</span>
-              ) : (
-                <span className="text-amber-400"> · no player×hero CSV (needed for roster resolve)</span>
-              )}
-              {leagueInfo.statsDir ? (
-                <>
-                  {" "}
-                  · <code className="text-sky-300/80">{leagueInfo.statsDir}</code>
-                </>
-              ) : null}
-            </p>
-          ) : null}
-          {leagueInfo?.statsStorage?.heroesExists &&
-          lc?.aggregationStatus !== "ready" ? (
-            <p className="text-xs text-sky-300/90">
-              Files are on disk but not loaded into the API yet — click{" "}
-              <strong>reload CSV</strong>, then <strong>resolve stats</strong> after
-              roster upload.
-            </p>
-          ) : null}
-          {!leagueInfo?.steamApiConfigured ? (
-            <p className="text-xs text-amber-400">
-              <code className="text-sky-300">STEAM_WEB_API_KEY</code> in{" "}
-              <code className="text-sky-300">apps/broadcast-api/.env</code> is required to
-              list league matches from Steam.
-            </p>
-          ) : null}
-          <div>
-            <label className="text-xs uppercase text-slate-500">League ID</label>
-            <input
-              className="mt-1 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-slate-400"
-              value={leagueId}
-              readOnly
-              placeholder="from LEAGUE_ID env"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Btn
-              variant="ghost"
-              disabled={busy}
-              onClick={() => void post("/api/league/stats/reload-csv")}
-            >
-              reload CSV
-            </Btn>
-            <Btn
-              disabled={
-                busy ||
-                !leagueId ||
-                lc?.aggregationStatus === "running" ||
-                aggBusy
-              }
-              onClick={() => {
-                setAggBusy(true);
-                void post("/api/league/aggregate").then(() => void pollStatus());
-              }}
-            >
-              {lc?.aggregationStatus === "running" || aggBusy
-                ? "fetching…"
-                : "fetch league stats"}
-            </Btn>
-          </div>
-          {lc?.aggregationStatus !== "ready" && lc?.aggregationStatus !== "running" && !aggBusy ? (
-            <p className="text-xs text-amber-400">
-              No stats loaded yet — click <strong>fetch league stats</strong> once
-              (takes ~1–2 min for 33 matches), or <strong>reload CSV</strong> if files
-              exist.
-            </p>
-          ) : null}
-          {lc ? (
-            <div className="text-xs text-slate-400">
-              <p>status: {lc.aggregationStatus}</p>
-              {typeof lc.aggregationProgress === "number" ? (
-                <div className="mt-2">
-                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full bg-emerald-500 transition-all"
-                      style={{ width: `${lc.aggregationProgress}%` }}
-                    />
-                  </div>
-                  <p className="mt-1">
-                    {lc.aggregationMatchDone ?? 0} / {lc.aggregationMatchTotal ?? "?"} matches
-                  </p>
-                </div>
-              ) : null}
-              {lc.aggregationError ? (
-                <p className="mt-2 text-red-400">{lc.aggregationError}</p>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="space-y-4 rounded-xl border border-white/10 bg-slate-950/60 p-4">
-          <h3 className="text-sm font-semibold uppercase text-slate-400">Roster CSV</h3>
+        ) : null}
+        {leagueInfo?.statsStorage ? (
           <p className="text-xs text-slate-500">
-            displayName,steam32,teamName,teamKey,teamColor[,avatarUrl] — avatars auto-fetched from Steam on upload, or paste image URLs in CSV.
-            teamColor is optional hex (e.g. #5b8fd4) for draft overlay accents.
+            CSV:{" "}
+            {leagueInfo.statsStorage.heroesExists ? (
+              <span className="text-emerald-400">heroes file found</span>
+            ) : (
+              <span className="text-amber-400">no heroes CSV yet</span>
+            )}
+            {leagueInfo.statsStorage.playerHeroesExists ? (
+              <span className="text-emerald-400"> · player×hero file found</span>
+            ) : (
+              <span className="text-amber-400"> · no player×hero CSV (needed for roster resolve)</span>
+            )}
+            {leagueInfo.statsDir ? (
+              <>
+                {" "}
+                · <code className="text-sky-300/80">{leagueInfo.statsDir}</code>
+              </>
+            ) : null}
           </p>
-          <textarea
-            className="min-h-[100px] w-full rounded-lg border border-white/10 bg-black/70 p-3 font-mono text-xs"
-            value={csvText}
-            onChange={(e) => setCsvText(e.target.value)}
-            placeholder="displayName,steam32,teamName,teamKey,teamColor"
-          />
+        ) : null}
+        {leagueInfo?.statsStorage?.heroesExists &&
+        lc?.aggregationStatus !== "ready" ? (
+          <p className="text-xs text-sky-300/90">
+            Files are on disk but not loaded into the API yet — click{" "}
+            <strong>reload CSV</strong>, then <strong>resolve stats</strong> after
+            roster upload.
+          </p>
+        ) : null}
+        {!leagueInfo?.steamApiConfigured ? (
+          <p className="text-xs text-amber-400">
+            <code className="text-sky-300">STEAM_WEB_API_KEY</code> in{" "}
+            <code className="text-sky-300">apps/broadcast-api/.env</code> is required to
+            list league matches from Steam.
+          </p>
+        ) : null}
+        <div className="max-w-md">
+          <label className="text-xs uppercase text-slate-500">League ID</label>
           <input
-            type="file"
-            accept=".csv,text/csv"
-            className="text-xs"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              void f.text().then(setCsvText);
-            }}
+            className="mt-1 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-slate-400 text-xs"
+            value={leagueId}
+            readOnly
+            placeholder="from LEAGUE_ID env"
           />
-          <div className="flex flex-wrap gap-2">
-            <Btn
-              disabled={busy || !csvText.trim()}
-              onClick={() => void post("/api/roster/upload", { csv: csvText })}
-            >
-              upload roster
-            </Btn>
-            <Btn
-              variant="ghost"
-              disabled={busy || roster.length === 0}
-              onClick={() =>
-                void post("/api/league/stats/resolve").then((data) => {
-                  if (data && typeof data === "object") {
-                    setResolveReport(data as typeof resolveReport);
-                  }
-                })
-              }
-            >
-              resolve stats
-            </Btn>
-          </div>
-          {resolveReport ? (
-            <p
-              className={`text-xs ${
-                (resolveReport.missingSteam32?.length ?? 0) === 0
-                  ? "text-emerald-400"
-                  : "text-amber-400"
-              }`}
-            >
-              Stats resolved: {resolveReport.indexKeyCount ?? 0} index keys ·{" "}
-              {resolveReport.csvPlayerCount ?? 0} players in CSV ·{" "}
-              {resolveReport.matchedRosterCount ?? 0}/
-              {resolveReport.rosterCount ?? 0} roster matched
-              {resolveReport.indexEmpty ? (
-                <span className="block text-rose-400">{resolveReport.indexEmpty}</span>
-              ) : null}
-              {(resolveReport.missingSteam32?.length ?? 0) > 0 ? (
-                <span className="block text-amber-300/90">
-                  No league stats for {resolveReport.missingSteam32!.length} roster
-                  steam32 (not in league CSV or no games played in league{" "}
-                  {leagueId || "—"})
-                </span>
-              ) : (
-                " · all roster steam32 matched"
-              )}
-            </p>
-          ) : null}
-          {roster.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs text-slate-400">
-                {roster.length} player{roster.length === 1 ? "" : "s"} loaded
-              </p>
-              {rosterExpanded ? (
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="text-slate-500">
-                      <th className="py-1">name</th>
-                      <th>steam32</th>
-                      <th>team</th>
-                      <th>key</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roster.map((p) => (
-                      <tr key={p.steam32} className="border-t border-white/5">
-                        <td className="py-1">{p.displayName}</td>
-                        <td>{p.steam32}</td>
-                        <td>{p.teamName ?? "—"}</td>
-                        <td>{p.teamKey ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : null}
-              <button
-                type="button"
-                className="text-xs font-semibold text-sky-400 hover:text-sky-300"
-                onClick={() => setRosterExpanded((v) => !v)}
-              >
-                {rosterExpanded ? "Show less" : `Show roster (${roster.length})`}
-              </button>
-            </div>
-          ) : null}
         </div>
+        <div className="flex flex-wrap gap-2">
+          <Btn
+            variant="ghost"
+            disabled={busy}
+            onClick={() => void post("/api/league/stats/reload-csv")}
+          >
+            reload CSV
+          </Btn>
+          <Btn
+            disabled={
+              busy ||
+              !leagueId ||
+              lc?.aggregationStatus === "running" ||
+              aggBusy
+            }
+            onClick={() => {
+              setAggBusy(true);
+              void post("/api/league/aggregate").then(() => void pollStatus());
+            }}
+          >
+            {lc?.aggregationStatus === "running" || aggBusy
+              ? "fetching…"
+              : "fetch league stats"}
+          </Btn>
+        </div>
+        {lc?.aggregationStatus !== "ready" && lc?.aggregationStatus !== "running" && !aggBusy ? (
+          <p className="text-xs text-amber-400">
+            No stats loaded yet — click <strong>fetch league stats</strong> once
+            (takes ~1–2 min for 33 matches), or <strong>reload CSV</strong> if files
+            exist.
+          </p>
+        ) : null}
+        {lc ? (
+          <div className="text-xs text-slate-400">
+            <p>status: {lc.aggregationStatus}</p>
+            {typeof lc.aggregationProgress === "number" ? (
+              <div className="mt-2 max-w-md">
+                <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full bg-emerald-500 transition-all"
+                    style={{ width: `${lc.aggregationProgress}%` }}
+                  />
+                </div>
+                <p className="mt-1">
+                  {lc.aggregationMatchDone ?? 0} / {lc.aggregationMatchTotal ?? "?"} matches
+                </p>
+              </div>
+            ) : null}
+            {lc.aggregationError ? (
+              <p className="mt-2 text-red-400">{lc.aggregationError}</p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px] items-start">
+        <ActiveMatchPlayers
+          origin={origin}
+          token={token}
+          state={state}
+          setErr={setErr}
+          onShowOverlay={onShowOverlay}
+        />
+        <AutopilotPanel
+          origin={origin}
+          token={token}
+          setErr={setErr}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

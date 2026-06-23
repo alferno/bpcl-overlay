@@ -67,30 +67,7 @@ export function DraftTeamColumn({
         boxShadow: neonPanelShadow(teamColor, isActive ? "active" : "idle"),
       }}
     >
-      <div className="grid min-w-0 grid-cols-7 gap-x-2 gap-y-1.5 opacity-95">
-        {bans.map((slot, i) => (
-          <DraftBanTile
-            key={`ban-${i}`}
-            slot={slot}
-            teamColor={teamColor}
-            isActive={
-              isActive &&
-              turnAction === "ban" &&
-              !slot?.heroId &&
-              i === firstEmptyBan
-            }
-          />
-        ))}
-      </div>
-
-      <div
-        className="h-px w-full opacity-60"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${colorAlpha(teamColor, 0.55)}, transparent)`,
-          boxShadow: `0 0 8px ${colorAlpha(teamColor, 0.35)}`,
-        }}
-      />
-
+      {/* Picks on top */}
       <div
         className="grid min-w-0 grid-cols-5 gap-2"
         style={{ height: DRAFT_PICK_HEIGHT }}
@@ -135,6 +112,31 @@ export function DraftTeamColumn({
               />
             </div>
           </div>
+        ))}
+      </div>
+
+      <div
+        className="h-px w-full opacity-60"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${colorAlpha(teamColor, 0.55)}, transparent)`,
+          boxShadow: `0 0 8px ${colorAlpha(teamColor, 0.35)}`,
+        }}
+      />
+
+      {/* Bans below */}
+      <div className="grid min-w-0 grid-cols-7 gap-x-2 gap-y-1.5 opacity-95">
+        {bans.map((slot, i) => (
+          <DraftBanTile
+            key={`ban-${i}`}
+            slot={slot}
+            teamColor={teamColor}
+            isActive={
+              isActive &&
+              turnAction === "ban" &&
+              !slot?.heroId &&
+              i === firstEmptyBan
+            }
+          />
         ))}
       </div>
     </div>

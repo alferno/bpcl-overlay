@@ -108,15 +108,17 @@ export class OpenDotaClient {
     }
 
     const fresh = await this.fetchLive<T>(urlPath);
-    this.memory.set(key, {
-      expiry: now + this.ttlSeconds * 1000,
-      body: fresh,
-    });
+    if (fresh.ok) {
+      this.memory.set(key, {
+        expiry: now + this.ttlSeconds * 1000,
+        body: fresh,
+      });
 
-    if (fresh.ok && this.redis) {
-      await this.redis
-        .setex(`opendota:${key}`, this.ttlSeconds, JSON.stringify(fresh))
-        .catch(() => undefined);
+      if (this.redis) {
+        await this.redis
+          .setex(`opendota:${key}`, this.ttlSeconds, JSON.stringify(fresh))
+          .catch(() => undefined);
+      }
     }
 
     return fresh;

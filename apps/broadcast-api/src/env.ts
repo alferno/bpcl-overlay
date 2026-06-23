@@ -31,6 +31,11 @@ const envSchema = z.object({
   STEAM_WEB_API_KEY: z.string().optional(),
   /** Optional comma/space-separated match IDs (merged with Steam league history) */
   LEAGUE_MATCH_IDS: z.string().optional(),
+  REPLAY_DB_FILE: z.string().default("C:\\Users\\anian\\Videos\\BPCL S2 Broadcast\\System\\replay_db.csv"),
+  REPLAY_MATCH_FILE: z.string().default("C:\\Users\\anian\\Videos\\BPCL S2 Broadcast\\System\\active_match.txt"),
+  REPLAY_LAST_COMPLETED_FILE: z.string().default("C:\\Users\\anian\\Videos\\BPCL S2 Broadcast\\System\\last_completed_match.txt"),
+  REPLAY_PLAYBACK_DIR: z.string().default("C:\\Users\\anian\\Videos\\BPCL S2 Broadcast\\Playback"),
+  REPLAY_FOLDER: z.string().default("C:\\Users\\anian\\Videos\\BPCL S2 Broadcast\\Replays"),
 });
 
 export const env = envSchema.parse(process.env);

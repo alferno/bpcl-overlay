@@ -9,15 +9,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { colorAlpha, resolveDraftTeamColors } from "../../draft/team-colors";
 import { DraftHeroIntro } from "./DraftHeroIntro";
 
-/** Overlap into the draft blast bar (px from bottom of 1080 canvas) */
-const CINEMATIC_OVERLAP_DRAFT_PX = 120;
-/** Max black veil opacity — keeps draft/UI readable under spotlight */
-const DIM_VEIL_MAX = 0.4;
-
 const VEIL_EASE = [0.16, 1, 0.3, 1] as const;
 
 /**
- * Full-screen dim + centered hero cinematic (4s only). Stats use DraftPickStatsPanel without dim.
+ * Full-screen cinematic hero reveal — PGL/BLAST style.
+ * Dims the entire screen, shows the hero model large & centered with accent glow.
  */
 export function DraftPickRevealLayer({
   draft,
@@ -34,32 +30,31 @@ export function DraftPickRevealLayer({
   const isRadiant = introPick.side === "radiant" || introPick.side === "A";
   const accent = isRadiant ? teamColors.radiant : teamColors.dire;
 
-  const veilBackground = [
-    `radial-gradient(ellipse 42% 36% at 50% 46%, ${colorAlpha(accent, 0.42)} 0%, ${colorAlpha(accent, 0.12)} 42%, transparent 68%)`,
-    `radial-gradient(ellipse 52% 46% at 50% 46%, transparent 0%, transparent 32%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 100%)`,
-    `radial-gradient(ellipse 120% 100% at 50% 48%, rgb(0 0 0 / 0.12) 0%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 78%)`,
-    `radial-gradient(ellipse 80% 40% at 50% 100%, rgb(0 0 0 / 0.28) 0%, rgb(0 0 0 / ${DIM_VEIL_MAX}) 100%)`,
-  ].join(", ");
-
   return (
     <motion.div
-      className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center"
-      style={{ bottom: -CINEMATIC_OVERLAP_DRAFT_PX }}
+      className="pointer-events-none absolute inset-0 z-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4, ease: VEIL_EASE }}
     >
+      {/* Full-screen dim veil with team-colored accent */}
       <motion.div
         className="absolute inset-0"
-        initial={{ opacity: 0, scale: 1.04 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0, scale: 1.02 }}
         transition={{ duration: 0.55, ease: VEIL_EASE }}
-        style={{ background: veilBackground }}
+        style={{
+          background: [
+            `radial-gradient(ellipse 60% 50% at 50% 50%, ${colorAlpha(accent, 0.15)} 0%, transparent 70%)`,
+            `linear-gradient(180deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.88) 40%, rgb(0 0 0 / 0.92) 100%)`,
+          ].join(", "),
+        }}
       />
 
-      <div className="relative z-[1] flex items-center justify-center px-8">
+      {/* Hero cinematic content */}
+      <div className="relative z-[1] h-full w-full">
         <AnimatePresence mode="wait">
           <DraftHeroIntro
             key={`intro-${introPick.side}-${introPick.heroId}`}

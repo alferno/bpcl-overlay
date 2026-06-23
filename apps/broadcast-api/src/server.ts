@@ -6,6 +6,8 @@ import type { Express } from "express";
 import express from "express";
 import helmet from "helmet";
 import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Server } from "socket.io";
 import { env, parseCorsOrigins } from "./env.js";
 import { logger } from "./logger.js";
@@ -49,7 +51,7 @@ export async function createBroadcastServer(deps: {
 
   const app = express();
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: false }));
   app.disable("x-powered-by");
   app.use(
     cors({
@@ -62,6 +64,22 @@ export async function createBroadcastServer(deps: {
   );
 
   app.use(express.json({ limit: "1mb" }));
+
+  // Serve static frontends dynamically based on current script location
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const overlayPath = path.join(__dirname, "../../overlay-web/dist");
+  const adminPath = path.join(__dirname, "../../admin-web/dist");
+  
+  app.use("/overlay", express.static(overlayPath));
+  app.use("/admin", express.static(adminPath));
+  
+  // Fallback for React Router in admin
+  app.get("/admin/*", (req, res) => {
+    res.sendFile(path.join(adminPath, "index.html"));
+  });
+  app.get("/overlay/*", (req, res) => {
+    res.sendFile(path.join(overlayPath, "index.html"));
+  });
 
   const httpServer = http.createServer(app);
 
@@ -107,6 +125,7 @@ export async function createBroadcastServer(deps: {
     state,
     broadcast: broadcastFns,
     opendota,
+    io,
   });
 
   attachGsiHeartbeat(state, broadcastFns, io);
