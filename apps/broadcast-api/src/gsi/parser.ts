@@ -380,28 +380,54 @@ function heroIdFromGsiPlayerEntry(val: unknown): number | null {
 function collectGsiPlayerHeroByOrder(
   payload: GsiPayload,
   side: "radiant" | "dire",
-): Map<number, number> {
-  const byPickOrder = new Map<number, number>();
+): Map<number, { heroId: number; steam32?: number }> {
+  const byPickOrder = new Map<number, { heroId: number; steam32?: number }>();
   const playerRoot = asRecord(payload.player);
   const heroRoot = asRecord(payload.hero);
-  const teamBlocks = [
-    side === "radiant"
-      ? (asRecord(heroRoot?.team2) ?? asRecord(heroRoot?.radiant))
-      : (asRecord(heroRoot?.team3) ?? asRecord(heroRoot?.dire)),
-    side === "radiant"
-      ? (asRecord(playerRoot?.team2) ?? asRecord(playerRoot?.radiant))
-      : (asRecord(playerRoot?.team3) ?? asRecord(playerRoot?.dire)),
-  ];
+  const teamHeroData = side === "radiant"
+    ? (asRecord(heroRoot?.team2) ?? asRecord(heroRoot?.radiant))
+    : (asRecord(heroRoot?.team3) ?? asRecord(heroRoot?.dire));
+  const teamPlayerData = side === "radiant"
+    ? (asRecord(playerRoot?.team2) ?? asRecord(playerRoot?.radiant))
+    : (asRecord(playerRoot?.team3) ?? asRecord(playerRoot?.dire));
 
-  for (const teamData of teamBlocks) {
-    if (!teamData) continue;
-    for (const [key, val] of Object.entries(teamData)) {
+  if (teamHeroData) {
+    for (const [key, val] of Object.entries(teamHeroData)) {
       const m = /^player(\d+)$/i.exec(key);
       if (!m) continue;
       const pickOrder = Number(m[1]);
       const heroId = heroIdFromGsiPlayerEntry(val);
       if (heroId && heroId > 0 && Number.isFinite(pickOrder)) {
-        byPickOrder.set(pickOrder, heroId);
+        let steam32: number | undefined;
+        if (teamPlayerData) {
+          const pData = asRecord(teamPlayerData[key]);
+          if (pData?.accountid) {
+            const num = parseInt(String(pData.accountid), 10);
+            if (Number.isFinite(num) && num > 0) steam32 = num;
+          }
+        }
+        byPickOrder.set(pickOrder, { heroId, steam32 });
+      }
+    }
+  }
+
+  if (teamPlayerData) {
+    for (const [key, val] of Object.entries(teamPlayerData)) {
+      const m = /^player(\d+)$/i.exec(key);
+      if (!m) continue;
+      const pickOrder = Number(m[1]);
+      const existing = byPickOrder.get(pickOrder);
+      if (existing?.heroId) continue;
+
+      const heroId = heroIdFromGsiPlayerEntry(val);
+      if (heroId && heroId > 0 && Number.isFinite(pickOrder)) {
+        const pData = asRecord(val);
+        let steam32: number | undefined;
+        if (pData?.accountid) {
+          const num = parseInt(String(pData.accountid), 10);
+          if (Number.isFinite(num) && num > 0) steam32 = num;
+        }
+        byPickOrder.set(pickOrder, { heroId, steam32 });
       }
     }
   }
@@ -419,20 +445,21 @@ function applyPlayerHeroLocks(
 
   return slots.map((slot) => {
     if (slot.type !== "pick") return slot;
-    const heroId = byPickOrder.get(slot.order);
-    if (!heroId || heroId <= 0) return slot;
+    const heroInfo = byPickOrder.get(slot.order);
+    if (!heroInfo || !heroInfo.heroId || heroInfo.heroId <= 0) return slot;
 
     const media = mediaForHero(
-      heroId,
+      heroInfo.heroId,
       undefined,
-      displayNameForHero(heroId, undefined),
+      displayNameForHero(heroInfo.heroId, undefined),
       `${side}-player${slot.order}`,
     );
 
     return {
       ...slot,
-      heroId,
-      heroName: displayNameForHero(heroId, undefined),
+      heroId: heroInfo.heroId,
+      steam32: heroInfo.steam32,
+      heroName: displayNameForHero(heroInfo.heroId, undefined),
       heroPortraitSlug: media.slug,
       heroPortraitUrl: media.staticUrl,
       heroPortraitAnimatedUrl: media.animatedUrl,
@@ -718,6 +745,7 @@ export function parseGsiToDraft(
   const draftPatch: Partial<DraftState> = {
     source: "gsi",
     phase,
+    gameState,
     reserveSeconds: Math.max(0, Math.round(reserveSeconds)),
     activeTeam: phase === "starting" ? null : activeTeam,
     turnAction: phase === "starting" ? undefined : turnAction,
@@ -750,11 +778,13 @@ export function parseGsiToDraft(
       name: radiantSide.name,
       logoUrl: radiantSide.logoUrl,
       slots: radiantSlots,
+      bonusTime: Math.max(0, Math.round(gsiNumber(draftRec.radiant_bonus_time) || gsiNumber(asRecord(draftRec.team2)?.bonus_time) || 0)),
     },
     dire: {
       name: direSide.name,
       logoUrl: direSide.logoUrl,
       slots: direSlots,
+      bonusTime: Math.max(0, Math.round(gsiNumber(draftRec.dire_bonus_time) || gsiNumber(asRecord(draftRec.team3)?.bonus_time) || 0)),
     },
     picksBansOrder,
     lastPick,

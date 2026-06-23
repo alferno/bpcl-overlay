@@ -21,6 +21,8 @@ export const OVERLAY_ROUTES = [
   "startingsoon",
   "postgame",
   "sponsors",
+  "versus",
+  "replay",
   "global_kill_switch",
 ] as const;
 
@@ -97,12 +99,15 @@ export const matchSetupSchema = z.object({
   stageLabel: z.string().optional(),
   /** Manual steam32 assignment per CM pick slot (0–4), set in admin */
   pickPlayers: pickPlayersSchema.optional(),
+  /** Custom text per player (steam32) displayed during draft */
+  playerMemes: z.record(z.string(), z.string()).optional(),
 });
 
 export type MatchSetup = z.infer<typeof matchSetupSchema>;
 
 export const leagueConfigSchema = z.object({
   leagueId: z.number().nullable(),
+  seasonSlug: z.string().optional(),
   roster: z.array(rosterPlayerSchema).default([]),
   matchSetup: matchSetupSchema.nullable().optional(),
   /** Brand colors keyed by CSV `teamKey` (hex, e.g. `#1e4d8c`) */
@@ -228,6 +233,7 @@ export const draftTeamSideSchema = z.object({
   /** Team brand color (hex) for overlay highlights */
   color: z.string().optional(),
   slots: z.array(draftSlotSchema).optional(),
+  bonusTime: z.number().optional(),
 });
 
 export const lastPickSchema = z.object({
@@ -244,6 +250,7 @@ export const draftStateSchema = z.object({
   series: teamSeriesSchema,
   side: z.enum(["radiant_first_pick", "dire_first_pick"]),
   phase: z.enum(["starting", "bans", "picks", "done", "paused"]),
+  gameState: z.string().optional(),
   reserveSeconds: z.number().nonnegative(),
   picksBansOrder: z.array(draftPickSlotSchema).optional(),
   source: z.enum(["manual", "gsi"]).optional(),
@@ -267,7 +274,27 @@ export const lowerThirdStateSchema = z.object({
 
 export type LowerThirdState = z.infer<typeof lowerThirdStateSchema>;
 
+export const replaySchema = z.object({
+  match: z.number(),
+  replayId: z.number(),
+  file: z.string(),
+  favorite: z.boolean(),
+  duration: z.number(),
+  filename: z.string(),
+});
+
+export type Replay = z.infer<typeof replaySchema>;
+
+export const replayStateSchema = z.object({
+  currentMatch: z.number(),
+  lastCompletedMatch: z.number(),
+  replays: z.array(replaySchema),
+});
+
+export type ReplayState = z.infer<typeof replayStateSchema>;
+
 export const playerStatsCardSchema = z.object({
+  steam32: z.number().optional(),
   playerLabel: z.string(),
   heroId: z.number().optional(),
   heroName: z.string().optional(),
@@ -309,6 +336,7 @@ export type HeroStatsCardKind = z.infer<typeof heroStatsCardKindSchema>;
 export const heroStatsCardSchema = z.object({
   /** Drives overlay layout; set when composing league stats cards */
   statsCardKind: heroStatsCardKindSchema.optional(),
+  steam32: z.number().optional(),
   playerLabel: z.string(),
   heroId: z.number(),
   heroName: z.string().optional(),
