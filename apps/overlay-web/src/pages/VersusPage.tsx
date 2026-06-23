@@ -6,7 +6,15 @@ import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { useRouteVisible } from "../hooks/useRouteVisible";
 import { colorAlpha } from "../draft/team-colors";
+import { resolveSlotFlatPortraitUrl, resolveSlotSlug } from "../hero-portrait";
 
+function formatHeroName(slug: string | undefined): string {
+  if (!slug) return "";
+  return slug
+    .split("_")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 function FallbackPlayerAvatar({
   player,
   color,
@@ -117,8 +125,8 @@ function PlayerCard({
           className="absolute inset-0 overflow-hidden rounded-xl bg-slate-900"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", boxShadow: `0 10px 40px -10px ${colorAlpha(color, 0.4)}` }}
         >
-          {heroInfo?.heroPortraitUrl && (
-            <img src={heroInfo.heroPortraitUrl} alt="Hero" className="h-full w-full object-cover object-top" />
+          {heroInfo && resolveSlotFlatPortraitUrl(heroInfo) && (
+            <img src={resolveSlotFlatPortraitUrl(heroInfo)} alt="Hero" className="h-full w-full object-cover object-top" />
           )}
           <div
             className="pointer-events-none absolute inset-0 opacity-20 mix-blend-overlay"
@@ -132,7 +140,7 @@ function PlayerCard({
               {player.displayName}
             </span>
             <span className="mt-1 font-mono text-[11px] font-bold uppercase tracking-widest text-slate-300">
-              {heroInfo?.heroName || `Position ${pos}`}
+              {heroInfo?.heroName || formatHeroName(heroInfo ? resolveSlotSlug(heroInfo) : undefined) || `Position ${pos}`}
             </span>
           </div>
         </div>
