@@ -2,10 +2,44 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ngrok from '@ngrok/ngrok'
-import { bootstrapBroadcastServer } from 'broadcast-api/src/index.js'
+import { createHash } from 'node:crypto'
+import os from 'node:os'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 process.env.APP_ROOT = path.join(__dirname, '..')
+
+// ── Inject API env defaults BEFORE broadcast-api/env.ts is imported ──────────
+// These are safe defaults. The user can override them via the UI later.
+// BROADCAST_SECRET is auto-generated per-install if not set.
+if (!process.env.BROADCAST_SECRET) {
+  // Generate a stable secret seeded from machine data so it survives restarts
+  process.env.BROADCAST_SECRET = createHash('sha256')
+    .update(os.hostname() + os.userInfo().username)
+    .digest('hex')
+    .slice(0, 32)
+}
+if (!process.env.LEAGUE_ID)           process.env.LEAGUE_ID           = '19721'
+if (!process.env.NODE_ENV)            process.env.NODE_ENV            = 'production'
+if (!process.env.PORT)                process.env.PORT                = '8080'
+if (!process.env.STATE_BACKEND)       process.env.STATE_BACKEND       = 'memory'
+if (!process.env.CORS_ORIGINS)        process.env.CORS_ORIGINS        = '*'
+if (!process.env.STEAM_WEB_API_KEY)   process.env.STEAM_WEB_API_KEY   = 'E5DE5CF0D74F982E7FCB0AC3DE13393F'
+if (!process.env.LEAGUE_AUTO_AGGREGATE) process.env.LEAGUE_AUTO_AGGREGATE = 'false'
+
+// Replay paths — default to streamer's Videos folder
+const homeDir = os.homedir()
+const bpclBase = path.join(homeDir, 'Videos', 'BPCL S2 Broadcast')
+if (!process.env.REPLAY_DB_FILE)              process.env.REPLAY_DB_FILE              = path.join(bpclBase, 'System', 'replay_db.csv')
+if (!process.env.REPLAY_MATCH_FILE)           process.env.REPLAY_MATCH_FILE           = path.join(bpclBase, 'System', 'active_match.txt')
+if (!process.env.REPLAY_LAST_COMPLETED_FILE)  process.env.REPLAY_LAST_COMPLETED_FILE  = path.join(bpclBase, 'System', 'last_completed_match.txt')
+if (!process.env.REPLAY_PLAYBACK_DIR)         process.env.REPLAY_PLAYBACK_DIR         = path.join(bpclBase, 'Playback')
+if (!process.env.REPLAY_FOLDER)               process.env.REPLAY_FOLDER               = path.join(bpclBase, 'Replays')
+// ─────────────────────────────────────────────────────────────────────────────
+
+// bootstrapBroadcastServer is imported dynamically inside app.whenReady()
+// to guarantee env vars above are set before broadcast-api/env.ts parses them.
+type BootstrapFn = typeof import('broadcast-api/src/index.js')['bootstrapBroadcastServer']
+let bootstrapBroadcastServer: BootstrapFn
 
 // Prevent the API from exiting the process on error
 process.env.BPC_NO_EXIT = "1"
@@ -46,6 +80,14 @@ let apiInstances: { obs: any; opendota: any; state: any; shutdown: any } | null 
 
 app.whenReady().then(async () => {
   createWindow()
+
+  // Dynamically import the API — env vars above must be set first
+  try {
+    const mod = await import('broadcast-api/src/index.js')
+    bootstrapBroadcastServer = mod.bootstrapBroadcastServer
+  } catch (err) {
+    win?.webContents.send('log', 'Failed to load API module: ' + err)
+  }
 
   // Start the Broadcast API locally
   try {
