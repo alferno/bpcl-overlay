@@ -26,18 +26,20 @@ export type BroadcastServerContext = {
   };
 };
 
-function authorizeSocket(kind: "producer" | "overlay", handshake: unknown): boolean {
-  const h = handshake as {
-    auth?: { token?: string };
-    query?: { token?: string };
-  };
+function authorizeSocket(kind: "producer" | "overlay", socket: any): boolean {
+  const h = socket.handshake;
 
   let token = "";
   if (typeof h.auth?.token === "string") token = h.auth.token;
   else if (typeof h.query?.token === "string") token = h.query.token;
 
   if (!token) {
-    return kind === "overlay" && env.NODE_ENV === "development";
+    if (kind === "overlay") {
+      // Allow all overlay connections without a token.
+      // Overlays are read-only and contain no sensitive admin secrets.
+      return true;
+    }
+    return false;
   }
   return token === env.BROADCAST_SECRET;
 }
@@ -51,7 +53,7 @@ export async function createBroadcastServer(deps: {
 
   const app = express();
 
-  app.use(helmet({ crossOriginResourcePolicy: false }));
+  app.use(helmet({ crossOriginResourcePolicy: false, contentSecurityPolicy: false }));
   app.disable("x-powered-by");
   app.use(
     cors({
@@ -74,11 +76,29 @@ export async function createBroadcastServer(deps: {
   app.use("/admin", express.static(adminPath));
   
   // Fallback for React Router in admin
+  app.get("/admin", (req, res) => {
+    const file = path.join(adminPath, "index.html");
+    res.sendFile(file, (err) => {
+      if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
+    });
+  });
   app.get("/admin/*", (req, res) => {
-    res.sendFile(path.join(adminPath, "index.html"));
+    const file = path.join(adminPath, "index.html");
+    res.sendFile(file, (err) => {
+      if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
+    });
+  });
+  app.get("/overlay", (req, res) => {
+    const file = path.join(overlayPath, "index.html");
+    res.sendFile(file, (err) => {
+      if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
+    });
   });
   app.get("/overlay/*", (req, res) => {
-    res.sendFile(path.join(overlayPath, "index.html"));
+    const file = path.join(overlayPath, "index.html");
+    res.sendFile(file, (err) => {
+      if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
+    });
   });
 
   const httpServer = http.createServer(app);
@@ -134,12 +154,12 @@ export async function createBroadcastServer(deps: {
   const overlayNs = io.of(NAMESPACES.OVERLAY);
 
   producerNs.use((socket, next) => {
-    const ok = authorizeSocket("producer", socket.handshake);
+    const ok = authorizeSocket("producer", socket);
     next(ok ? undefined : new Error("unauthorized producer"));
   });
 
   overlayNs.use((socket, next) => {
-    const ok = authorizeSocket("overlay", socket.handshake);
+    const ok = authorizeSocket("overlay", socket);
     next(ok ? undefined : new Error("unauthorized overlay"));
   });
 

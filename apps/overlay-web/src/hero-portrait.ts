@@ -57,7 +57,7 @@ function applyBundledHeroIndex(data: BundledHeroIndexFile): void {
 
 async function loadBundledHeroIndex(): Promise<void> {
   try {
-    const res = await fetch("/heroes/hero-index.json");
+    const res = await fetch(`${import.meta.env.BASE_URL}heroes/hero-index.json`);
     if (!res.ok) return;
     applyBundledHeroIndex((await res.json()) as BundledHeroIndexFile);
   } catch {

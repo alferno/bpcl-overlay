@@ -12,23 +12,29 @@ declare global {
 export default function App() {
   const [logs, setLogs] = useState<string[]>([])
   const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
+  const [broadcastSecret, setBroadcastSecret] = useState<string | null>(null)
 
   useEffect(() => {
-    const unsubLog = window.ipcRenderer.on('log', (_, msg) => {
+    const unsubLog = window.ipcRenderer?.on('log', (_, msg) => {
       setLogs((prev) => [...prev, msg])
     })
-    const unsubNgrok = window.ipcRenderer.on('ngrok-url', (_, url) => {
+    const unsubNgrok = window.ipcRenderer?.on('ngrok-url', (_, url) => {
       setTunnelUrl(url)
     })
 
-    // Fetch initial URL if it already started
-    window.ipcRenderer.invoke('get-tunnel-url').then((url) => {
-      if (url) setTunnelUrl(url)
-    })
+    // Fetch initial URL and secret if it already started
+    if (window.ipcRenderer) {
+      window.ipcRenderer.invoke('get-tunnel-url').then((url) => {
+        if (url) setTunnelUrl(url)
+      })
+      window.ipcRenderer.invoke('get-broadcast-secret').then((secret) => {
+        if (secret) setBroadcastSecret(secret)
+      })
+    }
 
     return () => {
-      unsubLog()
-      unsubNgrok()
+      unsubLog?.()
+      unsubNgrok?.()
     }
   }, [])
 
@@ -36,9 +42,43 @@ export default function App() {
   const [obsPassword, setObsPassword] = useState('')
 
   const handleObsConnect = async () => {
+    if (!window.ipcRenderer) {
+      alert('IPC not available (Preload failed)')
+      return
+    }
     const res = await window.ipcRenderer.invoke('obs-connect', '127.0.0.1', Number(obsPort), obsPassword)
     if (res.ok) alert('Connected to OBS successfully!')
     else alert('Failed to connect: ' + res.error)
+  }
+
+  const handleCopyLink = async () => {
+    if (!tunnelUrl) return
+    try {
+      if (window.ipcRenderer) {
+        await window.ipcRenderer.invoke('copy-to-clipboard', tunnelUrl + '/admin')
+      } else {
+        await navigator.clipboard.writeText(tunnelUrl + '/admin')
+      }
+      alert('Link copied to clipboard!')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to copy link')
+    }
+  }
+
+  const handleCopySecret = async () => {
+    if (!broadcastSecret) return
+    try {
+      if (window.ipcRenderer) {
+        await window.ipcRenderer.invoke('copy-to-clipboard', broadcastSecret)
+      } else {
+        await navigator.clipboard.writeText(broadcastSecret)
+      }
+      alert('Secret copied to clipboard!')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to copy secret')
+    }
   }
 
   return (
@@ -67,21 +107,38 @@ export default function App() {
       </div>
 
       <div style={{ marginTop: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h2>Remote Control URL</h2>
+        <h2>Remote Control URL & Secret</h2>
         {tunnelUrl ? (
           <div>
             <p>Send this link to your admin:</p>
-            <input 
-              readOnly 
-              value={tunnelUrl} 
-              style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }} 
-            />
-            <button 
-              onClick={() => navigator.clipboard.writeText(tunnelUrl)}
-              style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-            >
-              Copy Link
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+              <input 
+                readOnly 
+                value={tunnelUrl + "/admin"} 
+                style={{ flex: 1, padding: '0.5rem' }} 
+              />
+              <button 
+                onClick={handleCopyLink}
+                style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
+              >
+                Copy Link
+              </button>
+            </div>
+            
+            <p>Admin Login Secret:</p>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+              <input 
+                readOnly 
+                value={broadcastSecret || 'Loading...'} 
+                style={{ flex: 1, padding: '0.5rem', fontFamily: 'monospace', color: '#ff4444' }} 
+              />
+              <button 
+                onClick={handleCopySecret}
+                style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
+              >
+                Copy Secret
+              </button>
+            </div>
           </div>
         ) : (
           <p>Starting tunnel...</p>

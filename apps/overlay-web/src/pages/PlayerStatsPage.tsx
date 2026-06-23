@@ -9,6 +9,7 @@ import {
 import { StatsOverlayRegion } from "../components/StatsOverlayRegion";
 import { PLAYER_STATS_SHELL_CLASS } from "../overlay-layout";
 import { useRouteVisible } from "../hooks/useRouteVisible";
+import { withBaseUrl } from "../asset-paths";
 
 export default function PlayerStatsPage() {
   const { state } = useOverlayState();
@@ -35,7 +36,7 @@ export default function PlayerStatsPage() {
           {card ? (
             card.steam32 && !imageError ? (
               <img
-                src={`/cards/${card.steam32}.png`}
+                src={withBaseUrl(`/cards/${card.steam32}.png`)}
                 alt=""
                 className="max-h-[800px] object-contain shadow-2xl"
                 onError={() => setImageError(true)}

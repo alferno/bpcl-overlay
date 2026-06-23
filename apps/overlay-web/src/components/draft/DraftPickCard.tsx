@@ -3,11 +3,13 @@ import type {
   DraftSlot,
   LeagueConfig,
   ProductionSettings,
+  DraftState,
 } from "@bpc/shared-types";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 import { DraftHeroMedia } from "./DraftHeroMedia";
+import { DraftHistoryTags } from "./DraftHistoryTags";
 import { DraftPickCardLabel } from "./DraftPickCardLabel";
 import {
   heroCardInnerGlow,
@@ -81,6 +83,7 @@ export function DraftPickCard({
   leagueConfig,
   production,
   teamSide,
+  previousDrafts,
 }: {
   slot: DraftSlot | null;
   teamLogoUrl?: string;
@@ -94,6 +97,7 @@ export function DraftPickCard({
   leagueConfig?: LeagueConfig;
   production?: ProductionSettings | null;
   teamSide: "radiant" | "dire";
+  previousDrafts?: DraftState[];
 }) {
   const media = slot ? resolveSlotMedia(slot) : {};
   const hasPick = Boolean(
@@ -158,6 +162,7 @@ export function DraftPickCard({
       {showHeroVisual && slot && (media.static || media.animated) ? (
         <>
           <div className="pointer-events-none absolute inset-0 bg-black" />
+          <DraftHistoryTags currentSlot={slot} currentTeamSide={teamSide} previousDrafts={previousDrafts} />
           <div
             className="pointer-events-none absolute inset-0 z-[1] mix-blend-soft-light opacity-[0.42]"
             style={{ background: heroCardInnerGlow(accent, active) }}

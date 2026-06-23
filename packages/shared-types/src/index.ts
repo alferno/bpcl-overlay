@@ -101,6 +101,7 @@ export const matchSetupSchema = z.object({
   pickPlayers: pickPlayersSchema.optional(),
   /** Custom text per player (steam32) displayed during draft */
   playerMemes: z.record(z.string(), z.string()).optional(),
+  previousDrafts: z.array(z.lazy(() => draftStateSchema)).optional(),
 });
 
 export type MatchSetup = z.infer<typeof matchSetupSchema>;

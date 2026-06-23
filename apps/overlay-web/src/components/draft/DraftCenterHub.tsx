@@ -4,6 +4,7 @@ import { formatDraftSeconds, resolveTurnAction } from "../../draft/slot-utils";
 import { useDraftCountdown } from "../../draft/useDraftCountdown";
 import { colorAlpha } from "../../draft/team-colors";
 import { resolveSeriesMeta } from "../../draft/broadcast-theme";
+import { withBaseUrl } from "../../asset-paths";
 
 export function DraftCenterHub({
   draft,
@@ -20,8 +21,8 @@ export function DraftCenterHub({
   const reserveDisplayRadiant = Math.max(0, Math.floor(draft.radiant?.bonusTime ?? draft.reserveSeconds ?? 0));
   const reserveDisplayDire = Math.max(0, Math.floor(draft.dire?.bonusTime ?? draft.reserveSeconds ?? 0));
 
-  const logoA = draft.radiant?.logoUrl ?? draft.series.logoUrlA;
-  const logoB = draft.dire?.logoUrl ?? draft.series.logoUrlB;
+  const logoA = withBaseUrl(draft.radiant?.logoUrl ?? draft.series.logoUrlA);
+  const logoB = withBaseUrl(draft.dire?.logoUrl ?? draft.series.logoUrlB);
   const { bestOf, game } = resolveSeriesMeta(draft, leagueConfig);
   const boLabel = bestOf === 1 ? "BO1" : bestOf === 5 ? "BO5" : "BO3";
   const stage = leagueConfig?.matchSetup?.stageLabel ?? "";

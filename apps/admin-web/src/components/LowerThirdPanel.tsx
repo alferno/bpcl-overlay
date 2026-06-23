@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { OverlayEnvelope } from "@bpc/shared-types";
 import { Btn, apiFetch } from "./Common";
 
@@ -49,12 +49,15 @@ export function LowerThirdPanel({
   const isLtVisible = state?.overlayVisibility?.lowerthird === "visible" || 
     (typeof state?.overlayVisibility?.lowerthird === "object" && state.overlayVisibility.lowerthird?.mode === "timed");
 
+  const hasInitialized = useRef(false);
+
   // Load current overlay state on sync
   useEffect(() => {
-    if (currentLt) {
+    if (currentLt && !hasInitialized.current) {
       if (currentLt.headline) setHeadline(currentLt.headline);
       if (currentLt.subtitle) setSubtitle(currentLt.subtitle);
       if (currentLt.accent) setAccent(currentLt.accent);
+      hasInitialized.current = true;
     }
   }, [currentLt]);
 

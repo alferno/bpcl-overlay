@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
+import { withBaseUrl } from "../asset-paths";
 import { routeVisible } from "../visibility";
 
 export default function SponsorsPage() {
@@ -18,7 +19,7 @@ export default function SponsorsPage() {
         {visible && current ? (
           <motion.div
             key={idx}
-            className="absolute inset-0 flex items-center justify-center bg-neutral-950/70 backdrop-blur-2xl"
+            className="absolute inset-0 flex items-center justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -26,7 +27,7 @@ export default function SponsorsPage() {
             <div className="flex flex-col gap-16 text-center drop-shadow-xl">
               {current.imageUrl ? (
                 <img
-                  src={current.imageUrl}
+                  src={withBaseUrl(current.imageUrl)}
                   alt={current.title}
                   className="mx-auto max-h-[420px] object-contain"
                 />

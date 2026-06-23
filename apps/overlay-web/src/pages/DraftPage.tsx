@@ -42,7 +42,7 @@ export default function DraftPage() {
           {/* Top Half Trophy Background */}
           <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[65%] w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/40 via-emerald-900/10 to-transparent mix-blend-screen" />
-            <img src="/emerald-trophy.png" alt="BPCL Trophy" className="h-full w-full object-cover opacity-100" style={{ objectPosition: 'center 20%' }} />
+            <img src={`${import.meta.env.BASE_URL}emerald-trophy.png`} alt="BPCL Trophy" className="h-full w-full object-cover opacity-100" style={{ objectPosition: 'center 20%' }} />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
           </div>
 

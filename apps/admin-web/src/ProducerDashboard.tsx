@@ -26,9 +26,10 @@ import { GsiDraftControls } from "./components/GsiDraftControls";
 import { LowerThirdPanel } from "./components/LowerThirdPanel";
 import { ReplayManagerPanel } from "./components/ReplayManagerPanel";
 import { CasterDeckPanel } from "./components/CasterDeckPanel";
+import { VersusTestPanel } from "./components/VersusTestPanel";
 import { ErrBox } from "./components/Common";
 
-type TabId = "dashboard" | "match_obs" | "stats" | "roster" | "lower_thirds" | "replays";
+type TabId = "dashboard" | "match_obs" | "stats" | "roster" | "lower_thirds" | "replays" | "testing";
 
 export function ProducerDashboard() {
   const persisted = loadConnection();
@@ -291,6 +292,12 @@ export function ProducerDashboard() {
                   token={token}
                 />
               )}
+
+              {activeTab === "testing" && (
+                <div className="grid gap-6 items-start">
+                  <VersusTestPanel state={state} patch={patch} />
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -361,6 +368,15 @@ function Sidebar({
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      id: "testing" as TabId,
+      label: "Testing Area",
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
         </svg>
       ),
     },

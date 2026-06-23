@@ -21,7 +21,7 @@ export async function loadHeroPortraitManifest(): Promise<ReadonlySet<string>> {
     if (portraitManifestLoaded) return localPortraitSlugs;
     portraitManifestLoaded = true;
     try {
-      const res = await fetch("/heroes/portraits/manifest.json");
+      const res = await fetch(`${import.meta.env.BASE_URL}heroes/portraits/manifest.json`);
       if (!res.ok) return localPortraitSlugs;
       const data = (await res.json()) as {
         slugs?: string[];
@@ -47,5 +47,8 @@ export function resolveOverlayHeroPortraitUrl(slug: string): string | undefined 
   if (!clean) return undefined;
   const manifest = localPortraitSlugs;
   if (manifest.size > 0 && !manifest.has(clean)) return undefined;
-  return resolveHeroPortraitUrl(clean, manifest, canonicalToFileSlug);
+  const rawUrl = resolveHeroPortraitUrl(clean, manifest, canonicalToFileSlug);
+  return rawUrl.startsWith("/")
+    ? `${import.meta.env.BASE_URL}${rawUrl.slice(1)}`
+    : `${import.meta.env.BASE_URL}${rawUrl}`;
 }

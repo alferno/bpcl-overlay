@@ -1,4 +1,5 @@
 import type { DraftState, LeagueConfig } from "@bpc/shared-types";
+import { withBaseUrl } from "../../asset-paths";
 
 import { formatSeriesLabel } from "../../draft/broadcast-theme";
 import { colorAlpha } from "../../draft/team-colors";
@@ -7,8 +8,8 @@ export function draftTeamSides(draft: DraftState) {
   return {
     radiantName: draft.radiant?.name ?? draft.series.teamA ?? "Radiant",
     direName: draft.dire?.name ?? draft.series.teamB ?? "Dire",
-    radiantLogo: draft.radiant?.logoUrl ?? draft.series.logoUrlA,
-    direLogo: draft.dire?.logoUrl ?? draft.series.logoUrlB,
+    radiantLogo: withBaseUrl(draft.radiant?.logoUrl ?? draft.series.logoUrlA),
+    direLogo: withBaseUrl(draft.dire?.logoUrl ?? draft.series.logoUrlB),
     scoreLabel:
       draft.series.scoreA > 0 || draft.series.scoreB > 0
         ? `${draft.series.scoreA} – ${draft.series.scoreB}`

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { RosterPlayer } from "@bpc/shared-types";
+import { withBaseUrl } from "../asset-paths";
 import { motion } from "framer-motion";
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
@@ -71,7 +72,7 @@ function PlayerCard({
   flipToHero: boolean;
   heroInfo?: any;
 }) {
-  const cardUrl = `/cards/${player.steam32}.png`;
+  const cardUrl = withBaseUrl(`/cards/${player.steam32}.png`)!;
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => setImageError(false), [player.steam32]);
@@ -192,8 +193,8 @@ export default function VersusPage() {
     teamKey: direKey,
   });
 
-  const radiantLogoPath = `/teams/${radiantKey}.png`;
-  const direLogoPath = `/teams/${direKey}.png`;
+  const radiantLogoPath = `${import.meta.env.BASE_URL}teams/${radiantKey}.png`;
+  const direLogoPath = `${import.meta.env.BASE_URL}teams/${direKey}.png`;
 
   // Determine if strategy time has started
   const radiantPicks = state?.draft?.radiant?.slots?.filter((s) => s.type === "pick" && s.heroId) || [];

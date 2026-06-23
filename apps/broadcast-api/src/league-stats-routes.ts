@@ -85,10 +85,18 @@ export function attachLeagueAndStatsRoutes(opts: {
     });
   });
 
-  app.post("/api/league/config", requireBroadcastAuth, async (_req, res) => {
-    res.status(400).json({
-      error: `League ID is set via LEAGUE_ID env (${env.LEAGUE_ID}). Update .env and restart the API.`,
+  app.post("/api/league/config", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ leagueId: z.number() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    const snap = await state.getState();
+    const next = await state.patchState({
+      leagueConfig: { ...snap.leagueConfig, leagueId: parsed.data.leagueId },
     });
+    await broadcast.broadcastFull(next);
+    res.json({ ok: true, leagueConfig: next.leagueConfig });
   });
 
   app.post("/api/league/aggregate", requireBroadcastAuth, async (_req, res) => {
@@ -108,29 +116,30 @@ export function attachLeagueAndStatsRoutes(opts: {
     }
 
     void runLeagueAggregation({
-      leagueId: env.LEAGUE_ID,
+      leagueId: snap.leagueConfig?.leagueId ?? env.LEAGUE_ID,
       state,
       opendota,
       broadcast,
     });
 
-    res.json({ ok: true, started: true, leagueId: env.LEAGUE_ID });
+    res.json({ ok: true, started: true, leagueId: snap.leagueConfig?.leagueId ?? env.LEAGUE_ID });
   });
 
   app.post(
     "/api/league/stats/reload-csv",
     requireBroadcastAuth,
     async (_req, res) => {
+      const snapConfigId = (await state.getState()).leagueConfig?.leagueId;
       const ok = await loadLeagueStatsFromCsvFile({
-        leagueId: env.LEAGUE_ID,
+        leagueId: snapConfigId ?? env.LEAGUE_ID,
         state,
         broadcast,
       });
       if (!ok) {
-        const csvInfo = await leagueStatsFileInfo(env.LEAGUE_ID);
+        const csvInfo = await leagueStatsFileInfo(snapConfigId ?? env.LEAGUE_ID);
         const payload = csvInfo.heroesExists
-          ? leagueStatsCsvLoadFailedPayload(env.LEAGUE_ID, csvInfo)
-          : { ...leagueStatsCsvMissingPayload(env.LEAGUE_ID), statsStorage: csvInfo };
+          ? leagueStatsCsvLoadFailedPayload(snapConfigId ?? env.LEAGUE_ID, csvInfo)
+          : { ...leagueStatsCsvMissingPayload(snapConfigId ?? env.LEAGUE_ID), statsStorage: csvInfo };
         return res.status(422).json(payload);
       }
       const snap = await state.getState();
@@ -200,8 +209,9 @@ export function attachLeagueAndStatsRoutes(opts: {
       const roster = await enrichRosterAvatars(rawRoster, opendota);
       const teamColors = teamColorsFromRoster(roster);
 
+      const snap = await state.getState();
       const next = await state.patchState({
-        leagueConfig: { roster, teamColors, leagueId: env.LEAGUE_ID, seasonSlug },
+        leagueConfig: { roster, teamColors, leagueId: snap.leagueConfig?.leagueId ?? env.LEAGUE_ID, seasonSlug },
       });
       await broadcast.broadcastFull(next);
 
@@ -243,7 +253,29 @@ export function attachLeagueAndStatsRoutes(opts: {
     }
 
     try {
-      const matchSetup = parsed.data;
+      const matchSetup = { ...parsed.data };
+      const currentMatchSetup = snap.leagueConfig?.matchSetup;
+      
+      // Carry over previousDrafts if not explicitly provided
+      if (!matchSetup.previousDrafts && currentMatchSetup?.previousDrafts) {
+        matchSetup.previousDrafts = [...currentMatchSetup.previousDrafts];
+      }
+
+      // If seriesGame increased, snapshot the current draft
+      if (
+        currentMatchSetup &&
+        matchSetup.seriesGame > currentMatchSetup.seriesGame &&
+        snap.draft
+      ) {
+        matchSetup.previousDrafts = matchSetup.previousDrafts ?? [];
+        matchSetup.previousDrafts.push(snap.draft);
+      }
+      
+      // If series reset to 1, clear previous drafts
+      if (matchSetup.seriesGame === 1) {
+        matchSetup.previousDrafts = [];
+      }
+
       const draftSeed = draftPatchFromMatchSetup(
         matchSetup,
         roster,
@@ -280,16 +312,17 @@ export function attachLeagueAndStatsRoutes(opts: {
         return res.status(400).json({ error: "upload roster first" });
       }
 
-      const csvInfo = await leagueStatsFileInfo(env.LEAGUE_ID);
+      const configId = snap.leagueConfig?.leagueId ?? env.LEAGUE_ID;
+      const csvInfo = await leagueStatsFileInfo(configId);
       const loaded = await loadLeagueStatsFromCsvFile({
-        leagueId: env.LEAGUE_ID,
+        leagueId: configId,
         state,
         broadcast,
       });
       if (!loaded) {
         const payload = csvInfo.heroesExists
-          ? leagueStatsCsvLoadFailedPayload(env.LEAGUE_ID, csvInfo)
-          : { ...leagueStatsCsvMissingPayload(env.LEAGUE_ID), statsStorage: csvInfo };
+          ? leagueStatsCsvLoadFailedPayload(configId, csvInfo)
+          : { ...leagueStatsCsvMissingPayload(configId), statsStorage: csvInfo };
         return res.status(422).json(payload);
       }
 
@@ -353,7 +386,8 @@ export function attachLeagueAndStatsRoutes(opts: {
         }));
       const total = summarizePlayerLeagueFromIndex(index, steam32);
 
-      const paths = await leagueStatsFileInfo(env.LEAGUE_ID);
+      const configId = snap.leagueConfig?.leagueId ?? env.LEAGUE_ID;
+      const paths = await leagueStatsFileInfo(configId);
       let csvLines: string[] = [];
       try {
         const csvText = await readFile(paths.playerHeroesPath, "utf8");
@@ -370,7 +404,7 @@ export function attachLeagueAndStatsRoutes(opts: {
 
       res.json({
         steam32,
-        leagueId: env.LEAGUE_ID,
+        leagueId: configId,
         gamesInIndex: total.games,
         winsInIndex: total.wins,
         heroRows,

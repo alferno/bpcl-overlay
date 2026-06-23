@@ -46,21 +46,18 @@ export async function fetchSteamAvatarUrl(
 export async function enrichRosterAvatars<
   T extends { steam32: number; avatarUrl?: string },
 >(roster: T[], client: OpenDotaClient): Promise<T[]> {
-  const out: T[] = [];
-  for (const player of roster) {
-    if (player.avatarUrl?.trim()) {
-      out.push(player);
-      continue;
-    }
-    try {
-      const url = await fetchSteamAvatarUrl(client, player.steam32);
-      out.push(url ? { ...player, avatarUrl: url } : player);
-    } catch (err) {
-      logger.warn({ err, steam32: player.steam32 }, "avatar fetch failed");
-      out.push(player);
-    }
-  }
-  return out;
+  return Promise.all(
+    roster.map(async (player) => {
+      if (player.avatarUrl?.trim()) return player;
+      try {
+        const url = await fetchSteamAvatarUrl(client, player.steam32);
+        return url ? { ...player, avatarUrl: url } : player;
+      } catch (err) {
+        logger.warn({ err, steam32: player.steam32 }, "avatar fetch failed");
+        return player;
+      }
+    })
+  );
 }
 
 export function clearAvatarCache(): void {

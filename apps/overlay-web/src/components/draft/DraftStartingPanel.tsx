@@ -6,6 +6,7 @@ import { neonPanelShadow } from "../../draft/neon-effects";
 import { formatDraftSeconds } from "../../draft/slot-utils";
 import { useDraftCountdown } from "../../draft/useDraftCountdown";
 import { colorAlpha, resolveDraftTeamColors } from "../../draft/team-colors";
+import { withBaseUrl } from "../../asset-paths";
 import { draftTeamSides } from "./DraftTeamFaceoff";
 import { DraftBroadcastShell } from "./DraftBroadcastShell";
 
@@ -27,6 +28,13 @@ export function DraftStartingPanel({
   const sides = draftTeamSides(draft);
   const seriesLabel = formatSeriesLabel(draft, leagueConfig);
 
+  const teamSides = {
+    radiantName: sides.radiantName,
+    radiantLogo: sides.radiantLogo,
+    direName: sides.direName,
+    direLogo: sides.direLogo,
+  };
+
   return (
     <DraftBroadcastShell
       teamColors={teamColors}
@@ -35,8 +43,8 @@ export function DraftStartingPanel({
     >
       <div className="relative flex min-w-0 w-full max-w-none items-stretch gap-2 font-body">
         <StartingTeamColumn
-          name={sides.radiantName}
-          logoUrl={sides.radiantLogo}
+          name={teamSides.radiantName}
+          logoUrl={teamSides.radiantLogo}
           teamColor={teamColors.radiant}
           align="start"
         />
@@ -61,8 +69,8 @@ export function DraftStartingPanel({
         </div>
 
         <StartingTeamColumn
-          name={sides.direName}
-          logoUrl={sides.direLogo}
+          name={teamSides.direName}
+          logoUrl={teamSides.direLogo}
           teamColor={teamColors.dire}
           align="end"
         />

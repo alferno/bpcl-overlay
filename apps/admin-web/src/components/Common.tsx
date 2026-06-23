@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import type { VisibilityMode } from "@bpc/shared-types";
 export { apiFetch, formatApiErrorBody } from "../api";
 
@@ -91,4 +91,25 @@ export function stringifyMode(mode?: VisibilityMode) {
   if (!mode || mode === "visible" || mode === "hidden") return String(mode ?? "unset");
   if (typeof mode === "object") return `timed ${new Date(mode.until).toLocaleTimeString()}`;
   return "?";
+}
+
+export function SectionPanel({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-6 rounded-2xl border border-cyan-500/20 bg-slate-900/40 p-6 backdrop-blur-md">
+      <div>
+        <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          {icon && <span className="text-2xl">{icon}</span>} {title}
+        </h2>
+      </div>
+      {children}
+    </div>
+  );
 }

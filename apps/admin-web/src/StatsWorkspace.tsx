@@ -245,12 +245,21 @@ export function StatsWorkspace({
         ) : null}
         <div className="max-w-md">
           <label className="text-xs uppercase text-slate-500">League ID</label>
-          <input
-            className="mt-1 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-slate-400 text-xs"
-            value={leagueId}
-            readOnly
-            placeholder="from LEAGUE_ID env"
-          />
+          <div className="flex gap-2 mt-1">
+            <input
+              className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-slate-400 text-xs"
+              value={leagueId}
+              onChange={(e) => setLeagueId(e.target.value)}
+              placeholder="from LEAGUE_ID env"
+            />
+            <Btn
+              variant="ghost"
+              disabled={busy || !leagueId}
+              onClick={() => void post("/api/league/config", { leagueId: Number(leagueId) })}
+            >
+              Save
+            </Btn>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Btn

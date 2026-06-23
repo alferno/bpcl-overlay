@@ -21,7 +21,7 @@ export async function loadHeroRenderManifest(): Promise<ReadonlySet<string>> {
     if (renderManifestLoaded) return localRenderSlugs;
     renderManifestLoaded = true;
     try {
-      const res = await fetch("/heroes/renders/manifest.json");
+      const res = await fetch(`${import.meta.env.BASE_URL}heroes/renders/manifest.json`);
       if (!res.ok) return localRenderSlugs;
       const data = (await res.json()) as { slugs?: string[] };
       ingestRenderManifestSlugs(data.slugs ?? []);
@@ -43,5 +43,9 @@ export function resolveOverlayHeroAnimatedUrl(slug: string): string | undefined 
   if (!clean) return undefined;
   const manifest = localRenderSlugs;
   if (manifest.size > 0 && !manifest.has(clean)) return undefined;
-  return resolveHeroAnimatedUrl(clean, manifest, canonicalToFileSlug) || undefined;
+  const rawUrl = resolveHeroAnimatedUrl(clean, manifest, canonicalToFileSlug);
+  if (!rawUrl) return undefined;
+  return rawUrl.startsWith("/")
+    ? `${import.meta.env.BASE_URL}${rawUrl.slice(1)}`
+    : `${import.meta.env.BASE_URL}${rawUrl}`;
 }

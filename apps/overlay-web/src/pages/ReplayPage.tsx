@@ -1,7 +1,5 @@
 import { motion } from "framer-motion";
 import { FadePanel, HudCanvas } from "../HudPrimitives";
-import { useOverlayState } from "../OverlaySocketLayer";
-import { useRouteVisible } from "../hooks/useRouteVisible";
 
 export default function ReplayPage() {
   return (

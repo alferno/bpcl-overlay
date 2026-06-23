@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, clipboard } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ngrok from '@ngrok/ngrok'
@@ -7,6 +7,17 @@ import os from 'node:os'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 process.env.APP_ROOT = path.join(__dirname, '..')
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error)
+  dialog.showErrorBox('Main Process Uncaught Exception', error.stack || error.message || String(error))
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason)
+  const message = reason instanceof Error ? reason.stack || reason.message : String(reason)
+  dialog.showErrorBox('Main Process Unhandled Rejection', message)
+})
 
 // ── Inject API env defaults BEFORE broadcast-api/env.ts is imported ──────────
 // These are safe defaults. The user can override them via the UI later.
@@ -58,7 +69,8 @@ async function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.mjs'),
+      sandbox: false,
     },
   })
 
@@ -67,6 +79,17 @@ async function createWindow() {
   } else {
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
+
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F12') {
+      win?.webContents.toggleDevTools()
+      event.preventDefault()
+    }
+  })
+
+  ipcMain.handle('copy-to-clipboard', (_, text) => {
+    clipboard.writeText(text)
+  })
 }
 
 app.on('window-all-closed', () => {
@@ -109,6 +132,7 @@ app.whenReady().then(async () => {
 })
 
 ipcMain.handle('get-tunnel-url', () => tunnelUrl)
+ipcMain.handle('get-broadcast-secret', () => process.env.BROADCAST_SECRET)
 
 ipcMain.handle('obs-connect', async (_, host, port, password) => {
   if (!apiInstances) return { ok: false, error: 'API not started' }

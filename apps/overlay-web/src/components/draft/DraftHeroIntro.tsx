@@ -7,6 +7,7 @@ import type {
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
+import { withBaseUrl } from "../../asset-paths";
 import {
   neonTextShadow,
 } from "../../draft/neon-effects";
@@ -23,9 +24,10 @@ function resolveSideLogo(
   side: LastPick["side"],
 ): string | undefined {
   const isRadiant = side === "radiant" || side === "A";
-  return isRadiant
+  const url = isRadiant
     ? (draft.radiant?.logoUrl ?? draft.series.logoUrlA)
     : (draft.dire?.logoUrl ?? draft.series.logoUrlB);
+  return withBaseUrl(url);
 }
 
 function resolveSideName(

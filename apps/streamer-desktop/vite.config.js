@@ -3,6 +3,7 @@ import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
 import react from '@vitejs/plugin-react';
 export default defineConfig({
+    base: './',
     plugins: [
         react(),
         electron([
@@ -21,6 +22,16 @@ export default defineConfig({
                 onstart(options) {
                     options.reload();
                 },
+                vite: {
+                    build: {
+                        rollupOptions: {
+                            output: {
+                                entryFileNames: '[name].mjs',
+                                format: 'es'
+                            }
+                        }
+                    }
+                }
             },
         ]),
         renderer(),

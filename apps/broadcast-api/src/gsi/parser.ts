@@ -395,7 +395,7 @@ function collectGsiPlayerHeroByOrder(
     for (const [key, val] of Object.entries(teamHeroData)) {
       const m = /^player(\d+)$/i.exec(key);
       if (!m) continue;
-      const pickOrder = Number(m[1]);
+      const pickOrder = Number(m[1]) % 5;
       const heroId = heroIdFromGsiPlayerEntry(val);
       if (heroId && heroId > 0 && Number.isFinite(pickOrder)) {
         let steam32: number | undefined;
@@ -415,7 +415,7 @@ function collectGsiPlayerHeroByOrder(
     for (const [key, val] of Object.entries(teamPlayerData)) {
       const m = /^player(\d+)$/i.exec(key);
       if (!m) continue;
-      const pickOrder = Number(m[1]);
+      const pickOrder = Number(m[1]) % 5;
       const existing = byPickOrder.get(pickOrder);
       if (existing?.heroId) continue;
 
@@ -435,34 +435,26 @@ function collectGsiPlayerHeroByOrder(
   return byPickOrder;
 }
 
-/** After CM draft — apply locked hero from GSI player0..4 onto pick slots. */
 function applyPlayerHeroLocks(
   slots: DraftSlot[],
   side: "radiant" | "dire",
   payload: GsiPayload,
 ): DraftSlot[] {
-  const byPickOrder = collectGsiPlayerHeroByOrder(payload, side);
+  const playerHeroes = Array.from(collectGsiPlayerHeroByOrder(payload, side).values());
 
   return slots.map((slot) => {
-    if (slot.type !== "pick") return slot;
-    const heroInfo = byPickOrder.get(slot.order);
-    if (!heroInfo || !heroInfo.heroId || heroInfo.heroId <= 0) return slot;
+    if (slot.type !== "pick" || !slot.heroId) return slot;
+    
+    // Find the player playing this hero
+    const playerMatch = playerHeroes.find(p => p.heroId === slot.heroId);
+    
+    // If we couldn't find a player for this hero, or no steam32 was found, just return the slot
+    if (!playerMatch) return slot;
 
-    const media = mediaForHero(
-      heroInfo.heroId,
-      undefined,
-      displayNameForHero(heroInfo.heroId, undefined),
-      `${side}-player${slot.order}`,
-    );
-
+    // We no longer replace the heroId, we just attach the steam32 of the player playing it
     return {
       ...slot,
-      heroId: heroInfo.heroId,
-      steam32: heroInfo.steam32,
-      heroName: displayNameForHero(heroInfo.heroId, undefined),
-      heroPortraitSlug: media.slug,
-      heroPortraitUrl: media.staticUrl,
-      heroPortraitAnimatedUrl: media.animatedUrl,
+      steam32: playerMatch.steam32 ?? slot.steam32,
     };
   });
 }

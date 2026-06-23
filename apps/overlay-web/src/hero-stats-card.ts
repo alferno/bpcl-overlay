@@ -35,7 +35,10 @@ export function resolveTeamLogoForCard(
   if (!isLeagueAggregateCard(card)) return undefined;
   const player = resolveRosterPlayerForCard(card, roster);
   if (!player?.teamKey) return undefined;
-  return teamLogoPath(player.teamKey);
+  const rawUrl = teamLogoPath(player.teamKey);
+  return rawUrl.startsWith("/")
+    ? `${import.meta.env.BASE_URL}${rawUrl.slice(1)}`
+    : `${import.meta.env.BASE_URL}${rawUrl}`;
 }
 
 export function resolveTeamColorForCard(
