@@ -8,7 +8,7 @@
   "description": "BPCL Streamer Hub",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
+    "build": "tsc && vite build && electron-packager . \"BPCL Streamer Desktop\" --platform=win32 --arch=x64 --out=release --overwrite --electron-version=31.3.1 --ignore=\"^/(src|electron|node_modules|\\.gitignore|vite\\.config|tsconfig)\"",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -18,6 +18,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@electron/packager": "^20.0.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -32,10 +33,44 @@
     "appId": "com.bpcl.streamerdesktop",
     "productName": "BPCL Streamer Desktop",
     "win": {
-      "target": ["nsis"]
+      "target": [
+        {
+          "target": "dir"
+        }
+      ],
+      "sign": false
     },
     "directories": {
       "output": "release"
-    }
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../../apps/broadcast-api",
+        "to": "broadcast-api",
+        "filter": [
+          "src/**",
+          "package.json",
+          ".env"
+        ]
+      },
+      {
+        "from": "../../apps/overlay-web/dist",
+        "to": "overlay-web/dist",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../../apps/admin-web/dist",
+        "to": "admin-web/dist",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
   }
 }
