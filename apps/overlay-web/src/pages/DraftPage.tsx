@@ -50,6 +50,7 @@ export default function DraftPage() {
             <DraftDataOverlay 
               leagueConfig={state.leagueConfig} 
               teamColors={teamColors} 
+              playerHeroIndex={state.playerHeroIndex}
             />
           )}
           

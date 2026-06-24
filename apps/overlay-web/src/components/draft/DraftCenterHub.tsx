@@ -36,31 +36,18 @@ export function DraftCenterHub({
   const isDireReserveActive = draft.activeTeam === "dire" && turnSeconds === 0 && draft.phase !== "done";
 
   return (
-    <div className="relative flex h-full w-[420px] shrink-0 flex-col justify-between rounded-xl px-4 py-3 font-body"
+    <div className="relative flex h-full w-[400px] shrink-0 flex-col justify-center rounded-lg px-6 py-4 font-body"
       style={{
-        background: "linear-gradient(180deg, rgb(20 24 22 / 0.98) 0%, rgb(8 12 10 / 0.95) 100%)",
-        border: `1px solid ${colorAlpha(emeraldAccent, 0.2)}`,
-        boxShadow: `0 4px 24px rgb(0 0 0 / 0.6), inset 0 0 32px ${colorAlpha(emeraldAccent, 0.05)}`,
+        background: "linear-gradient(180deg, rgb(30 32 36 / 0.95) 0%, rgb(18 20 24 / 0.95) 100%)",
+        border: `1px solid rgba(255,255,255,0.1)`,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
       }}
     >
-      {/* Top: Tournament Details */}
-      <div className="text-center">
-        <p className="font-dota text-[10px] font-bold tracking-[0.15em] text-slate-300">
-          {BROADCAST_LEAGUE_TITLE}
-        </p>
-        <p className="font-heading text-[11px] font-bold tracking-widest text-emerald-400 mt-0.5 uppercase">
-          {stage || "LIVE MATCH"}
-        </p>
-        <p className="font-heading text-[9px] font-bold tracking-[0.2em] text-slate-500 mt-1 uppercase">
-          {boLabel} • GAME {game}
-        </p>
-      </div>
-
       {/* Middle: Team Logos & Priority */}
-      <div className="flex items-center justify-between px-2 my-2">
-        <div className="flex flex-col items-center gap-1.5">
+      <div className="flex items-center justify-between px-2 mb-6 mt-2">
+        <div className="flex flex-col items-center gap-2">
           <TeamLogo src={logoA} color={teamColors.radiant} />
-          <span className="text-[10px] font-bold tracking-widest text-slate-300 uppercase truncate w-24 text-center" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}>
+          <span className="text-[10px] font-bold tracking-widest text-slate-300 uppercase truncate w-24 text-center">
             {teamNameA}
           </span>
         </div>
@@ -69,53 +56,45 @@ export function DraftCenterHub({
         <div className="flex flex-col items-center justify-center relative w-16">
           {showTurnArrow ? (
             <div 
-              className="text-emerald-400 font-bold text-4xl leading-none transition-transform duration-300"
+              className="text-slate-400 font-bold text-4xl leading-none transition-transform duration-300"
               style={{
                 transform: draft.activeTeam === "radiant" ? "scaleX(-1)" : "none",
-                textShadow: `0 0 16px ${colorAlpha(emeraldAccent, 0.6)}`
               }}
             >
-              ›
+              —
             </div>
           ) : (
             <div className="text-slate-600 font-bold text-2xl">—</div>
           )}
-          {showTurnArrow && (
-            <span className="absolute -bottom-4 text-[9px] font-bold tracking-widest text-emerald-500 uppercase">
-              {action === "ban" ? "Ban" : "Pick"}
-            </span>
-          )}
         </div>
 
-        <div className="flex flex-col items-center gap-1.5">
+        <div className="flex flex-col items-center gap-2">
           <TeamLogo src={logoB} color={teamColors.dire} />
-          <span className="text-[10px] font-bold tracking-widest text-slate-300 uppercase truncate w-24 text-center" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}>
+          <span className="text-[10px] font-bold tracking-widest text-slate-300 uppercase truncate w-24 text-center">
             {teamNameB}
           </span>
         </div>
       </div>
 
       {/* Bottom: Timers */}
-      <div className="flex items-center justify-between mt-2">
-        <div className={`text-left w-20 transition-colors duration-300 ${isRadiantReserveActive ? 'animate-pulse' : ''}`}>
+      <div className="flex items-center justify-between">
+        <div className={`text-center w-20 transition-colors duration-300 ${isRadiantReserveActive ? 'animate-pulse' : ''}`}>
           <p className={`text-[9px] font-bold tracking-widest ${isRadiantReserveActive ? 'text-amber-500' : 'text-slate-500'}`}>RESERVE</p>
-          <p className={`font-heading text-xl font-bold tabular-nums leading-none ${isRadiantReserveActive ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : 'text-slate-300'}`}>
+          <p className={`font-heading text-xl font-bold tabular-nums leading-none ${isRadiantReserveActive ? 'text-amber-400' : 'text-slate-300'}`}>
             {formatDraftSeconds(reserveDisplayRadiant)}
           </p>
         </div>
         
-        <div className="text-center bg-black/40 rounded px-4 py-1 border border-emerald-500/20"
-             style={{ boxShadow: showTurnArrow ? `inset 0 0 12px ${colorAlpha(emeraldAccent, 0.2)}` : "none" }}>
+        <div className="text-center rounded px-4 py-1">
           <p className="text-[10px] font-bold tracking-widest text-emerald-500">{action === "ban" ? "BANNING" : "PICKING"}</p>
-          <p className="font-heading text-3xl font-bold tabular-nums text-white leading-none"
-             style={{ textShadow: `0 0 16px ${colorAlpha(emeraldAccent, 0.5)}` }}>
+          <p className="font-heading text-3xl font-bold tabular-nums text-white leading-none">
             {formatDraftSeconds(turnSeconds)}
           </p>
         </div>
 
-        <div className={`text-right w-20 transition-colors duration-300 ${isDireReserveActive ? 'animate-pulse' : ''}`}>
+        <div className={`text-center w-20 transition-colors duration-300 ${isDireReserveActive ? 'animate-pulse' : ''}`}>
           <p className={`text-[9px] font-bold tracking-widest ${isDireReserveActive ? 'text-amber-500' : 'text-slate-500'}`}>RESERVE</p>
-          <p className={`font-heading text-xl font-bold tabular-nums leading-none ${isDireReserveActive ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : 'text-slate-300'}`}>
+          <p className={`font-heading text-xl font-bold tabular-nums leading-none ${isDireReserveActive ? 'text-amber-400' : 'text-slate-300'}`}>
             {formatDraftSeconds(reserveDisplayDire)}
           </p>
         </div>

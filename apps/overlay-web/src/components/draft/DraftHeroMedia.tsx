@@ -172,7 +172,7 @@ export function DraftHeroMedia({
     >
       <div
         className={`draft-hero-contained-fig ${
-          variant === "slot" ? "scale-110 origin-[center_22%]" : ""
+          variant === "slot" ? "scale-[1.30] origin-[center_22%]" : ""
         }`}
       >
         {media}

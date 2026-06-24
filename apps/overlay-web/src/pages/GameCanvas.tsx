@@ -10,7 +10,7 @@ export default function GameCanvas() {
   const visible = routeVisible("game", state);
 
   return (
-    <HudCanvas blend={!visible}>
+    <HudCanvas blend>
 
       
       <H2HMatchupGraphic />

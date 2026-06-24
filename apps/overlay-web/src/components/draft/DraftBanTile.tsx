@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 
 import { neonSlotShadow } from "../../draft/neon-effects";
 import { resolveSlotFlatPortraitUrl } from "../../hero-portrait";
+import { colorAlpha } from "../../draft/team-colors";
 
 const BAN_TILE_CLASS = "mx-auto w-full h-full aspect-square rounded-sm bg-black";
 
@@ -18,14 +19,16 @@ export function DraftBanTile({
   const portraitUrl = slot ? resolveSlotFlatPortraitUrl(slot) : undefined;
   const filled = Boolean(slot?.heroId || portraitUrl);
   const accent = teamColor ?? "#ffffff";
-  const glow = neonSlotShadow(accent, isActive);
-  const sizeStyle = { boxShadow: glow };
 
   if (!filled) {
     return (
       <div
         className={`${BAN_TILE_CLASS} transition-shadow`}
-        style={sizeStyle}
+        style={{
+          border: `1px solid ${colorAlpha(accent, isActive ? 0.8 : 0.4)}`,
+          background: "rgba(0,0,0,0.3)",
+          boxShadow: isActive ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
+        }}
       />
     );
   }
@@ -33,7 +36,9 @@ export function DraftBanTile({
   return (
     <motion.div
       className={`relative overflow-hidden ${BAN_TILE_CLASS}`}
-      style={sizeStyle}
+      style={{
+        border: `1px solid ${colorAlpha(accent, 0.8)}`,
+      }}
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}

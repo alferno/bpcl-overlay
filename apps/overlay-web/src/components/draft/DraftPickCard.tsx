@@ -28,49 +28,6 @@ import {
 import { resolveSlotMedia, draftHeroAnimationEnabled } from "../../hero-portrait";
 import { colorAlpha } from "../../draft/team-colors";
 
-function PickCardTeamHueEdge({
-  accent,
-  active,
-  subdued = false,
-}: {
-  accent: string;
-  active: boolean;
-  subdued?: boolean;
-}) {
-  return (
-    <>
-      <div
-        className="pointer-events-none absolute inset-0 z-[4] rounded-[inherit]"
-        style={{
-          background: pickCardEdgeHueOverlay(accent, active && !subdued),
-          opacity: subdued ? 0.38 : 0.52,
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 z-[4] rounded-[inherit]"
-        style={{
-          background: pickCardCornerHue(accent, active && !subdued),
-          opacity: subdued ? 0.34 : 0.48,
-        }}
-      />
-    </>
-  );
-}
-
-function PickCardInnerRim({
-  accent,
-  active,
-}: {
-  accent: string;
-  active: boolean;
-}) {
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 z-[7] rounded-[inherit]"
-      style={{ boxShadow: pickCardInnerRim(accent, active) }}
-    />
-  );
-}
 
 export function DraftPickCard({
   slot,
@@ -136,28 +93,18 @@ export function DraftPickCard({
   return (
     <motion.div
       layout
-      className={`draft-pick-card relative h-full min-w-0 w-full overflow-hidden rounded-md ${
+      className={`relative h-full min-w-0 w-full overflow-hidden rounded-md ${
         active ? "draft-pick-pulse" : ""
       } ${sweep ? "energy-sweep" : ""} ${showHeroVisual ? "draft-pick-card--filled" : "draft-pick-card--empty"}`}
       style={{
-        ...pickCardOuterFrame(accent, active, showHeroVisual),
-        ...(active
-          ? ({
-              ["--pick-glow" as string]: colorAlpha(accent, 0.75),
-              ["--pick-glow-soft" as string]: colorAlpha(accent, 0.28),
-            } as CSSProperties)
-          : {}),
+        border: `1px solid ${colorAlpha(accent, active ? 0.8 : 0.4)}`,
+        background: "rgba(0,0,0,0.3)",
+        boxShadow: active ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
       }}
       initial={showHeroVisual ? { y: 30, scale: 0.92, opacity: 0 } : false}
       animate={{ y: 0, scale: 1, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
-      <PickCardTeamHueEdge
-        accent={accent}
-        active={active}
-        subdued={!showHeroVisual}
-      />
-      <PickCardInnerRim accent={accent} active={active} />
 
       {showHeroVisual && slot && (media.static || media.animated) ? (
         <>

@@ -23,6 +23,7 @@ export const OVERLAY_ROUTES = [
   "sponsors",
   "versus",
   "replay",
+  "liveplayercard",
   "global_kill_switch",
 ] as const;
 
@@ -74,6 +75,8 @@ export const rosterPlayerSchema = z.object({
   avatarUrl: z.string().optional(),
   /** @deprecated use leagueConfig.matchSetup instead */
   side: z.enum(["radiant", "dire", "A", "B"]).optional(),
+  /** Preferred roles synced from BPC League */
+  roles: z.array(z.string()).optional(),
 });
 
 export type RosterPlayer = z.infer<typeof rosterPlayerSchema>;
@@ -447,6 +450,7 @@ export const overlayEnvelopeSchema = z.object({
   lowerThirds: lowerThirdStateSchema.nullable().optional(),
   playerStatsCard: playerStatsCardSchema.nullable().optional(),
   heroStatsCard: heroStatsCardSchema.nullable().optional(),
+  livePlayerCard: heroStatsCardSchema.nullable().optional(),
   matchupCard: matchupCardSchema.nullable().optional(),
   sponsor: sponsorRotationStateSchema.nullable().optional(),
   timers: broadcastTimersSchema.optional(),
@@ -473,6 +477,9 @@ export const overlayPatchSchema = z.object({
     .union([playerStatsCardSchema, playerStatsCardSchema.partial(), z.null()])
     .optional(),
   heroStatsCard: z
+    .union([heroStatsCardSchema, heroStatsCardSchema.partial(), z.null()])
+    .optional(),
+  livePlayerCard: z
     .union([heroStatsCardSchema, heroStatsCardSchema.partial(), z.null()])
     .optional(),
   matchupCard: z
@@ -544,6 +551,7 @@ export function createDefaultEnvelope(): OverlayEnvelope {
     lowerThirds: null,
     playerStatsCard: null,
     heroStatsCard: null,
+    livePlayerCard: null,
     matchupCard: null,
     sponsor: null,
     timers: {},

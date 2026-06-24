@@ -54,7 +54,7 @@ let p = null;
 l.whenReady().then(async () => {
   h();
   try {
-    d = (await import("./index-RdVIpPEJ.js")).bootstrapBroadcastServer;
+    d = (await import("./index-DdyZc2mA.js")).bootstrapBroadcastServer;
   } catch (o) {
     e == null || e.webContents.send("log", "Failed to load API module: " + o);
   }

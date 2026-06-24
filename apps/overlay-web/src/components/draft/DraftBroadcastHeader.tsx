@@ -25,43 +25,30 @@ export function DraftBroadcastHeader({
 
   return (
     <div
-      className="relative mb-2 grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-white/[0.08] px-3 py-2.5 font-body"
+      className="relative grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-lg border border-white/10 px-6 py-2 font-body"
       style={{
-        background:
-          "linear-gradient(180deg, rgb(18 18 20 / 0.98) 0%, rgb(8 8 10 / 0.95) 100%)",
-        boxShadow: `0 4px 24px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.06)`,
+        background: "linear-gradient(180deg, rgb(30 32 36 / 0.95) 0%, rgb(18 20 24 / 0.95) 100%)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
       }}
     >
-      <p className="broadcast-header-side-title truncate text-left font-dota font-semibold uppercase tracking-[0.12em] text-slate-200">
+      <p className="truncate text-left font-dota text-sm font-semibold uppercase tracking-[0.12em] text-slate-300">
         {BROADCAST_LEAGUE_TITLE}
       </p>
 
       <div className="flex flex-col items-center px-4">
         <div className="flex items-baseline gap-2">
-          <p
-            className="font-heading text-sm font-bold uppercase tracking-[0.32em] text-white"
-            style={{ textShadow: "0 0 14px rgb(255 255 255 / 0.4)" }}
-          >
-            Series
-          </p>
-          <p
-            className="font-heading text-sm font-bold uppercase tracking-[0.32em] text-white/90"
-            style={{ textShadow: "0 0 14px rgb(255 255 255 / 0.4)" }}
-          >
-            {boLabel} · Game {game}
+          <p className="font-heading text-xs font-bold uppercase tracking-[0.2em] text-slate-300">
+            Series {boLabel} - Game {game}
           </p>
         </div>
-        <p
-          className="mt-1 font-heading text-3xl font-bold tabular-nums leading-none text-white"
-          style={{ textShadow: `0 0 20px ${colorAlpha(accent, 0.35)}` }}
-        >
+        <p className="mt-0.5 font-heading text-2xl font-bold tabular-nums leading-none text-white">
           {scoreA}
-          <span className="mx-2 text-zinc-500">–</span>
+          <span className="mx-3 text-zinc-500">–</span>
           {scoreB}
         </p>
       </div>
 
-      <p className="broadcast-header-side-title truncate text-right font-dota font-semibold uppercase tracking-[0.14em] text-slate-300">
+      <p className="truncate text-right font-dota text-sm font-semibold uppercase tracking-[0.14em] text-slate-300">
         {stage || "\u00a0"}
       </p>
     </div>

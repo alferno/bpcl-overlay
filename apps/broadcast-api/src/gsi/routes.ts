@@ -3,6 +3,7 @@ import type { Server as IOServer } from "socket.io";
 import type { StateManager } from "@bpc/state-manager";
 import { parseGsiToDraft } from "./parser.js";
 import { detectPowerSpikes } from "./power-spikes.js";
+import { detectFocusedPlayer } from "./live-player-card.js";
 import { ensureHeroRegistry } from "../services/hero-registry.js";
 import type { BroadcastFns } from "../routes.js";
 import { logger } from "../logger.js";
@@ -61,6 +62,8 @@ export function attachGsiRoutes(opts: {
       matchSetup,
     );
 
+    const focusedPlayer = detectFocusedPlayer(payload);
+
     const apply = async () => {
       const current = await state.getState();
 
@@ -91,25 +94,62 @@ export function attachGsiRoutes(opts: {
         };
       }
 
+      if (focusedPlayer) {
+        const { steam32, heroId } = focusedPlayer;
+        if (
+          current.livePlayerCard?.steam32 !== steam32 ||
+          current.livePlayerCard?.heroId !== heroId
+        ) {
+          const player = findRosterPlayer(roster, steam32);
+          const card = player
+            ? await buildPlayerHeroCard(
+                opendota,
+                steam32,
+                heroId,
+                player.displayName,
+                current.tournamentHeroIndex ?? {},
+                roster,
+                current.playerHeroIndex,
+              ).catch((e) => {
+                logger.error(e, "failed to build live player card");
+                return null;
+              })
+            : null;
+          if (card) {
+            patch = {
+              ...patch,
+              livePlayerCard: card,
+            };
+          }
+        }
+      }
+
       const next = await state.patchState(patch);
       await broadcast.broadcastFull(next);
 
+      const lastPickChanged =
+        parsed.draftPatch?.lastPick &&
+        (!current.draft?.lastPick ||
+          parsed.draftPatch.lastPick.heroId !== current.draft.lastPick.heroId ||
+          parsed.draftPatch.lastPick.side !== current.draft.lastPick.side);
+
       if (
         current.production?.autoShowStatsOnPick &&
-        parsed.draftPatch?.lastPick
+        lastPickChanged
       ) {
         try {
           assertLeagueStatsReady(current);
         } catch {
           return;
         }
-        const lp = parsed.draftPatch.lastPick;
+        const lp = parsed.draftPatch?.lastPick;
+        if (!lp) return;
         const side =
           lp.side === "dire" || lp.side === "B" ? "dire" : "radiant";
         const teamSlots =
           side === "radiant"
-            ? parsed.draftPatch.radiant?.slots ?? current.draft?.radiant?.slots
-            : parsed.draftPatch.dire?.slots ?? current.draft?.dire?.slots;
+            ? parsed.draftPatch?.radiant?.slots ?? current.draft?.radiant?.slots
+            : parsed.draftPatch?.dire?.slots ?? current.draft?.dire?.slots;
         const slotOrder = pickSlotOrderForHero(side, lp.heroId, teamSlots);
         const manualSteam32 =
           slotOrder !== undefined

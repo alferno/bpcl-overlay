@@ -37,6 +37,7 @@ export function DraftBlastBar({
         <DraftTeamColumn
           slots={draft.radiant?.slots}
           teamLogoUrl={draft.radiant?.logoUrl ?? draft.series.logoUrlA}
+          teamName={draft.radiant?.name ?? draft.series.teamA}
           isActive={active === "radiant"}
           heroSelectionMode={heroSelectionMode}
           leagueConfig={leagueConfig}
@@ -57,6 +58,7 @@ export function DraftBlastBar({
         <DraftTeamColumn
           slots={draft.dire?.slots}
           teamLogoUrl={draft.dire?.logoUrl ?? draft.series.logoUrlB}
+          teamName={draft.dire?.name ?? draft.series.teamB}
           isActive={active === "dire"}
           heroSelectionMode={heroSelectionMode}
           leagueConfig={leagueConfig}

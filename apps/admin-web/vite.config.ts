@@ -1,17 +1,21 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-export default defineConfig({
-  base: '/admin/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/admin/' : '/',
   plugins: [react()],
   server: {
     port: 3000,
     proxy: {
-      "/broadcast-api-proxy": {
+      "/api": {
         target: process.env.ADMIN_BACKEND_PROXY ?? "http://127.0.0.1:8080",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/broadcast-api-proxy/, ""),
       },
+      "/socket.io": {
+        target: process.env.ADMIN_BACKEND_PROXY ?? "http://127.0.0.1:8080",
+        changeOrigin: true,
+        ws: true,
+      }
     },
   },
-});
+}));

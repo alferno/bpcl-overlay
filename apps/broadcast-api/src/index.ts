@@ -48,7 +48,9 @@ export async function bootstrapBroadcastServer() {
   return { obs, opendota, state, shutdown };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+import { fileURLToPath } from "node:url";
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   void bootstrapBroadcastServer().catch((err) => {
     logger.error(err, "fatal startup");
     process.exit(1);

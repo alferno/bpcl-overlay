@@ -11,8 +11,8 @@ export function HudCanvas({
 }) {
   return (
     <div
-      className={`relative overflow-hidden box-border h-[1080px] w-[1920px] text-white antialiased shadow-2xl ${
-        blend ? "bg-transparent" : "bg-slate-950/60"
+      className={`relative overflow-hidden box-border h-[1080px] w-[1920px] text-white antialiased ${
+        blend ? "bg-transparent" : "bg-slate-950/60 shadow-2xl"
       }`}
     >
       {children}

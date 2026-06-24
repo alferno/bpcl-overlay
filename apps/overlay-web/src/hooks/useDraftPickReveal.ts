@@ -138,28 +138,7 @@ export function useDraftPickReveal(
   }, [pickKey, playNextCinematic]);
 
   // ─── Ban detection (stats only, no cinematic) ───
-  useEffect(() => {
-    if (!draft) return;
-    const currentBanKeys = collectFilledBanKeys(draft);
-
-    for (const banKey of currentBanKeys) {
-      if (seenBanKeysRef.current.has(banKey)) continue;
-      seenBanKeysRef.current.add(banKey);
-
-      // Parse "radiant-ban-123" → { side: "radiant", heroId: 123 }
-      const parts = banKey.split("-");
-      const banSide = parts[0] as "radiant" | "dire";
-      const banHeroId = Number(parts[2]);
-      if (!banHeroId) continue;
-
-      const banPick = banSlotToLastPick(draft, banSide, banHeroId);
-      const statsUntil = Date.now() + DRAFT_STATS_VISIBLE_MS;
-      setStatsQueue((prev) => [
-        ...prev,
-        { key: banKey, pick: banPick, statsUntil, isBan: true },
-      ]);
-    }
-  }, [draft?.radiant?.slots, draft?.dire?.slots, draft]);
+  // Feature removed per user request: "I want to stop sending stat card for bans, only send stats for picks"
 
   // ─── Stats queue expiry ───
   useEffect(() => {

@@ -1,18 +1,21 @@
-import type { LeagueConfig } from "@bpc/shared-types";
+import type { LeagueConfig, PlayerHeroLeagueStats } from "@bpc/shared-types";
 import { colorAlpha } from "../../draft/team-colors";
 import { withBaseUrl } from "../../asset-paths";
 
 export function DraftDataOverlay({
   leagueConfig,
   teamColors,
+  playerHeroIndex,
 }: {
   leagueConfig?: LeagueConfig;
   teamColors: { radiant: string; dire: string };
+  playerHeroIndex?: Record<string, PlayerHeroLeagueStats>;
 }) {
   return (
     <DraftStatsView
       leagueConfig={leagueConfig}
       teamColors={teamColors}
+      playerHeroIndex={playerHeroIndex}
     />
   );
 }
@@ -22,9 +25,11 @@ export function DraftDataOverlay({
 function DraftStatsView({
   leagueConfig,
   teamColors,
+  playerHeroIndex,
 }: {
   leagueConfig?: LeagueConfig;
   teamColors: { radiant: string; dire: string };
+  playerHeroIndex?: Record<string, PlayerHeroLeagueStats>;
 }) {
   const matchSetup = leagueConfig?.matchSetup;
   const roster = leagueConfig?.roster ?? [];
@@ -34,11 +39,39 @@ function DraftStatsView({
   const radiantPlayers = roster.filter((p) => p.teamKey === radiantKey);
   const direPlayers = roster.filter((p) => p.teamKey === direKey);
 
+  const getPlayerStats = (steam32: number) => {
+    if (!playerHeroIndex) return null;
+    let games = 0;
+    let wins = 0;
+    let totalKills = 0;
+    let totalDeaths = 0;
+    let totalAssists = 0;
+
+    for (const [key, stats] of Object.entries(playerHeroIndex)) {
+      if (key.startsWith(`${steam32}:`)) {
+        games += stats.games;
+        wins += stats.wins;
+        totalKills += stats.avgKills * stats.games;
+        totalDeaths += stats.avgDeaths * stats.games;
+        totalAssists += stats.avgAssists * stats.games;
+      }
+    }
+
+    if (games === 0) return null;
+    const losses = games - wins;
+    const winRate = Math.round((wins / games) * 100);
+    const kda = totalDeaths > 0 ? ((totalKills + totalAssists) / totalDeaths).toFixed(2) : (totalKills + totalAssists).toFixed(2);
+    
+    return `${wins}W - ${losses}L • ${kda} KDA • ${winRate}% WIN`;
+  };
+
   const renderTeamStats = (players: typeof roster, color: string, isRight: boolean) => {
     return (
       <div className="flex flex-col gap-4 w-[450px]">
         {players.map((p) => {
           const meme = matchSetup?.playerMemes?.[String(p.steam32)];
+          const stats = !meme ? getPlayerStats(p.steam32) : null;
+          
           return (
             <div key={p.steam32} className={`flex items-center gap-4 bg-slate-950/80 backdrop-blur-md rounded-xl p-3 border shadow-2xl ${isRight ? 'flex-row-reverse text-right' : ''}`} style={{ borderColor: colorAlpha(color, 0.4), boxShadow: `0 10px 30px ${colorAlpha(color, 0.15)}` }}>
               <div className="h-16 w-16 rounded-lg bg-slate-900 border border-white/20 overflow-hidden shrink-0 flex items-center justify-center text-sm font-bold text-slate-500">
@@ -52,8 +85,14 @@ function DraftStatsView({
                       {meme}
                     </span>
                   </div>
+                ) : p.roles && p.roles.length > 0 ? (
+                  <div className="text-sky-400 text-[11px] mt-1 font-mono font-bold uppercase tracking-widest">
+                    {p.roles.join(" / ")}
+                  </div>
+                ) : stats ? (
+                  <div className="text-slate-400 text-[11px] mt-1 font-mono uppercase tracking-widest">{stats}</div>
                 ) : (
-                  <div className="text-slate-500 text-xs mt-1 font-mono uppercase tracking-widest">Awaiting Stats...</div>
+                  <div className="text-slate-600 text-[11px] mt-1 font-mono uppercase tracking-widest">Awaiting Stats...</div>
                 )}
               </div>
             </div>

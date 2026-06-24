@@ -36,6 +36,7 @@ type RawPlayer = {
   name?: string;
   steamProfile?: string;
   role?: string;
+  roles?: string[];
   mmr?: number;
   isCaptain?: boolean;
 };
@@ -189,9 +190,10 @@ export async function fetchRosterFromBpcLeague(opts: {
     const { teamName, teamKey, teamColor, player } = allEntries[i];
     const steam32 = steam32Results[i];
     const displayName = player.displayName || player.name || "Player";
+    const roles = player.roles || [];
 
     if (steam32 != null && steam32 > 0) {
-      roster.push({ displayName, steam32, teamName, teamKey, teamColor });
+      roster.push({ displayName, steam32, teamName, teamKey, teamColor, roles });
     } else {
       logger.warn({ displayName, url: player.steamProfile }, "[steam32] Could not resolve — player skipped");
     }

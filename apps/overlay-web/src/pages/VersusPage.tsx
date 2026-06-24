@@ -126,13 +126,34 @@ function PlayerCard({
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", boxShadow: `0 10px 40px -10px ${colorAlpha(color, 0.4)}` }}
         >
           {heroInfo && resolveSlotFlatPortraitUrl(heroInfo) && (
-            <img src={resolveSlotFlatPortraitUrl(heroInfo)} alt="Hero" className="h-full w-full object-cover object-top" />
+            <>
+              {/* Premium Blurred Aura Background */}
+              <div className="absolute inset-0">
+                <img 
+                  src={resolveSlotFlatPortraitUrl(heroInfo)} 
+                  className="h-full w-full object-cover blur-2xl opacity-40 scale-125 saturate-150" 
+                  alt=""
+                />
+              </div>
+
+              {/* Main Hero Portrait (Restricted height to prevent extreme zoom) */}
+              <div className="absolute inset-x-0 top-0 h-[65%]">
+                <img 
+                  src={resolveSlotFlatPortraitUrl(heroInfo)} 
+                  alt="Hero" 
+                  className="h-full w-full object-cover object-top" 
+                />
+                {/* Seamless vignette fading into the card background */}
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-900 to-transparent" />
+              </div>
+            </>
           )}
+          
           <div
             className="pointer-events-none absolute inset-0 opacity-20 mix-blend-overlay"
             style={{ backgroundColor: color }}
           />
-          <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end bg-gradient-to-t from-black/95 via-black/70 to-transparent p-5 pt-20 text-center">
+          <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end bg-gradient-to-t from-slate-950 via-slate-900/95 to-transparent p-5 pt-20 text-center">
             <span
               className="truncate font-display text-2xl font-black uppercase tracking-wide text-white"
               style={{ textShadow: `0 0 12px ${color}` }}
@@ -265,7 +286,7 @@ export default function VersusPage() {
                 </div>
               </motion.div>
 
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 items-center">
                 {/* Top Row: 3 cards */}
                 <div className="flex gap-4">
                   {radiantPlayers.slice(0, 3).map((p, i) => (
@@ -283,7 +304,7 @@ export default function VersusPage() {
                   ))}
                 </div>
                 {/* Bottom Row: 2 cards centered */}
-                <div className="flex gap-4">
+                <div className="flex gap-4 justify-center">
                   {radiantPlayers.slice(3, 5).map((p, i) => (
                     <PlayerCard
                       key={p.steam32}
@@ -343,10 +364,10 @@ export default function VersusPage() {
                 </div>
               </motion.div>
 
-              <div className="flex flex-col gap-4">
-                {/* Top Row: 2 cards centered */}
+              <div className="flex flex-col gap-4 items-center">
+                {/* Top Row: 3 cards */}
                 <div className="flex gap-4">
-                  {direPlayers.slice(0, 2).map((p, i) => (
+                  {direPlayers.slice(0, 3).map((p, i) => (
                     <PlayerCard
                       key={p.steam32}
                       player={p}
@@ -360,16 +381,16 @@ export default function VersusPage() {
                     />
                   ))}
                 </div>
-                {/* Bottom Row: 3 cards */}
-                <div className="flex gap-4">
-                  {direPlayers.slice(2, 5).map((p, i) => (
+                {/* Bottom Row: 2 cards centered */}
+                <div className="flex gap-4 justify-center">
+                  {direPlayers.slice(3, 5).map((p, i) => (
                     <PlayerCard
                       key={p.steam32}
                       player={p}
                       color={direColor}
                       logoPath={direLogoPath}
-                      pos={i + 3}
-                      index={i + 2}
+                      pos={i + 4}
+                      index={i + 3}
                       isDire={true}
                       flipToHero={flipToHero}
                       heroInfo={getHeroInfo(p.steam32, "dire")}
