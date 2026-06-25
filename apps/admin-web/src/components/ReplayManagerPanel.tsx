@@ -44,21 +44,54 @@ export function ReplayManagerPanel({
     return () => clearInterval(interval);
   }, [origin, token]);
 
-  const triggerHotkey = async (hotkeyName: string) => {
+  const saveReplay = async (duration: number) => {
     setBusy(true);
     setLocalErr(null);
     try {
-      const res = await apiFetch(origin, token, "/api/replays/hotkey", {
+      const res = await apiFetch(origin, token, "/api/replays/save", {
         method: "POST",
-        body: JSON.stringify({ hotkeyName }),
+        body: JSON.stringify({ duration }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "Failed to trigger hotkey");
-      if (!data.ok) throw new Error(data.error || "Failed to trigger hotkey");
+      if (data.error) throw new Error(data.error);
       
       // Brief delay to allow files to write, then refresh
       setTimeout(fetchReplays, 3200);
+    } catch (e) {
+      setLocalErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const nextMatchAction = async () => {
+    setBusy(true);
+    setLocalErr(null);
+    try {
+      const res = await apiFetch(origin, token, "/api/replays/next-match", { method: "POST" });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      fetchReplays();
+    } catch (e) {
+      setLocalErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const generateHighlightsAction = async () => {
+    setBusy(true);
+    setLocalErr(null);
+    try {
+      const res = await apiFetch(origin, token, "/api/replays/generate-highlights", { 
+        method: "POST",
+        body: JSON.stringify({ matchId: lastCompletedMatch || currentMatch })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
     } catch (e) {
       setLocalErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -136,11 +169,34 @@ export function ReplayManagerPanel({
       const data = await res.json();
       if (data.error) {
         setLocalErr(data.error);
+      } else {
+        // Find index of this file to enable next/prev
+        const idx = replays.findIndex(r => r.file === file);
+        if (idx >= 0) setPlaybackIndex(idx);
       }
     } catch (e) {
       setLocalErr(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const [playbackIndex, setPlaybackIndex] = useState<number>(-1);
+
+  const playOffset = (offset: number) => {
+    if (replays.length === 0) return;
+    let nextIdx = playbackIndex + offset;
+    if (nextIdx < 0) nextIdx = 0;
+    if (nextIdx >= replays.length) nextIdx = replays.length - 1;
+    if (replays[nextIdx]) {
+      void playLive(replays[nextIdx].file);
+    }
+  };
+
+  const playLatest = () => {
+    if (replays.length > 0) {
+      const latestIdx = replays.reduce((iMax, x, i, arr) => x.replayId > arr[iMax].replayId ? i : iMax, 0);
+      void playLive(replays[latestIdx].file);
     }
   };
 
@@ -150,7 +206,7 @@ export function ReplayManagerPanel({
     try {
       const res = await apiFetch(origin, token, "/api/obs/program-scene", {
         method: "POST",
-        body: JSON.stringify({ sceneName: "Main Scene" }),
+        body: JSON.stringify({ sceneName: "Scene" }),
       });
       if (!res.ok) throw new Error(await res.text());
     } catch (e) {
@@ -202,16 +258,16 @@ export function ReplayManagerPanel({
           <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6 backdrop-blur-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200 mb-4">Capture Replay</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Btn variant="cyan" disabled={busy} onClick={() => triggerHotkey("replay15")}>
+              <Btn variant="cyan" disabled={busy} onClick={() => saveReplay(15)}>
                 Save 15s
               </Btn>
-              <Btn variant="cyan" disabled={busy} onClick={() => triggerHotkey("replay20")}>
+              <Btn variant="cyan" disabled={busy} onClick={() => saveReplay(20)}>
                 Save 20s
               </Btn>
-              <Btn variant="cyan" disabled={busy} onClick={() => triggerHotkey("replay30")}>
+              <Btn variant="cyan" disabled={busy} onClick={() => saveReplay(30)}>
                 Save 30s
               </Btn>
-              <Btn variant="cyan" disabled={busy} onClick={() => triggerHotkey("replay40")}>
+              <Btn variant="cyan" disabled={busy} onClick={() => saveReplay(40)}>
                 Save 40s
               </Btn>
             </div>
@@ -219,13 +275,13 @@ export function ReplayManagerPanel({
             <div className="mt-6 border-t border-white/5 pt-6">
               <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Playback Navigation</h4>
               <div className="flex flex-wrap gap-2.5">
-                <Btn variant="ghost" disabled={busy} onClick={() => triggerHotkey("previous")}>
+                <Btn variant="ghost" disabled={busy} onClick={() => playOffset(-1)}>
                   ◀ Previous
                 </Btn>
-                <Btn variant="ghost" disabled={busy} onClick={() => triggerHotkey("next")}>
+                <Btn variant="ghost" disabled={busy} onClick={() => playOffset(1)}>
                   Next ▶
                 </Btn>
-                <Btn variant="ghost" disabled={busy} onClick={() => triggerHotkey("latest")}>
+                <Btn variant="ghost" disabled={busy} onClick={() => playLatest()}>
                   ⚡ Play Latest
                 </Btn>
               </div>
@@ -325,7 +381,7 @@ export function ReplayManagerPanel({
             <p className="text-[10px] text-slate-500 mb-4">
               Advanced match state updates. Advancing the match will trigger highlight compiling.
             </p>
-            <Btn variant="danger" className="w-full py-3" disabled={busy} onClick={() => triggerHotkey("nextmatch")}>
+            <Btn variant="danger" className="w-full py-3" disabled={busy} onClick={nextMatchAction}>
               Next Match
             </Btn>
           </div>
@@ -339,7 +395,7 @@ export function ReplayManagerPanel({
               variant="primary"
               className="w-full py-3 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 shadow-amber-950/20"
               disabled={busy}
-              onClick={() => triggerHotkey("highlights")}
+              onClick={generateHighlightsAction}
             >
               🎬 Generate Highlights
             </Btn>

@@ -33,8 +33,8 @@ A dedicated control panel for the stream producer to manage the live broadcast.
 - **Visibility Toggles**: Instantly show or hide specific overlay components (e.g. lower thirds, stats) from the producer dashboard.
 
 ## 4. OBS Integration & Instant Replays
-A powerful Lua script (`instant_replay.lua`) built for OBS Studio that automates the entire replay and highlight workflow.
-- **Automated Trimming**: Hotkeys to instantly save the replay buffer and use FFmpeg to trim it to specific lengths (15s, 20s, 30s, 40s).
-- **Instant Playback**: "Play Latest Replay" hotkey to automatically switch scenes and play the generated clip on stream.
-- **Replay Cataloging**: Saves replays to a local database (`replay_db.csv`) for easy navigation (Previous/Next) during the cast.
-- **Highlights Generator**: Mark specific replays as "Favorites" during the game. Transitioning to the "Next Match" automatically concatenates all favorited clips into a single post-game highlight reel using FFmpeg.
+A powerful built-in **Replay Manager** integrated directly into the Producer Dashboard that automates the entire replay and highlight workflow via OBS WebSockets.
+- **Automated Trimming**: Dashboard controls to instantly save the replay buffer and use FFmpeg to trim it to specific lengths (15s, 20s, 30s, 40s).
+- **Instant Playback**: "Go Live" and "Play Latest" buttons to automatically switch scenes and play the generated clip on stream.
+- **Replay Cataloging**: Saves and lists replays directly in the dashboard for easy navigation, previewing, and live playback during the cast.
+- **Highlights Generator**: Mark specific replays as "Favorites" (stars) during the game. Clicking "Generate Highlights" automatically concatenates all favorited clips from the last match into a single post-game highlight reel using FFmpeg.

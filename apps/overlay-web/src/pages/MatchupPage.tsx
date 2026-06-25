@@ -38,12 +38,21 @@ export default function MatchupPage() {
   return (
     <HudCanvas blend>
       <FadePanel show={visible} panelKey={`matchup-${m?.heroAId}-${m?.heroBId}`}>
-        <div className="flex h-full items-center justify-center gap-16 p-14 overflow-hidden">
+        <div className="relative flex h-full items-center justify-center gap-16 p-14 overflow-hidden">
           {m ? (
             <>
+              {/* Solid Background behind all 3 elements */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: 0.6, duration: 0.4 }}
+                className="absolute w-[1050px] h-[550px] bg-slate-950/95 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] z-0"
+              />
+
               {/* Hero A (Slides in from Left) */}
               <motion.div 
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-4 relative z-10"
                 initial={{ x: -800, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -800, opacity: 0 }}
@@ -87,7 +96,7 @@ export default function MatchupPage() {
 
               {/* Hero B (Slides in from Right) */}
               <motion.div 
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-4 relative z-10"
                 initial={{ x: 800, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 800, opacity: 0 }}
