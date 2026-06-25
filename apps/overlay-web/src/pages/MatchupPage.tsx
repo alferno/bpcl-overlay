@@ -49,7 +49,7 @@ export default function MatchupPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: 0.6, duration: 0.4 }}
-                  className="absolute inset-0 bg-slate-950 rounded-[2.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] z-0"
+                  className="absolute inset-0 bg-emerald-950 rounded-[2.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] z-0"
                 />
 
                 {/* Hero A (Slides in from Left) */}
