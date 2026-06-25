@@ -10,21 +10,18 @@ export function neonPanelShadow(
   const a = (n: number) => colorAlpha(color, n);
   if (mode === "active") {
     return [
-      `0 0 0 1px ${a(0.92)}`,
-      `0 0 0 2px ${a(0.22)}`,
-      `0 0 14px ${a(0.62)}`,
-      `0 0 32px ${a(0.38)}`,
-      `0 0 56px ${a(0.16)}`,
-      `inset 0 1px 0 rgb(255 255 255 / 0.12)`,
-      `inset 0 -48px 64px ${a(0.14)}`,
+      `0 0 0 1px ${a(0.6)}`,
+      `0 0 12px ${a(0.4)}`,
+      `0 0 24px ${a(0.15)}`,
+      `inset 0 1px 0 rgb(255 255 255 / 0.08)`,
+      `inset 0 -24px 48px ${a(0.08)}`,
     ].join(", ");
   }
   return [
-    `0 0 0 1px ${a(0.58)}`,
-    `0 0 10px ${a(0.34)}`,
-    `0 0 26px ${a(0.16)}`,
-    `inset 0 1px 0 rgb(255 255 255 / 0.06)`,
-    `inset 0 -36px 52px ${a(0.11)}`,
+    `0 0 0 1px ${a(0.4)}`,
+    `0 0 8px ${a(0.15)}`,
+    `inset 0 1px 0 rgb(255 255 255 / 0.04)`,
+    `inset 0 -24px 32px ${a(0.05)}`,
   ].join(", ");
 }
 
@@ -36,18 +33,15 @@ export function pickCardOuterFrame(
 ): { border: string; boxShadow: string } {
   const a = (n: number) => colorAlpha(color, n);
   return {
-    border: `2px solid ${a(active ? 0.82 : 0.55)}`,
+    border: `1px solid ${a(active ? 0.6 : 0.3)}`,
     boxShadow: [
-      "0 0 0 1px rgb(0 0 0 / 0.9)",
-      `0 0 0 3px ${a(active ? 0.38 : 0.2)}`,
+      "0 0 0 1px rgb(0 0 0 / 0.6)",
       neonSlotShadow(color, active),
       filled
-        ? `0 14px 36px rgb(0 0 0 / 0.65), 0 6px 18px rgb(0 0 0 / 0.5)`
-        : `0 10px 28px rgb(0 0 0 / 0.55), 0 4px 12px rgb(0 0 0 / 0.45)`,
-      `0 0 24px ${a(active ? 0.22 : 0.1)}`,
-      `inset 0 1px 0 rgb(255 255 255 / ${active ? 0.16 : 0.09})`,
-      `inset 0 -2px 8px ${a(active ? 0.2 : 0.1)}`,
-      `inset 0 0 24px ${a(active ? 0.14 : 0.07)}`,
+        ? `0 8px 24px rgb(0 0 0 / 0.5)`
+        : `0 4px 12px rgb(0 0 0 / 0.4)`,
+      `inset 0 1px 0 rgb(255 255 255 / ${active ? 0.1 : 0.05})`,
+      `inset 0 -2px 8px ${a(active ? 0.1 : 0.05)}`,
     ].join(", "),
   };
 }
@@ -68,24 +62,20 @@ export function neonSlotShadow(color: string, active = false): string {
   const a = (n: number) => colorAlpha(color, n);
   if (active) {
     return [
-      `0 0 0 1px ${a(0.95)}`,
-      `0 0 0 2px ${a(0.2)}`,
-      `0 0 12px ${a(0.65)}`,
-      `0 0 28px ${a(0.35)}`,
-      `inset 0 -32px 48px ${a(0.22)}`,
+      `0 0 0 1px ${a(0.6)}`,
+      `0 0 8px ${a(0.3)}`,
+      `0 0 16px ${a(0.15)}`,
     ].join(", ");
   }
   return [
-    `0 0 0 1px ${a(0.48)}`,
-    `0 0 8px ${a(0.28)}`,
-    `0 0 18px ${a(0.1)}`,
-    `inset 0 -24px 40px ${a(0.14)}`,
+    `0 0 0 1px ${a(0.3)}`,
+    `0 0 4px ${a(0.1)}`,
   ].join(", ");
 }
 
 /** Readable white label with subtle team-colored halo. */
 export function neonTextShadow(color: string): string {
-  return `0 0 12px ${colorAlpha(color, 0.55)}, 0 1px 2px rgb(0 0 0 / 0.85)`;
+  return `0 0 8px ${colorAlpha(color, 0.3)}, 0 1px 2px rgb(0 0 0 / 0.6)`;
 }
 
 /** High-contrast shadow for labels on busy hero art / video. */
@@ -110,8 +100,8 @@ export function pickCardLabelScrim(color: string): string {
 /** Radial bloom behind hero portrait inside a pick card. */
 export function heroCardInnerGlow(color: string, active = false): string {
   const a = (n: number) => colorAlpha(color, n);
-  const peak = active ? 0.22 : 0.14;
-  return `radial-gradient(ellipse 90% 80% at 50% 40%, ${a(peak)} 0%, ${a(0.06)} 50%, transparent 78%)`;
+  const peak = active ? 0.1 : 0.05;
+  return `radial-gradient(ellipse 90% 80% at 50% 40%, ${a(peak)} 0%, ${a(0.02)} 50%, transparent 78%)`;
 }
 
 /** Inset team-color wash on pick card edges (CSV brand hex). */
@@ -144,7 +134,7 @@ export function pickCardCornerHue(color: string, active = false): string {
 /** Bottom atmospheric glow inside empty pick slots. */
 export function slotFloorBackground(color: string): string {
   const a = (n: number) => colorAlpha(color, n);
-  return `linear-gradient(to top, ${a(0.24)} 0%, ${a(0.09)} 34%, ${a(0.03)} 60%, transparent 80%)`;
+  return `linear-gradient(to top, ${a(0.1)} 0%, ${a(0.04)} 34%, transparent 80%)`;
 }
 
 /** Outer HUD chrome — dual-team top edge + side bloom. */
@@ -172,13 +162,10 @@ export function hudTopLineGradient(radiant: string, dire: string): string {
 export function logoActiveGlow(color: string): string {
   const a = (n: number) => colorAlpha(color, n);
   return [
-    `0 0 0 2px ${a(0.95)}`,
-    `0 0 0 4px ${a(0.35)}`,
-    `0 0 18px ${a(0.85)}`,
-    `0 0 36px ${a(0.55)}`,
-    `0 0 64px ${a(0.28)}`,
-    `inset 0 0 20px ${a(0.25)}`,
-    `inset 0 1px 0 rgb(255 255 255 / 0.18)`,
+    `0 0 0 1px ${a(0.6)}`,
+    `0 0 12px ${a(0.4)}`,
+    `0 0 24px ${a(0.15)}`,
+    `inset 0 1px 0 rgb(255 255 255 / 0.1)`,
   ].join(", ");
 }
 

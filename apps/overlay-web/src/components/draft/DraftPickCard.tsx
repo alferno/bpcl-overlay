@@ -47,26 +47,14 @@ export function DraftPickCard({
   teamColor?: string;
   isActive?: boolean;
   animate?: boolean;
-  /** Slot has a pick in GSI but cinematic plays first — show empty card */
-  hideHeroUntilCinematic?: boolean;
-  /** After CM draft — show manually assigned roster name */
-  heroSelectionMode?: boolean;
-  leagueConfig?: LeagueConfig;
-  production?: ProductionSettings | null;
-  teamSide: "radiant" | "dire";
-  previousDrafts?: DraftState[];
-}) {
   const media = slot ? resolveSlotMedia(slot) : {};
   const hasPick = Boolean(
     slot?.heroId || media.static || media.animated,
   );
-  const showHeroVisual = hasPick && !hideHeroUntilCinematic;
-  const prevHideCinematicRef = useRef(hideHeroUntilCinematic);
-  const webmFirst =
-    showHeroVisual &&
-    prevHideCinematicRef.current &&
-    !hideHeroUntilCinematic;
-  prevHideCinematicRef.current = hideHeroUntilCinematic;
+  const showHeroVisual = hasPick;
+  const webmFirst = showHeroVisual;
+  const accent = teamColor ?? "#ffffff";
+  const [sweep, setSweep] = useState(false);
   const accent = teamColor ?? "#ffffff";
   const [sweep, setSweep] = useState(false);
 
@@ -91,99 +79,121 @@ export function DraftPickCard({
   const active = Boolean(isActive);
 
   return (
-    <motion.div
-      layout
-      className={`relative h-full min-w-0 w-full overflow-hidden rounded-md ${
-        active ? "draft-pick-pulse" : ""
-      } ${sweep ? "energy-sweep" : ""} ${showHeroVisual ? "draft-pick-card--filled" : "draft-pick-card--empty"}`}
-      style={{
-        border: `1px solid ${colorAlpha(accent, active ? 0.8 : 0.4)}`,
-        background: "rgba(0,0,0,0.3)",
-        boxShadow: active ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
-      }}
-      initial={showHeroVisual ? { y: 30, scale: 0.92, opacity: 0 } : false}
-      animate={{ y: 0, scale: 1, opacity: 1 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-    >
-
-      {showHeroVisual && slot && (media.static || media.animated) ? (
-        <>
-          <div className="pointer-events-none absolute inset-0 bg-black" />
-          <DraftHistoryTags currentSlot={slot} currentTeamSide={teamSide} previousDrafts={previousDrafts} />
-          <div
-            className="pointer-events-none absolute inset-0 z-[1] mix-blend-soft-light opacity-[0.42]"
-            style={{ background: heroCardInnerGlow(accent, active) }}
-          />
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-2/5"
-            style={{ background: slotFloorBackground(accent) }}
-          />
-          <DraftHeroMedia
-            staticUrl={media.static}
-            staticFallback={media.staticFallback}
-            animatedUrl={media.animated}
-            heroSlug={media.slug}
-            alt={slot.heroName ?? "hero"}
-            animate={animate && draftHeroAnimationEnabled()}
-            variant="slot"
-            webmFirst={webmFirst}
-            glowColor={colorAlpha(accent, 0.32)}
-          />
-          <div className="draft-hero-card-vignette pointer-events-none absolute inset-0 z-[3]" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[48%] bg-gradient-to-t from-black/95 via-black/70 to-transparent" />
-          {underHeroLabel ? (
-            <DraftPickCardLabel
-              label={underHeroLabel}
-              accent={accent}
-              variant={labelVariant}
-            />
-          ) : null}
-        </>
-      ) : showHeroVisual && slot ? (
-        <div className="flex h-full flex-col items-center justify-center bg-black px-1">
-          {underHeroLabel ? (
-            <DraftPickCardLabel
-              label={underHeroLabel}
-              accent={accent}
-              variant={labelVariant}
-            />
-          ) : (
-            <p
-              className="draft-pick-slot-label draft-pick-slot-label--hero draft-pick-slot-label--wrap px-2 text-center font-heading text-base font-bold leading-[1.12] tracking-[0.04em] text-white"
-              style={{ textShadow: readableTextShadow(accent) }}
-            >
-              {wrapCardLabelLines(
-                formatCardLabelText(
-                  slot.heroName ?? `Hero ${slot.heroId ?? ""}`,
-                  "hero",
-                ),
-                "hero",
-              ).map((line, i) => (
-                <span key={`${line}-${i}`} className="block">
-                  {line}
-                </span>
-              ))}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="relative flex h-full flex-col items-center justify-center bg-black p-2">
+    <div style={{ perspective: "1200px", width: "100%", height: "100%" }}>
+      <motion.div
+        layout
+        className={`relative h-full min-w-0 w-full ${
+          active ? "draft-pick-pulse" : ""
+        } ${sweep ? "energy-sweep" : ""}`}
+        style={{
+          transformStyle: "preserve-3d",
+        }}
+        initial={false}
+        animate={{
+          rotateY: showHeroVisual ? 180 : 0,
+          z: showHeroVisual ? 40 : 0,
+          scale: showHeroVisual ? 1.05 : 1,
+        }}
+        transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
+      >
+        {/* FRONT FACE (Team Logo & Empty State) */}
+        <div
+          className="absolute inset-0 overflow-hidden rounded-md draft-pick-card--empty flex flex-col items-center justify-center p-2"
+          style={{
+            backfaceVisibility: "hidden",
+            border: `1px solid ${colorAlpha(accent, active ? 0.8 : 0.4)}`,
+            background: "rgba(0,0,0,0.3)",
+            boxShadow: active ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
+          }}
+        >
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-3/5"
             style={{ background: slotFloorBackground(accent) }}
           />
-          {teamLogoUrl ? (
-            <img
-              src={teamLogoUrl}
-              alt=""
-              className="relative z-[1] max-h-[78%] max-w-[78%] object-contain opacity-35"
-              style={{ filter: `drop-shadow(0 0 12px ${colorAlpha(accent, 0.35)})` }}
-            />
-          ) : (
-            <div className="relative z-[1] h-10 w-10 rounded-full bg-white/[0.04]" />
-          )}
+          <div className="relative z-[1] flex h-full flex-col items-center justify-center">
+            <span 
+              className="font-heading text-2xl font-bold uppercase tracking-widest text-white/50"
+              style={{ textShadow: `0 0 12px ${colorAlpha(accent, 0.4)}` }}
+            >
+              BPCL S2
+            </span>
+          </div>
         </div>
-      )}
-    </motion.div>
+
+        {/* BACK FACE (Hero Picked Reveal) */}
+        <div
+          className="absolute inset-0 overflow-hidden rounded-md draft-pick-card--filled"
+          style={{
+            backfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+            border: `1px solid ${colorAlpha(accent, active ? 0.8 : 0.4)}`,
+            background: "rgba(0,0,0,0.3)",
+            boxShadow: active ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
+          }}
+        >
+          {slot && (media.static || media.animated) ? (
+            <>
+              <div className="pointer-events-none absolute inset-0 bg-black" />
+              <DraftHistoryTags currentSlot={slot} currentTeamSide={teamSide} previousDrafts={previousDrafts} />
+              <div
+                className="pointer-events-none absolute inset-0 z-[1] mix-blend-soft-light opacity-[0.42]"
+                style={{ background: heroCardInnerGlow(accent, active) }}
+              />
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-2/5"
+                style={{ background: slotFloorBackground(accent) }}
+              />
+              <DraftHeroMedia
+                staticUrl={media.static}
+                staticFallback={media.staticFallback}
+                animatedUrl={media.animated}
+                heroSlug={media.slug}
+                alt={slot.heroName ?? "hero"}
+                animate={animate && draftHeroAnimationEnabled()}
+                variant="slot"
+                webmFirst={webmFirst}
+                glowColor={colorAlpha(accent, 0.32)}
+              />
+              <div className="draft-hero-card-vignette pointer-events-none absolute inset-0 z-[3]" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[48%] bg-gradient-to-t from-black/95 via-black/70 to-transparent" />
+              {underHeroLabel ? (
+                <DraftPickCardLabel
+                  label={underHeroLabel}
+                  accent={accent}
+                  variant={labelVariant}
+                />
+              ) : null}
+            </>
+          ) : slot ? (
+            <div className="flex h-full flex-col items-center justify-center bg-black px-1">
+              {underHeroLabel ? (
+                <DraftPickCardLabel
+                  label={underHeroLabel}
+                  accent={accent}
+                  variant={labelVariant}
+                />
+              ) : (
+                <p
+                  className="draft-pick-slot-label draft-pick-slot-label--hero draft-pick-slot-label--wrap px-2 text-center font-heading text-base font-bold leading-[1.12] tracking-[0.04em] text-white"
+                  style={{ textShadow: readableTextShadow(accent) }}
+                >
+                  {wrapCardLabelLines(
+                    formatCardLabelText(
+                      slot.heroName ?? `Hero ${slot.heroId ?? ""}`,
+                      "hero",
+                    ),
+                    "hero",
+                  ).map((line, i) => (
+                    <span key={`${line}-${i}`} className="block">
+                      {line}
+                    </span>
+                  ))}
+                </p>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </motion.div>
+    </div>
   );
 }

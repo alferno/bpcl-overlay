@@ -13,7 +13,7 @@ import {
   isPickSlotFilled,
 } from "../../hero-portrait";
 import { prepareTeamBoard } from "../../draft/slot-utils";
-import { slotAwaitingCinematicReveal } from "../../draft/cinematic-pick";
+// import { slotAwaitingCinematicReveal } from "../../draft/cinematic-pick";
 import { colorAlpha } from "../../draft/team-colors";
 import { DraftBanTile } from "./DraftBanTile";
 import { DraftPickCard } from "./DraftPickCard";
@@ -86,22 +86,7 @@ export function DraftTeamColumn({
                     !slot?.heroPortraitUrl &&
                     i === firstEmptyPick
                   }
-                  animate={
-                    heroAnimate &&
-                    isPickSlotFilled(slot) &&
-                    !slotAwaitingCinematicReveal(
-                      teamSide,
-                      slot,
-                      cinematicPickKey,
-                    )
-                  }
-                  hideHeroUntilCinematic={
-                    slotAwaitingCinematicReveal(
-                      teamSide,
-                      slot,
-                      cinematicPickKey,
-                    )
-                  }
+                  animate={heroAnimate && isPickSlotFilled(slot)}
                   heroSelectionMode={heroSelectionMode}
                   leagueConfig={leagueConfig}
                   production={production}

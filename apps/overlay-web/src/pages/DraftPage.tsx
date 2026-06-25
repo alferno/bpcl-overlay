@@ -4,7 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { DraftBlastBar } from "../components/draft/DraftBlastBar";
-import { DraftPickRevealLayer } from "../components/draft/DraftPickRevealLayer";
+// import { DraftPickRevealLayer } from "../components/draft/DraftPickRevealLayer";
 import { DraftPickStatsStack } from "../components/draft/DraftPickStatsStack";
 import { DraftStartingPanel } from "../components/draft/DraftStartingPanel";
 import { DraftDataOverlay } from "../components/draft/DraftDataOverlay";
@@ -75,15 +75,7 @@ export default function DraftPage() {
           )}
 
           <AnimatePresence>
-            {draft && introPick ? (
-              <DraftPickRevealLayer
-                key={`reveal-${introPick.side}-${introPick.heroId}`}
-                draft={draft}
-                introPick={introPick}
-                leagueConfig={state.leagueConfig}
-                production={state.production}
-              />
-            ) : null}
+            {/* Cinematic hero focus removed in favor of 3D card flips */}
           </AnimatePresence>
 
           <DraftPickStatsStack
