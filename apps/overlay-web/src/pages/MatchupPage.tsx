@@ -47,12 +47,12 @@ export default function MatchupPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: 0.6, duration: 0.4 }}
-                className="absolute w-[1050px] h-[550px] bg-slate-950/95 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] z-0"
+                className="absolute w-[1300px] h-[600px] bg-slate-950 rounded-[2.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] z-0"
               />
 
               {/* Hero A (Slides in from Left) */}
               <motion.div 
-                className="flex flex-col items-center gap-4 relative z-10"
+                className="flex flex-col items-center gap-4 relative z-10 w-[320px]"
                 initial={{ x: -800, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -800, opacity: 0 }}
@@ -61,9 +61,9 @@ export default function MatchupPage() {
                 <HeroPortrait
                   url={portraitA}
                   heroName={m.heroAName}
-                  size={200}
+                  size={220}
                 />
-                <p className="text-4xl font-black text-emerald-300">
+                <p className="text-4xl font-black text-emerald-300 text-center leading-tight">
                   {m.heroAName ?? `#${m.heroAId}`}
                 </p>
               </motion.div>
@@ -96,7 +96,7 @@ export default function MatchupPage() {
 
               {/* Hero B (Slides in from Right) */}
               <motion.div 
-                className="flex flex-col items-center gap-4 relative z-10"
+                className="flex flex-col items-center gap-4 relative z-10 w-[320px]"
                 initial={{ x: 800, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 800, opacity: 0 }}
@@ -105,9 +105,9 @@ export default function MatchupPage() {
                 <HeroPortrait
                   url={portraitB}
                   heroName={m.heroBName}
-                  size={200}
+                  size={220}
                 />
-                <p className="text-4xl font-black text-rose-300">
+                <p className="text-4xl font-black text-rose-300 text-center leading-tight">
                   {m.heroBName ?? `#${m.heroBId}`}
                 </p>
               </motion.div>
