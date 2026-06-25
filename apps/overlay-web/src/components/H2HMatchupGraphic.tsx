@@ -57,7 +57,7 @@ export function H2HMatchupGraphic() {
               >
                 {/* Front side (Player Card image) */}
                 <div 
-                  className="absolute inset-0 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                  className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
                   style={{ backfaceVisibility: "hidden" }}
                 >
                   <img 
@@ -71,7 +71,7 @@ export function H2HMatchupGraphic() {
 
                 {/* Back side (Stats) */}
                 <div 
-                  className="absolute inset-0 rounded-2xl bg-slate-900/95 border-2 border-cyan-500/50 p-8 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(6,182,212,0.4)] backdrop-blur-xl"
+                  className="absolute inset-0 rounded-2xl bg-slate-900 border-2 border-cyan-500/50 p-8 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(6,182,212,0.4)]"
                   style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
                 >
                   <div className="flex flex-col items-center mb-10 w-full relative">
@@ -130,7 +130,7 @@ export function H2HMatchupGraphic() {
               >
                 {/* Front side (Player Card image) */}
                 <div 
-                  className="absolute inset-0 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                  className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
                   style={{ backfaceVisibility: "hidden" }}
                 >
                   <img 
@@ -144,7 +144,7 @@ export function H2HMatchupGraphic() {
 
                 {/* Back side (Stats) */}
                 <div 
-                  className="absolute inset-0 rounded-2xl bg-slate-900/95 border-2 border-emerald-500/50 p-8 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.4)] backdrop-blur-xl"
+                  className="absolute inset-0 rounded-2xl bg-slate-900 border-2 border-emerald-500/50 p-8 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.4)]"
                   style={{ backfaceVisibility: "hidden", transform: "rotateY(-180deg)" }}
                 >
                   <div className="flex flex-col items-center mb-10 w-full relative">
