@@ -85,7 +85,7 @@ export function RosterSyncPanel({
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Option A: bpcleague.in Sync</h4>
             <p className="mt-1 text-[10px] text-slate-400">
-              Pulls rosters, accent colors, and parses Steam URLs into Steam32 IDs.
+              Pulls rosters, accent colors, and parses Steam URLs into Steam32 IDs. Automatically syncs Sponsors for the season and saves a local CSV to <code className="text-cyan-200">data/roster/players_roster_prepared.csv</code>.
             </p>
           </div>
           <div className="flex gap-2">

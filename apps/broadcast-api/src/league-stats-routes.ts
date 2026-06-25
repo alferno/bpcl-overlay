@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import type { Express } from "express";
 import type { Server as IOServer } from "socket.io";
 import { z } from "zod";
@@ -31,14 +31,14 @@ import {
   assertLeagueStatsReady,
   LeagueStatsNotReadyError,
 } from "./services/league-stats-guard.js";
-import { parseRosterCsv, teamColorsFromRoster } from "./services/roster-parser.js";
+import { parseRosterCsv, teamColorsFromRoster, serializeRosterCsv } from "./services/roster-parser.js";
 import { listTeamsFromRoster } from "./services/roster-teams.js";
 import {
   applyPickPlayersToDraft,
   draftPatchFromMatchSetup,
 } from "./services/match-setup.js";
 import { enrichRosterAvatars } from "./services/steam-profile.js";
-import { fetchRosterFromBpcLeague, fetchMatchesFromBpcLeague, fetchSeasonsFromBpcLeague } from "./services/bpcleague-sync.js";
+import { fetchRosterFromBpcLeague, fetchMatchesFromBpcLeague, fetchSeasonsFromBpcLeague, fetchSeasonConfigFromBpcLeague } from "./services/bpcleague-sync.js";
 import { tournamentAggregator } from "./services/tournament-aggregator.js";
 import { autopilotManager } from "./services/autopilot.js";
 import {
@@ -209,9 +209,36 @@ export function attachLeagueAndStatsRoutes(opts: {
       const roster = await enrichRosterAvatars(rawRoster, opendota);
       const teamColors = teamColorsFromRoster(roster);
 
+      // Save CSV
+      const csvPath = env.ROSTER_CSV_PATH;
+      await mkdir(path.dirname(csvPath), { recursive: true });
+      const csvContent = serializeRosterCsv(roster);
+      await writeFile(csvPath, csvContent, "utf8");
+
+      // Fetch Season Config for sponsors
+      const seasonConfig = await fetchSeasonConfigFromBpcLeague(seasonSlug);
+      let fetchedBanners: any[] = [];
+      if (seasonConfig && seasonConfig.sponsorsConfig && Array.isArray(seasonConfig.sponsorsConfig.sponsors)) {
+        fetchedBanners = seasonConfig.sponsorsConfig.sponsors.map((s: any) => ({
+          title: s.title || s.name || "",
+          subtitle: s.subtitle || "",
+          imageUrl: s.imageUrl || s.logoUrl || s.logo || "",
+          color: s.color || "#ffffff",
+          isCoSponsor: s.isCoSponsor || false,
+        }));
+      }
+
+      if (fetchedBanners.length === 0) {
+        fetchedBanners = [
+          { title: "BPC", subtitle: "Gaming", isCoSponsor: true, color: "#ffffff", imageUrl: "" },
+          { title: "KRAFTon", subtitle: "Sponsor", isCoSponsor: false, color: "#ff0000", imageUrl: "" }
+        ];
+      }
+
       const snap = await state.getState();
       const next = await state.patchState({
         leagueConfig: { roster, teamColors, leagueId: snap.leagueConfig?.leagueId ?? env.LEAGUE_ID, seasonSlug },
+        sponsor: { banners: fetchedBanners, activeIndex: snap.sponsor?.activeIndex ?? 0 }
       });
       await broadcast.broadcastFull(next);
 

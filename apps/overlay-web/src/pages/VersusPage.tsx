@@ -266,7 +266,7 @@ export default function VersusPage() {
             />
             
             {/* Radiant Content */}
-            <div className="absolute inset-0 flex flex-col justify-center pl-16 pr-[15%]">
+            <div className="absolute inset-0 flex flex-col justify-center pl-16 pr-[15%] items-start">
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}

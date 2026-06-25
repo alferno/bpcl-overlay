@@ -144,6 +144,22 @@ export function ReplayManagerPanel({
     }
   };
 
+  const forceMainScene = async () => {
+    setBusy(true);
+    setLocalErr(null);
+    try {
+      const res = await apiFetch(origin, token, "/api/obs/program-scene", {
+        method: "POST",
+        body: JSON.stringify({ sceneName: "Main Scene" }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+    } catch (e) {
+      setLocalErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // Filter logic
   const filteredReplays = replays.filter((r) => {
     if (filterFav && !r.favorite) return false;
@@ -332,16 +348,26 @@ export function ReplayManagerPanel({
           <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6 backdrop-blur-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200 mb-4">OBS Reset</h3>
             <p className="text-[10px] text-slate-500 mb-4">
-              Switch back to the original scene from replay manually if needed.
+              Instantly cancel a replay sequence or switch back manually.
             </p>
-            <Btn 
-              variant="ghost" 
-              className="w-full py-3 border border-white/10" 
-              disabled={busy} 
-              onClick={() => triggerHotkeySequence("OBS_KEY_DOWN", { control: true, shift: true })}
-            >
-              ↩ Reset Scene (Ctrl+Shift+Down)
-            </Btn>
+            <div className="space-y-3">
+              <Btn 
+                variant="danger" 
+                className="w-full py-3 bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-500/30" 
+                disabled={busy} 
+                onClick={forceMainScene}
+              >
+                🚨 Force Main Scene
+              </Btn>
+              <Btn 
+                variant="ghost" 
+                className="w-full py-3 border border-white/10" 
+                disabled={busy} 
+                onClick={() => triggerHotkeySequence("OBS_KEY_DOWN", { control: true, shift: true })}
+              >
+                ↩ Reset Scene (Ctrl+Shift+Down)
+              </Btn>
+            </div>
           </div>
         </div>
       </div>

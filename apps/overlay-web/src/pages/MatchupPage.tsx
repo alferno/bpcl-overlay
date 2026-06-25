@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { HeroPortrait } from "../components/HeroPortrait";
@@ -37,10 +38,17 @@ export default function MatchupPage() {
   return (
     <HudCanvas blend>
       <FadePanel show={visible} panelKey={`matchup-${m?.heroAId}-${m?.heroBId}`}>
-        <div className="flex h-full items-center justify-center gap-16 p-14">
+        <div className="flex h-full items-center justify-center gap-16 p-14 overflow-hidden">
           {m ? (
             <>
-              <div className="flex flex-col items-center gap-4">
+              {/* Hero A (Slides in from Left) */}
+              <motion.div 
+                className="flex flex-col items-center gap-4"
+                initial={{ x: -800, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -800, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.2 }}
+              >
                 <HeroPortrait
                   url={portraitA}
                   heroName={m.heroAName}
@@ -49,9 +57,16 @@ export default function MatchupPage() {
                 <p className="text-4xl font-black text-emerald-300">
                   {m.heroAName ?? `#${m.heroAId}`}
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="min-w-[28rem] rounded-[2rem] bg-black/80 p-12 text-xl text-neutral-200 shadow-2xl backdrop-blur">
+              {/* Center Panel (Pops in after slide) */}
+              <motion.div 
+                className="min-w-[28rem] rounded-[2rem] bg-black/95 p-12 text-xl text-neutral-200 shadow-[0_0_50px_rgba(6,182,212,0.3)] backdrop-blur-2xl relative z-10 border border-cyan-500/20"
+                initial={{ scale: 0.5, opacity: 0, y: 50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.5, opacity: 0, y: 50 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.6 }}
+              >
                 <p className="mb-6 text-center text-xs uppercase tracking-[0.5em] text-neutral-400">
                   Matchup
                 </p>
@@ -68,9 +83,16 @@ export default function MatchupPage() {
                 ) : (
                   <p className="text-center text-neutral-500">No stat lines</p>
                 )}
-              </div>
+              </motion.div>
 
-              <div className="flex flex-col items-center gap-4">
+              {/* Hero B (Slides in from Right) */}
+              <motion.div 
+                className="flex flex-col items-center gap-4"
+                initial={{ x: 800, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 800, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.2 }}
+              >
                 <HeroPortrait
                   url={portraitB}
                   heroName={m.heroBName}
@@ -79,7 +101,7 @@ export default function MatchupPage() {
                 <p className="text-4xl font-black text-rose-300">
                   {m.heroBName ?? `#${m.heroBId}`}
                 </p>
-              </div>
+              </motion.div>
             </>
           ) : (
             <p className="w-full text-center text-4xl text-neutral-600">

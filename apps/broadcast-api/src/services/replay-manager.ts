@@ -7,6 +7,8 @@ import type { Replay, ReplayState } from "@bpc/shared-types";
 import { logger } from "../logger.js";
 import type { OBSController } from "../obs-controller.js";
 
+type PlaybackState = 'IDLE' | 'STINGER_IN' | 'REPLAYING' | 'STINGER_OUT';
+
 const execAsync = promisify(exec);
 
 export class ReplayManager {
@@ -15,6 +17,11 @@ export class ReplayManager {
   private lastCompletedFile = env.REPLAY_LAST_COMPLETED_FILE;
   private playbackDir = env.REPLAY_PLAYBACK_DIR;
   private replayFolder = env.REPLAY_FOLDER;
+  private highlightsDir = (env as any).HIGHLIGHTS_FOLDER || path.resolve(process.cwd(), "../../data/highlights");
+  private pendingDuration: number | null = null;
+
+  private playbackState: PlaybackState = 'IDLE';
+  private originalScene: string | null = null;
 
   // Temp folder for browser mp4 previews (inside build output or root)
   private previewCacheDir = path.resolve(process.cwd(), "public-preview-cache");
@@ -32,6 +39,126 @@ export class ReplayManager {
 
   getPreviewCacheDir(): string {
     return this.previewCacheDir;
+  }
+
+  init(obs: OBSController) {
+    obs.on("ReplayBufferSaved", async (data) => {
+      // obs-websocket-js typed data
+      const path = (data as any).savedReplayPath;
+      if (path) {
+        await this.handleReplaySaved(path);
+      }
+    });
+
+    obs.on("CurrentProgramSceneChanged", (data) => {
+      const sceneName = (data as any).sceneName;
+      if (this.playbackState !== 'IDLE' && sceneName !== 'Replay Stinger' && sceneName !== 'Replay') {
+        logger.info(`Manual scene switch to ${sceneName} detected. Cancelling replay sequence.`);
+        this.playbackState = 'IDLE';
+        this.originalScene = null;
+      }
+    });
+
+    obs.on("MediaInputPlaybackEnded", async (data) => {
+      const inputName = (data as any).inputName;
+      
+      if (this.playbackState === 'STINGER_IN' && inputName === 'Stinger') {
+        logger.info("Stinger In ended, switching to Replay");
+        this.playbackState = 'REPLAYING';
+        await obs.setCurrentScene("Replay");
+        await obs.restartMediaInput("ReplayPlayer");
+      } 
+      else if (this.playbackState === 'REPLAYING' && inputName === 'ReplayPlayer') {
+        logger.info("Replay ended, switching to Stinger Out");
+        this.playbackState = 'STINGER_OUT';
+        await obs.setCurrentScene("Replay Stinger");
+        await obs.restartMediaInput("Stinger");
+      }
+      else if (this.playbackState === 'STINGER_OUT' && inputName === 'Stinger') {
+        logger.info("Stinger Out ended, restoring original scene");
+        this.playbackState = 'IDLE';
+        if (this.originalScene) {
+          await obs.setCurrentScene(this.originalScene);
+          this.originalScene = null;
+        }
+      }
+    });
+  }
+
+  async triggerSaveReplay(duration: number | null, obs: OBSController) {
+    this.pendingDuration = duration;
+    const result = await obs.saveReplayBuffer();
+    if (!result.ok) {
+      this.pendingDuration = null;
+    }
+    return result;
+  }
+
+  private async handleReplaySaved(originalPath: string) {
+    try {
+      if (!originalPath || !fs.existsSync(originalPath)) {
+        logger.error({ originalPath }, "Replay saved but file not found");
+        return;
+      }
+
+      if (!fs.existsSync(this.replayFolder)) {
+        fs.mkdirSync(this.replayFolder, { recursive: true });
+      }
+
+      const filename = path.basename(originalPath);
+      const newPath = path.join(this.replayFolder, filename);
+
+      // Move the file and delete from original location
+      if (originalPath !== newPath) {
+        fs.copyFileSync(originalPath, newPath);
+        fs.unlinkSync(originalPath);
+      }
+
+      // Probe duration
+      let duration = 30; // default
+      let overridden = false;
+      if (this.pendingDuration !== null) {
+        duration = this.pendingDuration;
+        this.pendingDuration = null;
+        overridden = true;
+      }
+      try {
+        const probeCmd = `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${newPath}"`;
+        const probeOut = await execAsync(probeCmd);
+        const actualDuration = parseFloat(probeOut.stdout.trim());
+        if (!isNaN(actualDuration) && !overridden) {
+          duration = Math.round(actualDuration);
+        }
+      } catch (err) {
+        logger.error(err, "Failed to probe duration of new replay");
+      }
+
+      // Append to CSV
+      const state = await this.getReplayState();
+      const currentMatch = state.currentMatch;
+      
+      let maxReplayId = 0;
+      for (const r of state.replays) {
+        if (r.replayId > maxReplayId) {
+          maxReplayId = r.replayId;
+        }
+      }
+      const newReplayId = maxReplayId + 1;
+
+      const newLine = `${currentMatch},${newReplayId},"${newPath}",0,${duration}\n`;
+      
+      if (!fs.existsSync(this.dbFile)) {
+        const dir = path.dirname(this.dbFile);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(this.dbFile, 'match,replay_id,"file",favorite,duration\n');
+      }
+      
+      fs.appendFileSync(this.dbFile, newLine, "utf-8");
+      logger.info({ newPath, currentMatch, newReplayId }, "Saved new replay");
+
+    } catch (err) {
+      logger.error(err, "Failed to handle saved replay");
+    }
   }
 
   async getReplayState(): Promise<ReplayState> {
@@ -175,16 +302,19 @@ export class ReplayManager {
           return { ok: false, error: `Failed to set OBS input settings: ${setSettingsRes.error}` };
         }
 
-        const restartRes = await obs.restartMediaInput("ReplayPlayer");
-        if (!restartRes.ok) {
-          return { ok: false, error: `Failed to restart OBS media input: ${restartRes.error}` };
+        // Get current scene to restore later, unless we are already in the middle of a replay
+        const sceneRes = await obs.getCurrentProgramScene();
+        if (sceneRes.ok && sceneRes.sceneName && sceneRes.sceneName !== "Replay Stinger" && sceneRes.sceneName !== "Replay") {
+          this.originalScene = sceneRes.sceneName;
         }
 
-        // Switch to the replay scene
-        const sceneRes = await obs.setCurrentScene("Replay");
-        if (!sceneRes.ok) {
-          logger.error({ error: sceneRes.error }, "Failed to switch OBS scene");
+        this.playbackState = 'STINGER_IN';
+        
+        const stingerRes = await obs.setCurrentScene("Replay Stinger");
+        if (!stingerRes.ok) {
+          logger.error({ error: stingerRes.error }, "Failed to switch to Replay Stinger scene");
         }
+        await obs.restartMediaInput("Stinger");
 
         return { ok: true };
       } else {
@@ -207,6 +337,69 @@ export class ReplayManager {
       return { ok: true, previewUrl: `/api/replays/media/${encodeURIComponent(filename)}` };
     } catch (err) {
       logger.error(err, "Failed to generate preview url");
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  async nextMatch() {
+    try {
+      const state = await this.getReplayState();
+      const current = state.currentMatch;
+      
+      if (!fs.existsSync(path.dirname(this.lastCompletedFile))) {
+        fs.mkdirSync(path.dirname(this.lastCompletedFile), { recursive: true });
+      }
+      fs.writeFileSync(this.lastCompletedFile, current.toString(), "utf-8");
+      
+      // Fire and forget highlight generation
+      this.generateHighlights(current).catch(err => {
+        logger.error(err, "Failed to generate highlights in background");
+      });
+      
+      const next = current + 1;
+      fs.writeFileSync(this.matchFile, next.toString(), "utf-8");
+      logger.info(`Advanced to match ${next}`);
+      return { ok: true, currentMatch: next };
+    } catch (err) {
+      logger.error(err, "Failed to advance match");
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  async generateHighlights(matchId: number) {
+    try {
+      const state = await this.getReplayState();
+      const favorites = state.replays.filter(r => r.match === matchId && r.favorite);
+      
+      if (favorites.length === 0) {
+        logger.info(`No favorite replays found for match ${matchId} to highlight`);
+        return { ok: false, error: "No favorites" };
+      }
+      
+      if (!fs.existsSync(this.highlightsDir)) {
+        fs.mkdirSync(this.highlightsDir, { recursive: true });
+      }
+      
+      // Sort by replayId ascending so oldest plays first
+      favorites.sort((a, b) => a.replayId - b.replayId);
+      
+      // Create concat file
+      const concatFile = path.join(this.highlightsDir, `concat_${matchId}.txt`);
+      // Important: escape backslashes for ffmpeg concat demuxer
+      const lines = favorites.map(r => `file '${r.file.replace(/\\/g, "/")}'`);
+      fs.writeFileSync(concatFile, lines.join("\n") + "\n", "utf-8");
+      
+      const outputFile = path.join(this.highlightsDir, `Match_${matchId}_Highlights.mp4`);
+      
+      const cmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" -c copy "${outputFile}"`;
+      logger.info({ cmd }, "Generating highlights");
+      
+      await execAsync(cmd);
+      
+      logger.info(`Generated highlights: ${outputFile}`);
+      return { ok: true, file: outputFile };
+    } catch (err) {
+      logger.error(err, "Failed to generate highlights");
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
   }

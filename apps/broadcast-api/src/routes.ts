@@ -38,6 +38,7 @@ export function attachRestRoutes(opts: {
   const { app, state, io, broadcast, obs, opendota } = opts;
 
   const replayManager = new ReplayManager();
+  replayManager.init(obs);
 
   // Serve original replays directly to avoid remuxing
   app.use(
@@ -431,6 +432,29 @@ export function attachRestRoutes(opts: {
     } catch (err) {
       res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
+  });
+
+  app.post("/api/replays/save", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ duration: z.number().nullable().optional() });
+    const parsed = schema.safeParse(req.body);
+    const duration = parsed.success ? (parsed.data.duration || null) : null;
+
+    const result = await replayManager.triggerSaveReplay(duration, obs);
+    res.json(result);
+  });
+
+  app.post("/api/replays/next-match", requireBroadcastAuth, async (_req, res) => {
+    const result = await replayManager.nextMatch();
+    res.json(result);
+  });
+
+  app.post("/api/replays/generate-highlights", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ matchId: z.number() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const result = await replayManager.generateHighlights(parsed.data.matchId);
+    res.json(result);
   });
 
   app.post("/api/replays/hotkey", requireBroadcastAuth, async (req, res) => {

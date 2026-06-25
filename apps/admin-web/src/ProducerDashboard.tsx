@@ -134,7 +134,7 @@ export function ProducerDashboard() {
         <header className="border-b border-white/5 bg-slate-900/40 backdrop-blur-md px-8 py-5 flex items-center justify-between sticky top-0 z-50">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">broadcast center</p>
-            <h1 className="text-xl font-bold tracking-tight text-white mt-0.5">GODSENT Suite Dashboard</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white mt-0.5">BPC Broadcasting Suite Dashboard</h1>
           </div>
           <div className="flex items-center gap-6 text-xs">
             {/* Status indicators */}
@@ -387,12 +387,12 @@ function Sidebar({
       <div className="flex flex-col">
         {/* Logo and branding */}
         <div className="px-6 py-8 flex items-center gap-3 border-b border-white/5">
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center font-black text-slate-950 text-sm tracking-tighter">
-            GS
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center font-black text-slate-950 text-xs tracking-tighter">
+            BPC
           </div>
           <div>
-            <h2 className="text-sm font-black uppercase tracking-wider text-white">GODSENT</h2>
-            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] -mt-0.5">broadcasting</p>
+            <h2 className="text-sm font-black uppercase tracking-wider text-white">BPC Broadcasting</h2>
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] -mt-0.5">Suite</p>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import OBSWebSocket from "obs-websocket-js";
+import OBSWebSocket, { type OBSEventTypes } from "obs-websocket-js";
 import { logger } from "./logger.js";
 
 export type OBSConnectionSettings = {
@@ -78,6 +78,18 @@ export class OBSController {
     try {
       await this.client.call("SetCurrentProgramScene", { sceneName });
       return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  async getCurrentProgramScene(): Promise<{ ok: boolean; sceneName?: string; error?: string }> {
+    try {
+      const data = await this.client.call("GetCurrentProgramScene");
+      return { ok: true, sceneName: data.currentProgramSceneName as string };
     } catch (err) {
       return {
         ok: false,
@@ -204,5 +216,24 @@ export class OBSController {
     this.reconnectTimer = setTimeout(() => {
       void this.connect();
     }, delayMs);
+  }
+
+  async saveReplayBuffer(): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.client.call("SaveReplayBuffer");
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  on<Event extends keyof OBSEventTypes>(
+    event: Event,
+    handler: (data: OBSEventTypes[Event]) => void
+  ): void {
+    this.client.on(event, handler);
   }
 }

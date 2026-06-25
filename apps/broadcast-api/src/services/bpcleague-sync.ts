@@ -277,4 +277,22 @@ export async function fetchSeasonsFromBpcLeague(): Promise<BpcSeason[]> {
   }
 }
 
+export async function fetchSeasonConfigFromBpcLeague(seasonSlug?: string): Promise<any> {
+  const slug = (seasonSlug || "season-1").trim().toLowerCase();
+  logger.info({ slug }, "Fetching season config from bpcleague.in");
+
+  try {
+    let payload;
+    if (slug === "latest" || slug === "active") {
+      payload = await fetchUrlJson("https://api.bpcleague.in/api/public/tournament");
+    } else {
+      payload = await fetchUrlJson(`https://api.bpcleague.in/api/public/seasons/${slug}`);
+    }
+    return payload.season || payload.tournament || null;
+  } catch (err) {
+    logger.error(err, "Failed to fetch season config from bpcleague.in");
+    return null;
+  }
+}
+
 

@@ -47,7 +47,7 @@ export function H2HMatchupGraphic() {
               exit={{ x: -1000, opacity: 0, rotateY: -15 }}
               transition={{ type: "spring", stiffness: 80, damping: 20 }}
               className="absolute w-[400px] h-[600px]"
-              style={{ perspective: 1500 }}
+              style={{ perspective: 15000 }}
             >
               <motion.div
                 animate={{ rotateY: flipped ? 180 : 0 }}
@@ -120,7 +120,7 @@ export function H2HMatchupGraphic() {
               exit={{ x: 1000, opacity: 0, rotateY: 15 }}
               transition={{ type: "spring", stiffness: 80, damping: 20 }}
               className="absolute w-[400px] h-[600px]"
-              style={{ perspective: 1500 }}
+              style={{ perspective: 15000 }}
             >
               <motion.div
                 animate={{ rotateY: flipped ? -180 : 0 }}

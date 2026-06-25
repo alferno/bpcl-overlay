@@ -407,6 +407,8 @@ export const sponsorRotationStateSchema = z.object({
       subtitle: z.string().optional(),
       imageUrl: z.string().optional(),
       durationSeconds: z.number().positive(),
+      isCoSponsor: z.boolean().optional(),
+      color: z.string().optional(),
     }),
   ),
   activeIndex: z.number().nonnegative(),

@@ -408,14 +408,36 @@ export async function buildMatchupCard(
         ? (row as { win: number }).win
         : undefined;
 
+  const heroANameStr = heroDisplayName(heroAId) || `Hero ${heroAId}`;
+  const heroBNameStr = heroDisplayName(heroBId) || `Hero ${heroBId}`;
+
+  const heroAWins = wins ?? 0;
+  const heroBWins = gamesPlayed !== undefined ? gamesPlayed - heroAWins : 0;
+
+  let firstHero = heroANameStr;
+  let secondHero = heroBNameStr;
+  let firstWins = heroAWins;
+  let secondWins = heroBWins;
+
+  if (heroBWins > heroAWins) {
+    firstHero = heroBNameStr;
+    secondHero = heroANameStr;
+    firstWins = heroBWins;
+    secondWins = heroAWins;
+  }
+
   const statLines = [
     {
-      label: "Games sampled",
+      label: "Games Played",
       value: gamesPlayed !== undefined ? String(gamesPlayed) : "—",
     },
     {
-      label: "Hero A wins",
-      value: wins !== undefined ? String(wins) : "—",
+      label: `${firstHero} Won`,
+      value: gamesPlayed !== undefined ? String(firstWins) : "—",
+    },
+    {
+      label: `${secondHero} Won`,
+      value: gamesPlayed !== undefined ? String(secondWins) : "—",
     },
   ];
 
