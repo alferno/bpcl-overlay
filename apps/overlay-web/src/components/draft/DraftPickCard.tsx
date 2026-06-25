@@ -35,7 +35,6 @@ export function DraftPickCard({
   teamColor,
   isActive,
   animate = true,
-  hideHeroUntilCinematic = false,
   heroSelectionMode = false,
   leagueConfig,
   production,
@@ -47,14 +46,18 @@ export function DraftPickCard({
   teamColor?: string;
   isActive?: boolean;
   animate?: boolean;
+  heroSelectionMode?: boolean;
+  leagueConfig?: LeagueConfig;
+  production?: ProductionSettings | null;
+  teamSide: "radiant" | "dire";
+  previousDrafts?: DraftState[];
+}) {
   const media = slot ? resolveSlotMedia(slot) : {};
   const hasPick = Boolean(
     slot?.heroId || media.static || media.animated,
   );
   const showHeroVisual = hasPick;
   const webmFirst = showHeroVisual;
-  const accent = teamColor ?? "#ffffff";
-  const [sweep, setSweep] = useState(false);
   const accent = teamColor ?? "#ffffff";
   const [sweep, setSweep] = useState(false);
 
