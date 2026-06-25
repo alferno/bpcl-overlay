@@ -234,6 +234,6 @@ export class OBSController {
     event: Event,
     handler: (data: OBSEventTypes[Event]) => void
   ): void {
-    this.client.on(event, handler);
+    this.client.on(event, handler as any);
   }
 }

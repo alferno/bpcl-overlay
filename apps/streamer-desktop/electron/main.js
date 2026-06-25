@@ -39,9 +39,9 @@ if (!process.env.STEAM_WEB_API_KEY)
     process.env.STEAM_WEB_API_KEY = 'E5DE5CF0D74F982E7FCB0AC3DE13393F';
 if (!process.env.LEAGUE_AUTO_AGGREGATE)
     process.env.LEAGUE_AUTO_AGGREGATE = 'false';
-// Replay paths — default to streamer's Videos folder
-const homeDir = os.homedir();
-const bpclBase = path.join(homeDir, 'Videos', 'BPCL S2 Broadcast');
+// Replay & CSV paths — portable mode (inside the app folder)
+const exeDir = path.dirname(app.getPath('exe'));
+const bpclBase = app.isPackaged ? path.join(exeDir, 'BroadcastData') : path.join(process.env.APP_ROOT, 'BroadcastData');
 if (!process.env.REPLAY_DB_FILE)
     process.env.REPLAY_DB_FILE = path.join(bpclBase, 'System', 'replay_db.csv');
 if (!process.env.REPLAY_MATCH_FILE)
@@ -52,6 +52,10 @@ if (!process.env.REPLAY_PLAYBACK_DIR)
     process.env.REPLAY_PLAYBACK_DIR = path.join(bpclBase, 'Playback');
 if (!process.env.REPLAY_FOLDER)
     process.env.REPLAY_FOLDER = path.join(bpclBase, 'Replays');
+if (!process.env.ROSTER_CSV_PATH)
+    process.env.ROSTER_CSV_PATH = path.join(bpclBase, 'System', 'Rosters', 'players_roster_prepared.csv');
+if (!process.env.LEAGUE_STATS_DIR)
+    process.env.LEAGUE_STATS_DIR = path.join(bpclBase, 'System', 'Stats');
 let bootstrapBroadcastServer;
 // Prevent the API from exiting the process on error
 process.env.BPC_NO_EXIT = "1";
