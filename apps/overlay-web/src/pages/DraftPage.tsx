@@ -38,7 +38,7 @@ export default function DraftPage() {
   return (
     <HudCanvas blend>
       <FadePanel show={visible}>
-        <div className="relative h-full w-full max-w-none font-body overflow-hidden bg-black/40">
+        <div className="relative h-full w-full max-w-none font-body overflow-hidden bg-black">
           {/* Top Half Trophy Background */}
           <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[65%] w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/40 via-emerald-900/10 to-transparent mix-blend-screen" />
