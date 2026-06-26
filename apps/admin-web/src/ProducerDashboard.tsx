@@ -26,7 +26,7 @@ import { GsiDraftControls } from "./components/GsiDraftControls";
 import { LowerThirdPanel } from "./components/LowerThirdPanel";
 import { ReplayManagerPanel } from "./components/ReplayManagerPanel";
 import { CasterDeckPanel } from "./components/CasterDeckPanel";
-import { VersusTestPanel } from "./components/VersusTestPanel";
+import { OverlayTestPanel } from "./components/OverlayTestPanel";
 import { ErrBox } from "./components/Common";
 
 type TabId = "dashboard" | "match_obs" | "stats" | "roster" | "lower_thirds" | "replays" | "testing";
@@ -295,7 +295,7 @@ export function ProducerDashboard() {
 
               {activeTab === "testing" && (
                 <div className="grid gap-6 items-start">
-                  <VersusTestPanel state={state} patch={patch} />
+                  <OverlayTestPanel state={state} patch={patch} />
                 </div>
               )}
             </motion.div>

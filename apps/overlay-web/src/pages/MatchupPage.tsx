@@ -54,7 +54,7 @@ export default function MatchupPage() {
 
                 {/* Hero A (Slides in from Left) */}
                 <motion.div 
-                  className="flex flex-col items-center gap-4 relative z-10 max-w-[350px]"
+                  className="flex flex-col items-center gap-4 relative z-10 w-[350px]"
                   initial={{ x: -800, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: -800, opacity: 0 }}
@@ -65,7 +65,7 @@ export default function MatchupPage() {
                     heroName={m.heroAName}
                     size={220}
                   />
-                  <p className="text-4xl font-black text-emerald-300 text-center leading-tight">
+                  <p className="text-4xl font-black text-emerald-300 text-center leading-tight text-balance break-words">
                     {m.heroAName ?? `#${m.heroAId}`}
                   </p>
                 </motion.div>
@@ -98,7 +98,7 @@ export default function MatchupPage() {
 
                 {/* Hero B (Slides in from Right) */}
                 <motion.div 
-                  className="flex flex-col items-center gap-4 relative z-10 max-w-[350px]"
+                  className="flex flex-col items-center gap-4 relative z-10 w-[350px]"
                   initial={{ x: 800, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: 800, opacity: 0 }}
@@ -109,7 +109,7 @@ export default function MatchupPage() {
                     heroName={m.heroBName}
                     size={220}
                   />
-                  <p className="text-4xl font-black text-rose-300 text-center leading-tight">
+                  <p className="text-4xl font-black text-rose-300 text-center leading-tight text-balance break-words">
                     {m.heroBName ?? `#${m.heroBId}`}
                   </p>
                 </motion.div>
