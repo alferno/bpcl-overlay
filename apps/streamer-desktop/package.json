@@ -8,11 +8,10 @@
   "description": "BPCL Streamer Hub",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-packager . \"BPCL Streamer Desktop\" --platform=win32 --arch=x64 --out=release --overwrite --electron-version=31.3.1 --ignore=\"^/(src|electron|node_modules|\\.gitignore|vite\\.config|tsconfig)\" && node copy-resources.js",
+    "build": "tsc && vite build && electron-packager . \"BPCL Streamer Desktop\" --platform=win32 --arch=x64 --out=release --overwrite --electron-version=31.3.1 --ignore=\"^/(src|electron|node_modules|resources|\\.gitignore|vite\\.config|tsconfig)\" && node copy-resources.js",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ngrok/ngrok": "^1.4.1",
     "broadcast-api": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

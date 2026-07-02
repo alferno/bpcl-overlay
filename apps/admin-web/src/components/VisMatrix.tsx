@@ -13,6 +13,8 @@ const ADMIN_VIS_ROUTES = [
   "lowerthird",
   "versus",
   "replay",
+  "rankmedals",
+  "liveplayercard",
 ] as const;
 
 const ROUTE_LABELS: Record<(typeof ADMIN_VIS_ROUTES)[number], string> = {
@@ -25,6 +27,8 @@ const ROUTE_LABELS: Record<(typeof ADMIN_VIS_ROUTES)[number], string> = {
   lowerthird: "Lower Third Headline",
   versus: "Versus Matchup Screen",
   replay: "Replay Indicator",
+  rankmedals: "Rank Medals HUD",
+  liveplayercard: "Live Player Card",
 };
 
 export function VisMatrix(props: {
@@ -62,10 +66,20 @@ export function VisMatrix(props: {
                 <p className="text-[10px] font-mono text-slate-500 mt-0.5">/{route}</p>
                 <p className="text-[9px] font-mono text-slate-600 mt-1 uppercase tracking-wider">{stringifyMode(mv?.[route])}</p>
               </div>
-              <VisToggle
-                active={active}
-                onToggle={() => props.on(route, active ? "hidden" : "visible")}
-              />
+              <div className="flex items-center gap-2">
+                {route === "rankmedals" && (
+                  <button
+                    onClick={() => props.on(route, { mode: "timed", until: Date.now() + 60000 })}
+                    className="px-2 py-1 text-[10px] rounded bg-purple-500/20 border border-purple-500/50 text-purple-300 hover:bg-purple-500/40 transition-colors"
+                  >
+                    Tease 60s
+                  </button>
+                )}
+                <VisToggle
+                  active={active}
+                  onToggle={() => props.on(route, active ? "hidden" : "visible")}
+                />
+              </div>
             </div>
           );
         })}

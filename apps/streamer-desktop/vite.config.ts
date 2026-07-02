@@ -13,7 +13,7 @@ export default defineConfig({
         vite: {
           build: {
             rollupOptions: {
-              external: ['@ngrok/ngrok', 'broadcast-api', 'obs-websocket-js', 'express', 'socket.io', 'ioredis', 'dotenv', 'pino', 'zod', 'cors', 'helmet', 'bottleneck']
+              external: ['broadcast-api', 'obs-websocket-js', 'express', 'socket.io', 'ioredis', 'dotenv', 'pino', 'zod', 'cors', 'helmet', 'bottleneck']
             }
           }
         }

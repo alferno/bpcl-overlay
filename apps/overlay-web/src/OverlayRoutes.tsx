@@ -13,6 +13,7 @@ import StartingSoonPage from "./pages/StartingSoonPage";
 import VersusPage from "./pages/VersusPage";
 import ReplayPage from "./pages/ReplayPage";
 import LivePlayerCardPage from "./pages/LivePlayerCardPage";
+import StandoutPlayerPage from "./pages/StandoutPlayerPage";
 
 export default function OverlayAppRoutes() {
   return (
@@ -31,6 +32,7 @@ export default function OverlayAppRoutes() {
         <Route path="/versus" element={<VersusPage />} />
         <Route path="/replay" element={<ReplayPage />} />
         <Route path="/liveplayercard" element={<LivePlayerCardPage />} />
+        <Route path="/standoutplayer" element={<StandoutPlayerPage />} />
         <Route path="*" element={<GameCanvas />} />
       </Routes>
     </Router>

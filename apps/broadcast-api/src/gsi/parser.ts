@@ -633,6 +633,9 @@ function teamSideFromMatchSetup(
 export type GsiParseResult = {
   inDraft: boolean;
   draftPatch: Partial<DraftState> | null;
+  focusedPlayerSteam32?: number;
+  focusedPlayerHeroId?: number;
+  focusedPlayerName?: string;
 };
 
 export function parseGsiToDraft(

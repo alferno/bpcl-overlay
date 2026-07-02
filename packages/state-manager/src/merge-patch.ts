@@ -15,6 +15,7 @@ import {
   type StatCarouselState,
   type TournamentHeroAggregate,
   type VisibilityMode,
+  type StandoutPlayerCard,
 } from "@bpc/shared-types";
 
 function mergeVisibility(
@@ -237,43 +238,63 @@ export function applyOverlayPatch(
     };
   }
 
-  return {
-    ...prev,
-    seq: prev.seq + 1,
-    updatedAt: new Date().toISOString(),
-    overlayVisibility,
-    leagueConfig: nextLeague ?? prev.leagueConfig,
-    tournamentHeroIndex: tournamentHeroIndex ?? prev.tournamentHeroIndex,
-    playerHeroIndex: playerHeroIndex ?? prev.playerHeroIndex,
-    production: nextProduction ?? prev.production,
-    statCarousel:
-      nextCarousel === undefined
-        ? prev.statCarousel
-        : (nextCarousel as StatCarouselState | null),
-    draft: nextDraft === undefined ? prev.draft : nextDraft,
-    lowerThirds:
-      nextLower === undefined
-        ? prev.lowerThirds
-        : (nextLower as LowerThirdState | null),
-    playerStatsCard:
-      nextPlayer === undefined
-        ? prev.playerStatsCard
-        : (nextPlayer as PlayerStatsCard | null),
-    heroStatsCard:
-      nextHero === undefined
-        ? prev.heroStatsCard
-        : (nextHero as HeroStatsCard | null),
-    matchupCard:
-      nextMatch === undefined
-        ? prev.matchupCard
-        : (nextMatch as MatchupCard | null),
-    sponsor:
-      nextSponsor === undefined
-        ? prev.sponsor
-        : (nextSponsor as SponsorRotationState | null),
-    timers: nextTimers ?? prev.timers,
-    sceneHints: nextSceneHints,
-  };
-}
+    let nextLivePlayerCard = mergeNullableNested(
+      prev.livePlayerCard ?? undefined,
+      patch.livePlayerCard as Partial<HeroStatsCard> | null | undefined,
+    );
+    let nextStandout = mergeNullableNested(
+      prev.standoutPlayerCard ?? undefined,
+      patch.standoutPlayerCard as Partial<StandoutPlayerCard> | null | undefined,
+    );
+
+    return {
+      ...prev,
+      seq: prev.seq + 1,
+      updatedAt: new Date().toISOString(),
+      overlayVisibility,
+      leagueConfig: nextLeague ?? prev.leagueConfig,
+      tournamentHeroIndex: tournamentHeroIndex ?? prev.tournamentHeroIndex,
+      playerHeroIndex: playerHeroIndex ?? prev.playerHeroIndex,
+      production: nextProduction ?? prev.production,
+      statCarousel:
+        nextCarousel === undefined
+          ? prev.statCarousel
+          : (nextCarousel as StatCarouselState | null),
+      draft: nextDraft === undefined ? prev.draft : nextDraft,
+      lowerThirds:
+        nextLower === undefined
+          ? prev.lowerThirds
+          : (nextLower as LowerThirdState | null),
+      playerStatsCard:
+        nextPlayer === undefined
+          ? prev.playerStatsCard
+          : (nextPlayer as PlayerStatsCard | null),
+      heroStatsCard:
+        nextHero === undefined
+          ? prev.heroStatsCard
+          : (nextHero as HeroStatsCard | null),
+      livePlayerCard:
+        nextLivePlayerCard === undefined
+          ? prev.livePlayerCard
+          : (nextLivePlayerCard as HeroStatsCard | null),
+      matchupCard:
+        nextMatch === undefined
+          ? prev.matchupCard
+          : (nextMatch as MatchupCard | null),
+      sponsor:
+        nextSponsor === undefined
+          ? prev.sponsor
+          : (nextSponsor as SponsorRotationState | null),
+      timers: nextTimers ?? prev.timers,
+      sceneHints: nextSceneHints,
+      minimapState: patch.minimapState !== undefined
+        ? { ...(prev.minimapState ?? {}), ...patch.minimapState }
+        : prev.minimapState,
+      standoutPlayerCard:
+        nextStandout === undefined
+          ? prev.standoutPlayerCard
+          : (nextStandout as StandoutPlayerCard | null),
+    };
+  }
 
 export type { TournamentHeroAggregate };

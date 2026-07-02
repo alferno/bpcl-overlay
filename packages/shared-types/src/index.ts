@@ -24,6 +24,8 @@ export const OVERLAY_ROUTES = [
   "versus",
   "replay",
   "liveplayercard",
+  "rankmedals",
+  "standoutplayer",
   "global_kill_switch",
 ] as const;
 
@@ -77,6 +79,8 @@ export const rosterPlayerSchema = z.object({
   side: z.enum(["radiant", "dire", "A", "B"]).optional(),
   /** Preferred roles synced from BPC League */
   roles: z.array(z.string()).optional(),
+  /** Player MMR from BPCL API for dynamic rank medals */
+  mmr: z.number().optional(),
 });
 
 export type RosterPlayer = z.infer<typeof rosterPlayerSchema>;
@@ -297,6 +301,39 @@ export const replayStateSchema = z.object({
 
 export type ReplayState = z.infer<typeof replayStateSchema>;
 
+export const standoutPlayerCardSchema = z.object({
+  /** Player display name */
+  playerLabel: z.string(),
+  heroId: z.number().optional(),
+  heroName: z.string().optional(),
+  heroPortraitSlug: z.string().optional(),
+  heroPortraitUrl: z.string().optional(),
+  steam32: z.number().optional(),
+  // ── Left column ──────────────────────────────────────────────────────────
+  xpm: z.number(),
+  gpm: z.number(),
+  networth: z.number(),
+  /** OpenDota ability IDs for base skills (4–6, no innate).  Used to render
+   *  skill icons from the Dota 2 CDN. */
+  abilityIds: z.array(z.number()).optional(),
+  // ── Center column ────────────────────────────────────────────────────────
+  kills: z.number(),
+  deaths: z.number(),
+  assists: z.number(),
+  // ── Right column ─────────────────────────────────────────────────────────
+  heroDamage: z.number(),
+  lastHits: z.number(),
+  /** Total team kills — used client-side to compute kill participation % */
+  teamKills: z.number(),
+  /** 10-slot item id array: indices 0-5 = main inventory, 6 = neutral,
+   *  7-9 = backpack.  Use 0 for empty slots. */
+  items: z.array(z.number()).length(10).optional(),
+  hasScepter: z.boolean().optional(),
+  hasShard: z.boolean().optional(),
+});
+
+export type StandoutPlayerCard = z.infer<typeof standoutPlayerCardSchema>;
+
 export const playerStatsCardSchema = z.object({
   steam32: z.number().optional(),
   playerLabel: z.string(),
@@ -375,6 +412,7 @@ export const heroStatsCardSchema = z.object({
   source: z
     .enum(["opendota", "opendota_cached", "stale", "manual", "league"])
     .optional(),
+  abilityCount: z.number().optional(),
 });
 
 export type HeroStatsCard = z.infer<typeof heroStatsCardSchema>;
@@ -436,6 +474,27 @@ export const obsRemoteHintsSchema = z.object({
 
 export type OBSRemoteHints = z.infer<typeof obsRemoteHintsSchema>;
 
+export const minimapStateSchema = z.object({
+  roshanState: z.string().optional(),
+  roshanRespawnTimer: z.coerce.number().optional(),
+  tormentorRadiant: z.string().optional(),
+  tormentorRadiantRespawnTimer: z.coerce.number().optional(),
+  tormentorDire: z.string().optional(),
+  tormentorDireRespawnTimer: z.coerce.number().optional(),
+  radiantScanActive: z.boolean().optional(),
+  radiantScanCooldown: z.coerce.number().optional(),
+  radiantScanCharges: z.coerce.number().optional(),
+  direScanActive: z.boolean().optional(),
+  direScanCooldown: z.coerce.number().optional(),
+  direScanCharges: z.coerce.number().optional(),
+  radiantGlyphActive: z.boolean().optional(),
+  radiantGlyphCooldown: z.coerce.number().optional(),
+  direGlyphActive: z.boolean().optional(),
+  direGlyphCooldown: z.coerce.number().optional(),
+});
+
+export type MinimapState = z.infer<typeof minimapStateSchema>;
+
 export const overlayEnvelopeSchema = z.object({
   version: z.number(),
   seq: z.number(),
@@ -456,6 +515,8 @@ export const overlayEnvelopeSchema = z.object({
   matchupCard: matchupCardSchema.nullable().optional(),
   sponsor: sponsorRotationStateSchema.nullable().optional(),
   timers: broadcastTimersSchema.optional(),
+  minimapState: minimapStateSchema.optional(),
+  standoutPlayerCard: standoutPlayerCardSchema.nullable().optional(),
 });
 
 export type OverlayEnvelope = z.infer<typeof overlayEnvelopeSchema>;
@@ -466,6 +527,7 @@ export const overlayPatchSchema = z.object({
   tournamentHeroIndex: z.record(tournamentHeroAggregateSchema).optional(),
   playerHeroIndex: z.record(playerHeroLeagueStatsSchema).optional(),
   production: productionSettingsSchema.partial().optional(),
+  minimapState: minimapStateSchema.partial().optional(),
   statCarousel: z
     .union([statCarouselSchema, statCarouselSchema.partial(), z.null()])
     .optional(),
@@ -504,6 +566,13 @@ export const overlayPatchSchema = z.object({
     .partial()
     .optional(),
   sceneHints: obsRemoteHintsSchema.partial().optional(),
+  standoutPlayerCard: z
+    .union([
+      standoutPlayerCardSchema,
+      standoutPlayerCardSchema.partial(),
+      z.null(),
+    ])
+    .optional(),
 });
 
 export type OverlayPatch = z.infer<typeof overlayPatchSchema>;
@@ -557,6 +626,8 @@ export function createDefaultEnvelope(): OverlayEnvelope {
     matchupCard: null,
     sponsor: null,
     timers: {},
+    minimapState: {},
+    standoutPlayerCard: null,
   };
 }
 

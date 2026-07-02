@@ -27,20 +27,19 @@ export type BroadcastServerContext = {
 };
 
 function authorizeSocket(kind: "producer" | "overlay", socket: any): boolean {
+  if (kind === "overlay") {
+    // Allow all overlay connections without a token or with a mismatched hardcoded token.
+    // Overlays are read-only and contain no sensitive admin secrets.
+    return true;
+  }
+
   const h = socket.handshake;
 
   let token = "";
   if (typeof h.auth?.token === "string") token = h.auth.token;
   else if (typeof h.query?.token === "string") token = h.query.token;
 
-  if (!token) {
-    if (kind === "overlay") {
-      // Allow all overlay connections without a token.
-      // Overlays are read-only and contain no sensitive admin secrets.
-      return true;
-    }
-    return false;
-  }
+  if (!token) return false;
   return token === env.BROADCAST_SECRET;
 }
 
@@ -55,12 +54,24 @@ export async function createBroadcastServer(deps: {
 
   app.use(helmet({ crossOriginResourcePolicy: false, contentSecurityPolicy: false }));
   app.disable("x-powered-by");
+
+  app.use((req, res, next) => {
+    if (req.headers["access-control-request-private-network"]) {
+      res.setHeader("Access-Control-Allow-Private-Network", "true");
+    }
+    // Also explicitly set the origin for preflight requests that cors middleware might miss
+    if (req.method === "OPTIONS" && req.headers.origin) {
+      res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,PUT,PATCH,POST,DELETE");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+    next();
+  });
+
   app.use(
     cors({
-      origin:
-        env.NODE_ENV === "production"
-          ? parseCorsOrigins()
-          : true,
+      origin: true,
       credentials: true,
     }),
   );
@@ -82,7 +93,8 @@ export async function createBroadcastServer(deps: {
       if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
     });
   });
-  app.get("/admin/*", (req, res) => {
+  app.get("/admin/*", (req, res, next) => {
+    if (req.path.includes(".")) return next();
     const file = path.join(adminPath, "index.html");
     res.sendFile(file, (err) => {
       if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
@@ -94,7 +106,8 @@ export async function createBroadcastServer(deps: {
       if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
     });
   });
-  app.get("/overlay/*", (req, res) => {
+  app.get("/overlay/*", (req, res, next) => {
+    if (req.path.includes(".")) return next();
     const file = path.join(overlayPath, "index.html");
     res.sendFile(file, (err) => {
       if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
@@ -104,10 +117,7 @@ export async function createBroadcastServer(deps: {
   const httpServer = http.createServer(app);
 
   const io = new Server(httpServer, {
-    cors:
-      env.NODE_ENV === "production"
-        ? { origin: parseCorsOrigins() }
-        : { origin: true },
+    cors: { origin: true, credentials: true },
     transports: ["websocket", "polling"],
   });
 

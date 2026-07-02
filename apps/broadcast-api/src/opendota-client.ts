@@ -33,19 +33,42 @@ export type OpenDotaMatchPlayer = {
   deaths?: number;
   assists?: number;
   hero_damage?: number;
+  hero_healing?: number;
   gold_per_min?: number;
+  xp_per_min?: number;
+  net_worth?: number;
   last_hits?: number;
+  denies?: number;
   /** 1 safe · 2 mid · 3 off (OpenDota lane id) */
   lane?: number;
   lane_role?: number;
   lane_efficiency?: number;
   lane_efficiency_pct?: number;
   is_roaming?: boolean;
+  // End-of-game inventory (main slots 0–5)
+  item_0?: number;
+  item_1?: number;
+  item_2?: number;
+  item_3?: number;
+  item_4?: number;
+  item_5?: number;
+  // Neutral item slot
+  item_neutral?: number;
+  // Backpack slots
+  backpack_0?: number;
+  backpack_1?: number;
+  backpack_2?: number;
+  // Aghanim upgrades (1 = owned)
+  aghanims_scepter?: number;
+  aghanims_shard?: number;
 };
+
 
 export type OpenDotaMatch = {
   match_id: number;
   radiant_win?: boolean;
+  /** Match duration in seconds */
+  duration?: number;
   /** When set and non-zero, must match the league being aggregated */
   leagueid?: number;
   /** Legacy / alternate API spelling */

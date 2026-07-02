@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOverlayState } from "../OverlaySocketLayer";
 
+function formatTime(seconds: number) {
+  const m = Math.floor(Math.abs(seconds) / 60);
+  const s = Math.abs(seconds) % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export function PowerSpikeAlert() {
   const { socket } = useOverlayState();
   const [spike, setSpike] = useState<any>(null);
@@ -45,7 +51,6 @@ export function PowerSpikeAlert() {
             </div>
 
             <div className="flex items-center gap-3 z-10">
-              {/* Item image from local Dota assets or fallback */}
               <div className="w-16 h-12 bg-slate-900 border border-yellow-500/30 rounded flex items-center justify-center overflow-hidden shadow-inner">
                 <img 
                   src={`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${spike.item.replace('item_', '')}.png`} 
@@ -56,10 +61,33 @@ export function PowerSpikeAlert() {
               </div>
             </div>
 
-            <div className="z-10 mt-1 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded text-center w-full">
-              <span className="text-yellow-400 font-black text-xs tracking-tighter uppercase">
-                {spike.hypeText}
-              </span>
+            <div className="z-10 mt-1 flex flex-col items-center gap-1 w-full">
+              <div className="bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded text-center w-full">
+                <div className="text-yellow-400 font-black text-sm tracking-tight uppercase">
+                  {spike.cleanItemName || spike.hypeText}
+                </div>
+                {spike.categoryText && (
+                  <div className="text-yellow-200/70 text-[10px] uppercase font-bold tracking-widest mt-0.5">
+                    {spike.categoryText}
+                  </div>
+                )}
+              </div>
+
+              {spike.clockTime > 0 && (
+                <div className="bg-slate-900/80 border border-slate-700/50 px-3 py-1.5 rounded flex flex-col items-center justify-center w-full mt-1">
+                  <div className="text-slate-300 text-xs font-medium">
+                    Acquired at <span className="text-white font-bold">{formatTime(spike.clockTime)}</span>
+                  </div>
+                  
+                  {spike.timingDiff !== null && spike.timingDiff !== undefined && (
+                    <div className={`text-[11px] font-bold mt-1 ${spike.timingDiff < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {spike.timingDiff < 0 
+                        ? `🚀 ${formatTime(Math.abs(spike.timingDiff))} faster than average`
+                        : `🐢 ${formatTime(Math.abs(spike.timingDiff))} slower than average`}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

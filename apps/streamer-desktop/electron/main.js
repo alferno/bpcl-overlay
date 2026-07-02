@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, clipboard } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ngrok from '@ngrok/ngrok';
+import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import os from 'node:os';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -65,6 +65,13 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST;
 let win;
 let tunnelUrl = null;
+let cloudflaredProcess = null;
+app.on('before-quit', () => {
+    if (cloudflaredProcess) {
+        cloudflaredProcess.kill();
+        cloudflaredProcess = null;
+    }
+});
 async function createWindow() {
     win = new BrowserWindow({
         width: 800,
@@ -102,6 +109,12 @@ app.whenReady().then(async () => {
     // Dynamically import the API — env vars above must be set first
     try {
         const mod = await import('broadcast-api/src/index.js');
+        const loggerMod = await import('broadcast-api/src/logger.js');
+        if (loggerMod.logEmitter) {
+            loggerMod.logEmitter.on('log', (msg) => {
+                win?.webContents.send('log', msg);
+            });
+        }
         bootstrapBroadcastServer = mod.bootstrapBroadcastServer;
     }
     catch (err) {
@@ -115,15 +128,32 @@ app.whenReady().then(async () => {
     catch (err) {
         win?.webContents.send('log', 'Error starting API: ' + err);
     }
-    // Start Ngrok
+    // Start Cloudflare Tunnel
     try {
-        const listener = await ngrok.forward({ addr: 8080, authtoken: '25ZebxW6Y4x5PWoRwLhfY_6Qcr75LEn1PPifYovuxU3' });
-        tunnelUrl = listener.url() ?? null;
-        win?.webContents.send('ngrok-url', tunnelUrl);
-        win?.webContents.send('log', 'Ngrok tunnel established: ' + tunnelUrl);
+        const cloudflaredExe = app.isPackaged
+            ? path.join(process.resourcesPath, 'cloudflared-windows-amd64.exe')
+            : path.join(app.getAppPath(), 'resources', 'cloudflared-windows-amd64.exe');
+        win?.webContents.send('log', 'Starting Cloudflare Tunnel...');
+        cloudflaredProcess = spawn(cloudflaredExe, ['tunnel', '--url', 'http://localhost:8080']);
+        cloudflaredProcess.stderr?.on('data', (data) => {
+            const output = data.toString();
+            // Extract the trycloudflare URL
+            const match = output.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+            if (match && !tunnelUrl) {
+                tunnelUrl = match[0];
+                win?.webContents.send('tunnel-url', tunnelUrl);
+                win?.webContents.send('log', 'Cloudflare tunnel established: ' + tunnelUrl);
+            }
+        });
+        cloudflaredProcess.on('error', (err) => {
+            win?.webContents.send('log', 'Error starting Cloudflare Tunnel: ' + err);
+        });
+        cloudflaredProcess.on('exit', (code) => {
+            win?.webContents.send('log', 'Cloudflare Tunnel exited with code: ' + code);
+        });
     }
     catch (err) {
-        win?.webContents.send('log', 'Error starting Ngrok: ' + err);
+        win?.webContents.send('log', 'Error spawning Cloudflare Tunnel: ' + err);
     }
 });
 ipcMain.handle('get-tunnel-url', () => tunnelUrl);

@@ -24,6 +24,7 @@ import { SponsorBlock } from "./components/SponsorBlock";
 import { RosterSyncPanel } from "./components/RosterSyncPanel";
 import { GsiDraftControls } from "./components/GsiDraftControls";
 import { LowerThirdPanel } from "./components/LowerThirdPanel";
+import { StandoutPlayerPanel } from "./components/StandoutPlayerPanel";
 import { ReplayManagerPanel } from "./components/ReplayManagerPanel";
 import { CasterDeckPanel } from "./components/CasterDeckPanel";
 import { OverlayTestPanel } from "./components/OverlayTestPanel";
@@ -207,6 +208,7 @@ export function ProducerDashboard() {
                       state={state}
                       on={(r, m) => patch({ overlayVisibility: { [r]: m } })}
                     />
+                    <StandoutPlayerPanel origin={origin} token={token} />
                   </div>
                 </div>
               )}

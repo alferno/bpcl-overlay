@@ -6,6 +6,7 @@ import { createBroadcastServer } from "./server.js";
 import { createAppState } from "./state-setup.js";
 import { ensureHeroRegistry } from "./services/hero-registry.js";
 import { bootstrapLeagueFromEnv } from "./services/league-bootstrap.js";
+import { preloadItemTimings } from "./services/item-timings.js";
 
 export async function bootstrapBroadcastServer() {
   const state = await createAppState();
@@ -15,6 +16,10 @@ export async function bootstrapBroadcastServer() {
 
   void ensureHeroRegistry(opendota).catch((err) =>
     logger.warn(err, "hero registry preload deferred"),
+  );
+
+  void preloadItemTimings().catch((err) =>
+    logger.warn(err, "item timings preload deferred"),
   );
 
   const ctx = await createBroadcastServer({ state, obs, opendota });

@@ -8,7 +8,7 @@ export default function App() {
         const unsubLog = window.ipcRenderer?.on('log', (_, msg) => {
             setLogs((prev) => [...prev, msg]);
         });
-        const unsubNgrok = window.ipcRenderer?.on('ngrok-url', (_, url) => {
+        const unsubTunnel = window.ipcRenderer?.on('tunnel-url', (_, url) => {
             setTunnelUrl(url);
         });
         // Fetch initial URL and secret if it already started
@@ -24,7 +24,7 @@ export default function App() {
         }
         return () => {
             unsubLog?.();
-            unsubNgrok?.();
+            unsubTunnel?.();
         };
     }, []);
     const [obsPort, setObsPort] = useState('4455');

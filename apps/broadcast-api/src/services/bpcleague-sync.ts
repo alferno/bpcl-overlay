@@ -191,9 +191,10 @@ export async function fetchRosterFromBpcLeague(opts: {
     const steam32 = steam32Results[i];
     const displayName = player.displayName || player.name || "Player";
     const roles = player.roles || [];
+    const mmr = player.mmr;
 
     if (steam32 != null && steam32 > 0) {
-      roster.push({ displayName, steam32, teamName, teamKey, teamColor, roles });
+      roster.push({ displayName, steam32, teamName, teamKey, teamColor, roles, mmr });
     } else {
       logger.warn({ displayName, url: player.steamProfile }, "[steam32] Could not resolve — player skipped");
     }

@@ -37,8 +37,21 @@ function DraftStatsView({
   const radiantKey = matchSetup?.radiantTeamKey;
   const direKey = matchSetup?.direTeamKey;
 
-  const radiantPlayers = roster.filter((p) => p.teamKey === radiantKey);
-  const direPlayers = roster.filter((p) => p.teamKey === direKey);
+  const radiantRaw = roster.filter((p) => p.teamKey === radiantKey);
+  const direRaw = roster.filter((p) => p.teamKey === direKey);
+
+  const getOrderedPlayers = (raw: typeof roster, pickPlayers?: number[]) => {
+    return Array.from({ length: 5 })
+      .map((_, i) => {
+        const steam32 = pickPlayers?.[i] ?? raw[i]?.steam32;
+        if (!steam32) return null;
+        return roster.find((p) => p.steam32 === steam32) || raw[i];
+      })
+      .filter((p): p is typeof roster[0] => Boolean(p));
+  };
+
+  const radiantPlayers = getOrderedPlayers(radiantRaw, matchSetup?.pickPlayers?.radiant);
+  const direPlayers = getOrderedPlayers(direRaw, matchSetup?.pickPlayers?.dire);
 
   const getPlayerStats = (steam32: number) => {
     if (!playerHeroIndex) return null;

@@ -22,6 +22,12 @@ import type { OpenDotaClient } from "./opendota-client.js";
 import { parseOverlayPatch } from "./state-setup.js";
 import { ReplayManager } from "./services/replay-manager.js";
 import { env } from "./env.js";
+import { rankMvpCandidates, DEFAULT_MVP_WEIGHTS, type MvpWeights } from "./services/mvp-scorer.js";
+import {
+  ensureHeroRegistry,
+  heroPortraitFieldsForHero,
+  findRosterPlayer,
+} from "./services/hero-registry.js";
 
 export type BroadcastFns = {
   broadcastFull(envelope?: OverlayEnvelope): Promise<void>;
@@ -508,5 +514,187 @@ export function attachRestRoutes(opts: {
 
     const result = await replayManager.generatePreview(parsed.data.file);
     res.json(result);
+  });
+
+  // ─── Standout Player / MVP ──────────────────────────────────────────────────
+
+  /**
+   * POST /api/standout/compute
+   * Fetch a match from OpenDota, run the MVP scorer, and return ranked
+   * candidates.  Optionally persists the winner to overlay state.
+   *
+   * Body: { matchId: number, weights?: MvpWeights, persist?: boolean }
+   */
+  app.post("/api/standout/compute", requireBroadcastAuth, async (req, res) => {
+    const bodySchema = z.object({
+      matchId: z.number().int().positive(),
+      weights: z
+        .object({
+          kda:              z.number().optional(),
+          killParticipation:z.number().optional(),
+          gpm:              z.number().optional(),
+          xpm:              z.number().optional(),
+          networthShare:    z.number().optional(),
+          damagePm:         z.number().optional(),
+          healingPm:        z.number().optional(),
+          lastHits:         z.number().optional(),
+          denies:           z.number().optional(),
+          laneEfficiency:   z.number().optional(),
+          winBonus:         z.number().optional(),
+        })
+        .optional(),
+      persist: z.boolean().optional(),
+    });
+
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success)
+      return res.status(400).json({ error: parsed.error.flatten() });
+
+    const { matchId, persist } = parsed.data;
+    const weights: MvpWeights = { ...DEFAULT_MVP_WEIGHTS, ...(parsed.data.weights ?? {}) };
+
+    // Fetch match detail
+    const matchRes = await opendota.matchDetails(matchId);
+    if (!matchRes.ok || !matchRes.data) {
+      return res.status(502).json({
+        error: `OpenDota match fetch failed: ${matchRes.error ?? "no data"}`,
+      });
+    }
+
+    const match = matchRes.data;
+
+    // Inject match duration into each player for per-minute stats
+    if (Array.isArray(match.players) && match.duration) {
+      for (const p of match.players) {
+        (p as Record<string, unknown>).duration = match.duration;
+      }
+    }
+
+    // Ensure hero registry is loaded
+    await ensureHeroRegistry(opendota);
+
+    // Enrich hero names
+    if (Array.isArray(match.players)) {
+      for (const p of match.players) {
+        if (p.hero_id && !(p as Record<string, unknown>).hero_name) {
+          const fields = heroPortraitFieldsForHero(p.hero_id);
+          (p as Record<string, unknown>).hero_name = fields.heroPortraitSlug ?? String(p.hero_id);
+        }
+      }
+    }
+
+    // Run scorer
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ranked = rankMvpCandidates(match as any, weights);
+    const winner = ranked[0];
+
+    if (!winner) {
+      return res.status(422).json({ error: "No players found in match" });
+    }
+
+    // Build the StandoutPlayerCard payload
+    const snap = await state.getState();
+    const roster = snap.leagueConfig?.roster ?? [];
+    const rosterPlayer = winner.accountId
+      ? findRosterPlayer(roster, winner.accountId)
+      : undefined;
+
+    const portraitFields = winner.heroId
+      ? heroPortraitFieldsForHero(winner.heroId, winner.heroName)
+      : {};
+
+    const standoutCard = {
+      playerLabel: rosterPlayer?.displayName ?? winner.personaname ?? `Player ${winner.accountId ?? "?"}`,
+      heroId:      winner.heroId,
+      heroName:    winner.heroName,
+      steam32:     winner.accountId,
+      ...portraitFields,
+      xpm:         winner.raw.xpm,
+      gpm:         winner.raw.gpm,
+      networth:    winner.raw.networth,
+      kills:       winner.raw.kills,
+      deaths:      winner.raw.deaths,
+      assists:     winner.raw.assists,
+      heroDamage:  winner.raw.heroDamage,
+      lastHits:    winner.raw.lastHits,
+      teamKills:   winner.raw.teamKills,
+      items:       winner.raw.items,
+      hasScepter:  winner.raw.hasScepter,
+      hasShard:    winner.raw.hasShard,
+    };
+
+    if (persist) {
+      const next = await state.patchState({
+        standoutPlayerCard: standoutCard,
+        overlayVisibility: { standoutplayer: "visible" },
+      });
+      await broadcast.broadcastFull(next);
+      return res.json({ ok: true, winner, ranked, standoutCard, persisted: true });
+    }
+
+    return res.json({ ok: true, winner, ranked, standoutCard, persisted: false });
+  });
+
+  /**
+   * POST /api/standout/push
+   * Directly push an already-resolved StandoutPlayerCard to overlay state
+   * (e.g. after the producer reviews the auto-selected winner and confirms).
+   *
+   * Body: { card: StandoutPlayerCard, show?: boolean }
+   */
+  app.post("/api/standout/push", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({
+      card: z.record(z.unknown()),
+      show: z.boolean().optional().default(true),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success)
+      return res.status(400).json({ error: parsed.error.flatten() });
+
+    const cardData = parsed.data.card as Record<string, unknown>;
+    cardData.heroPortraitSlug = undefined;
+    cardData.heroPortraitUrl = undefined;
+    
+    if (typeof cardData.heroId === "number") {
+      const portraitFields = heroPortraitFieldsForHero(
+        cardData.heroId,
+        typeof cardData.heroName === "string" ? cardData.heroName : undefined
+      );
+      Object.assign(cardData, portraitFields);
+    }
+
+    const snap = await state.getState();
+    const roster = snap.leagueConfig?.roster ?? [];
+    const rosterPlayer = typeof cardData.steam32 === "number"
+      ? findRosterPlayer(roster, cardData.steam32)
+      : undefined;
+
+    cardData.playerLabel =
+      rosterPlayer?.displayName ??
+      (typeof cardData.personaname === "string" ? cardData.personaname : undefined) ??
+      `Player ${cardData.steam32 ?? "?"}`;
+
+    const patch: OverlayPatch = {
+      standoutPlayerCard: cardData as OverlayPatch["standoutPlayerCard"],
+    };
+    if (parsed.data.show) {
+      patch.overlayVisibility = { standoutplayer: "visible" };
+    }
+
+    const next = await state.patchState(patch);
+    await broadcast.broadcastFull(next);
+    res.json({ ok: true, standoutPlayerCard: next.standoutPlayerCard });
+  });
+
+  /**
+   * POST /api/standout/hide
+   * Hide the standout player overlay without clearing the card data.
+   */
+  app.post("/api/standout/hide", requireBroadcastAuth, async (_req, res) => {
+    const next = await state.patchState({
+      overlayVisibility: { standoutplayer: "hidden" },
+    });
+    await broadcast.broadcastFull(next);
+    res.json({ ok: true });
   });
 }
