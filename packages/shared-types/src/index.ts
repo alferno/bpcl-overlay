@@ -86,7 +86,15 @@ export const rosterPlayerSchema = z.object({
 export type RosterPlayer = z.infer<typeof rosterPlayerSchema>;
 
 /** Shown on the left of the draft overlay title bar */
-export const BROADCAST_LEAGUE_TITLE = "Bharat Pro Circuit League Season 1";
+export const BROADCAST_LEAGUE_TITLE = "BPC League Season 2";
+
+/** Derive a human-readable league title from a seasonSlug (e.g. "season-2" → "BPC League Season 2") */
+export function leagueTitleFromSlug(slug?: string): string {
+  if (!slug) return BROADCAST_LEAGUE_TITLE;
+  const match = /season[- _](\d+)/i.exec(slug);
+  if (match) return `BPC League Season ${match[1]}`;
+  return BROADCAST_LEAGUE_TITLE;
+}
 
 export const pickPlayersSchema = z.object({
   radiant: z.array(z.number().nullable()).length(5).optional(),
@@ -413,6 +421,24 @@ export const heroStatsCardSchema = z.object({
     .enum(["opendota", "opendota_cached", "stale", "manual", "league"])
     .optional(),
   abilityCount: z.number().optional(),
+  /** Live in-game KDA/CS stats populated from GSI while livePlayerCard is active */
+  liveKills: z.number().optional(),
+  liveDeaths: z.number().optional(),
+  liveAssists: z.number().optional(),
+  liveLastHits: z.number().optional(),
+  liveDenies: z.number().optional(),
+  /** Per-enemy-hero kill counts for the focused player */
+  enemyHeroKills: z
+    .array(
+      z.object({
+        heroId: z.number(),
+        heroClass: z.string(),
+        heroPortraitSlug: z.string().optional(),
+        heroPortraitUrl: z.string().optional(),
+        kills: z.number(),
+      }),
+    )
+    .optional(),
 });
 
 export type HeroStatsCard = z.infer<typeof heroStatsCardSchema>;

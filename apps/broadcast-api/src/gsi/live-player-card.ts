@@ -1,8 +1,22 @@
+export type EnemyHeroKill = {
+  heroId: number;
+  heroClass: string;
+  kills: number;
+};
+
 export type FocusedPlayerMatch = {
   steam32: number;
   heroId: number;
   playerName: string;
   abilityCount?: number;
+  /** Live in-game stats */
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  lastHits?: number;
+  denies?: number;
+  /** Kills against each individual enemy hero (from payload.player.killed map) */
+  enemyHeroKills?: EnemyHeroKill[];
 };
 
 const FIXED_HUD_WIDTH: Record<number, number> = {
@@ -87,6 +101,72 @@ function countAbilities(
   return applyCap(count, heroId, hasShard, hasScepter);
 }
 
+/**
+ * Parse the GSI `player.killed` map (e.g. { npc_dota_hero_antimage: 2 })
+ * into a list of EnemyHeroKill entries, including enemies with 0 kills.
+ *
+ * @param killedMap  The `player.killed` object from the focused player's slot
+ * @param enemyTeamHeroes  hero data for all 5 enemy players
+ */
+function parseEnemyHeroKills(
+  killedMap: unknown,
+  enemyTeamHeroes: Array<{ heroClass: string; heroId: number | null }>
+): EnemyHeroKill[] {
+  // Build a map of heroClass -> kill count from the killed map
+  const killsByClass = new Map<string, number>();
+  if (killedMap && typeof killedMap === "object") {
+    for (const [key, val] of Object.entries(killedMap as Record<string, unknown>)) {
+      if (key.startsWith("npc_dota_hero_")) {
+        const count = typeof val === "number" ? val : Number(val) || 0;
+        killsByClass.set(key, count);
+      }
+    }
+  }
+
+  return enemyTeamHeroes.map(({ heroClass, heroId }) => ({
+    heroId: heroId ?? 0,
+    heroClass,
+    kills: killsByClass.get(heroClass) ?? 0,
+  }));
+}
+
+/**
+ * Get enemy team hero entries from the GSI payload.
+ * If focused player is on team2 (radiant), enemies are on team3 (dire), and vice versa.
+ */
+function getEnemyTeamHeroes(
+  payload: any,
+  enemyTeamKey: "team2" | "team3"
+): Array<{ heroClass: string; heroId: number | null }> {
+  const teamHeroData = payload?.hero?.[enemyTeamKey];
+  if (!teamHeroData || typeof teamHeroData !== "object") return [];
+
+  const result: Array<{ heroClass: string; heroId: number | null }> = [];
+  for (let i = 0; i < 5; i++) {
+    const heroEntry = teamHeroData[`player${i}`];
+    if (!heroEntry || typeof heroEntry !== "object") continue;
+
+    const heroClassRaw = heroEntry.name ?? heroEntry.hero_name ?? heroEntry.class;
+    const heroClass = typeof heroClassRaw === "string" && heroClassRaw.startsWith("npc_dota_hero_")
+      ? heroClassRaw
+      : "";
+
+    const idRaw = heroEntry.hero_id ?? heroEntry.heroid ?? heroEntry.id;
+    let heroId: number | null = null;
+    if (typeof idRaw === "number" && idRaw > 0) {
+      heroId = idRaw;
+    } else if (typeof idRaw === "string") {
+      const n = Number(idRaw);
+      if (Number.isFinite(n) && n > 0) heroId = n;
+    }
+
+    if (heroId || heroClass) {
+      result.push({ heroClass: heroClass || `npc_dota_hero_unknown_${i}`, heroId });
+    }
+  }
+  return result;
+}
+
 export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
   if (!payload || typeof payload !== "object") return null;
 
@@ -114,11 +194,45 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
         const hasShard = rootHero.aghanims_shard === true;
         const hasScepter = rootHero.aghanims_scepter === true;
 
+        // Extract live stats from root player
+        const kills = typeof rootPlayer.kills === "number" ? rootPlayer.kills : Number(rootPlayer.kills) || 0;
+        const deaths = typeof rootPlayer.deaths === "number" ? rootPlayer.deaths : Number(rootPlayer.deaths) || 0;
+        const assists = typeof rootPlayer.assists === "number" ? rootPlayer.assists : Number(rootPlayer.assists) || 0;
+        const lastHits = typeof rootPlayer.last_hits === "number" ? rootPlayer.last_hits : Number(rootPlayer.last_hits) || 0;
+        const denies = typeof rootPlayer.denies === "number" ? rootPlayer.denies : Number(rootPlayer.denies) || 0;
+
+        // In spectator mode we don't know which team the focused player is on from root player alone;
+        // best-effort: try to find them in team2 or team3 to determine enemy side
+        let enemyHeroKills: EnemyHeroKill[] | undefined;
+        const killedMap = rootPlayer.killed;
+
+        // Try to determine which team the focused player is on
+        for (const teamKey of ["team2", "team3"] as const) {
+          const teamPlayerData = payload?.player?.[teamKey];
+          if (!teamPlayerData) continue;
+          for (let i = 0; i < 5; i++) {
+            const p = teamPlayerData[`player${i}`];
+            if (p?.accountid && parseInt(String(p.accountid), 10) === accountid) {
+              const enemyTeam = teamKey === "team2" ? "team3" : "team2";
+              const enemyHeroes = getEnemyTeamHeroes(payload, enemyTeam);
+              enemyHeroKills = parseEnemyHeroKills(killedMap, enemyHeroes);
+              break;
+            }
+          }
+          if (enemyHeroKills) break;
+        }
+
         return { 
           steam32: accountid, 
           heroId, 
           playerName,
-          abilityCount: countAbilities(payload.abilities, heroId, hasShard, hasScepter)
+          abilityCount: countAbilities(payload.abilities, heroId, hasShard, hasScepter),
+          kills,
+          deaths,
+          assists,
+          lastHits,
+          denies,
+          enemyHeroKills,
         };
       }
     }
@@ -163,11 +277,29 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
           const hasShard = hero.aghanims_shard === true;
           const hasScepter = hero.aghanims_scepter === true;
 
+          // Extract live stats
+          const kills = typeof player?.kills === "number" ? player.kills : Number(player?.kills) || 0;
+          const deaths = typeof player?.deaths === "number" ? player.deaths : Number(player?.deaths) || 0;
+          const assists = typeof player?.assists === "number" ? player.assists : Number(player?.assists) || 0;
+          const lastHits = typeof player?.last_hits === "number" ? player.last_hits : Number(player?.last_hits) || 0;
+          const denies = typeof player?.denies === "number" ? player.denies : Number(player?.denies) || 0;
+
+          // Enemy heroes on opposite team
+          const enemyTeam = teamKey === "team2" ? "team3" : "team2";
+          const enemyHeroes = getEnemyTeamHeroes(payload, enemyTeam);
+          const enemyHeroKills = parseEnemyHeroKills(player?.killed, enemyHeroes);
+
           return { 
             steam32, 
             heroId, 
             playerName,
-            abilityCount: countAbilities(abilities, heroId, hasShard, hasScepter)
+            abilityCount: countAbilities(abilities, heroId, hasShard, hasScepter),
+            kills,
+            deaths,
+            assists,
+            lastHits,
+            denies,
+            enemyHeroKills,
           };
         }
       }

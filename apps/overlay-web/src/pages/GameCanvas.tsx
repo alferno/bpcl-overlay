@@ -5,6 +5,7 @@ import { H2HMatchupGraphic } from "../components/H2HMatchupGraphic";
 import { PowerSpikeAlert } from "../components/PowerSpikeAlert";
 import { RankMedalsHUD } from "../components/RankMedalsHUD";
 import { LivePlayerCard } from "./LivePlayerCardPage";
+import { LiveStatsHud } from "../components/LiveStatsHud";
 
 export default function GameCanvas() {
   const { state } = useOverlayState();
@@ -19,6 +20,7 @@ export default function GameCanvas() {
       <H2HMatchupGraphic />
       <LivePlayerCard />
       <PowerSpikeAlert />
+      <LiveStatsHud />
     </HudCanvas>
   );
 }

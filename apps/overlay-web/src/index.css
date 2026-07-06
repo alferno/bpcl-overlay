@@ -488,3 +488,14 @@ body,
 .animate-ban-slash {
   animation: ban-slash-in 0.35s ease-out forwards;
 }
+
+@keyframes hudSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

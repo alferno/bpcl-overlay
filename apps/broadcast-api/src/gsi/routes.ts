@@ -375,6 +375,30 @@ export function attachGsiRoutes(opts: {
           const cardChanged = current.livePlayerCard?.steam32 !== steam32 || current.livePlayerCard?.heroId !== heroId || current.livePlayerCard?.abilityCount !== abilityCount;
           const visChanged = current.overlayVisibility?.liveplayercard !== "visible";
 
+          // Build enemy hero kills list with resolved portrait fields
+          const resolvedEnemyHeroKills = focusedPlayer.enemyHeroKills?.map((e) => {
+            const portraitFields = e.heroId > 0
+              ? heroPortraitFieldsForHero(e.heroId)
+              : {};
+            return {
+              heroId: e.heroId,
+              heroClass: e.heroClass,
+              heroPortraitSlug: portraitFields.heroPortraitSlug,
+              heroPortraitUrl: portraitFields.heroPortraitUrl,
+              kills: e.kills,
+            };
+          });
+
+          // Always update live stats on every tick (kills/deaths/assists/lh/dn update every second)
+          const liveStatsPatch: Record<string, unknown> = {
+            liveKills: focusedPlayer.kills ?? 0,
+            liveDeaths: focusedPlayer.deaths ?? 0,
+            liveAssists: focusedPlayer.assists ?? 0,
+            liveLastHits: focusedPlayer.lastHits ?? 0,
+            liveDenies: focusedPlayer.denies ?? 0,
+            enemyHeroKills: resolvedEnemyHeroKills,
+          };
+
           if (cardChanged || visChanged) {
             const player = findRosterPlayer(roster, steam32);
             // Fallback to GSI name if player is not in active roster
@@ -391,11 +415,26 @@ export function attachGsiRoutes(opts: {
                   fetchedAt: new Date().toISOString(),
                   source: "manual",
                   abilityCount,
+                  ...liveStatsPatch,
                 }
-              } : {}),
+              } : {
+                livePlayerCard: {
+                  ...(current.livePlayerCard ?? {}),
+                  ...liveStatsPatch,
+                }
+              }),
               overlayVisibility: {
                 ...(patch.overlayVisibility as any || {}),
                 liveplayercard: "visible",
+              },
+            };
+          } else {
+            // Card identity unchanged — just stream live stats
+            patch = {
+              ...patch,
+              livePlayerCard: {
+                ...(current.livePlayerCard ?? {}),
+                ...liveStatsPatch,
               },
             };
           }
