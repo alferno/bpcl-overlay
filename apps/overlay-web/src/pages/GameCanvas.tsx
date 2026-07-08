@@ -6,6 +6,7 @@ import { PowerSpikeAlert } from "../components/PowerSpikeAlert";
 import { RankMedalsHUD } from "../components/RankMedalsHUD";
 import { LivePlayerCard } from "./LivePlayerCardPage";
 import { LiveStatsHud } from "../components/LiveStatsHud";
+import { RoshanKillAlert } from "../components/RoshanKillAlert";
 
 export default function GameCanvas() {
   const { state } = useOverlayState();
@@ -21,6 +22,7 @@ export default function GameCanvas() {
       <LivePlayerCard />
       <PowerSpikeAlert />
       <LiveStatsHud />
+      <RoshanKillAlert />
     </HudCanvas>
   );
 }

@@ -34,6 +34,11 @@ let globalDireScanCharges = 2;
 let globalLastRadiantScanCooldown = 0;
 let globalLastDireScanCooldown = 0;
 
+// ── Roshan Kill Tracking ───────────────────────────────────────────────────────
+let globalRoshanKillCount = 0;
+let globalLastRoshanState: string | null = null;
+let globalLastRoshanKillerTeam: "radiant" | "dire" | null = null;
+
 const SHARD_VALUE = 1400;
 const TOLERANCE = 100;
 const RESPAWN_SECONDS = 600;
@@ -219,6 +224,9 @@ export function attachGsiRoutes(opts: {
         globalDireScanCharges = 2;
         globalLastRadiantScanCooldown = 0;
         globalLastDireScanCooldown = 0;
+        globalRoshanKillCount = 0;
+        globalLastRoshanState = null;
+        globalLastRoshanKillerTeam = null;
       } else if (clockTime < prevClockTime || clockTime < (globalLastTormentorKillClockTime || 0)) {
         globalLastTormentorKillClockTime = null;
         globalLastProcessedEventTime = 0;
@@ -230,9 +238,11 @@ export function attachGsiRoutes(opts: {
       }
 
       if (payload?.events && Array.isArray(payload.events)) {
-        console.log("EVENTS:", JSON.stringify(payload.events, null, 2));
         for (const ev of payload.events) {
           if (ev.game_time && ev.game_time > globalLastProcessedEventTime) {
+            if (ev.event_type === "roshan_killed") {
+              globalLastRoshanKillerTeam = ev.killer_team === 2 ? "radiant" : ev.killer_team === 3 ? "dire" : null;
+            }
             globalLastProcessedEventTime = ev.game_time;
           }
         }
@@ -344,6 +354,83 @@ export function attachGsiRoutes(opts: {
         finalDireScanCharges = 0;
         finalRoshanState = "alive";
         finalRoshanRespawnTimer = 0;
+      }
+
+      // ── Roshan Kill Detection ────────────────────────────────────────────────
+      const prevRoshanState = globalLastRoshanState;
+      if (
+        finalRoshanState &&
+        prevRoshanState === "alive" &&
+        finalRoshanState !== "alive" &&
+        clockTime > 0
+      ) {
+        // Roshan just died — increment kill count
+        globalRoshanKillCount += 1;
+        const killNumber = globalRoshanKillCount;
+
+        // Determine which team picked up aegis by scanning player items
+        let aegisTeam: "radiant" | "dire" | null = null;
+        let pickerPlayerName: string | undefined = undefined;
+
+        for (const [gsiTeamKey, side] of [["team2", "radiant"], ["team3", "dire"]] as const) {
+          const teamItems = (payload?.items as any)?.[gsiTeamKey];
+          if (teamItems) {
+            for (const playerKey of Object.keys(teamItems)) {
+              const slots = teamItems[playerKey];
+              if (slots) {
+                for (const slotKey of Object.keys(slots)) {
+                  if (slots[slotKey]?.name === "item_aegis") {
+                    aegisTeam = side;
+                    pickerPlayerName = (payload?.player as any)?.[gsiTeamKey]?.[playerKey]?.name;
+                    break;
+                  }
+                }
+              }
+              if (aegisTeam) break;
+            }
+          }
+          if (aegisTeam) break;
+        }
+
+        // Resolve team name + logo from draft state or matchSetup
+        const draftSnap = current.draft;
+        const matchSetupSnap = current.leagueConfig?.matchSetup;
+        let teamName: string | undefined;
+        let teamLogoUrl: string | undefined;
+
+        if (aegisTeam) {
+          if (aegisTeam === "radiant") {
+            teamName = draftSnap?.radiant?.name ?? matchSetupSnap?.radiantTeamKey ?? "Radiant";
+            teamLogoUrl = draftSnap?.radiant?.logoUrl ?? (matchSetupSnap?.radiantTeamKey ? `/teams/${matchSetupSnap.radiantTeamKey}.png` : undefined);
+          } else {
+            teamName = draftSnap?.dire?.name ?? matchSetupSnap?.direTeamKey ?? "Dire";
+            teamLogoUrl = draftSnap?.dire?.logoUrl ?? (matchSetupSnap?.direTeamKey ? `/teams/${matchSetupSnap.direTeamKey}.png` : undefined);
+          }
+        } else {
+          // Fallback — aegis not yet visible in GSI tick, still fire event without team
+          teamName = undefined;
+          teamLogoUrl = undefined;
+        }
+
+        logger.info(
+          { killNumber, clockTime, aegisTeam, teamName, killerTeam: globalLastRoshanKillerTeam, pickerPlayerName },
+          "[roshan] Roshan killed — emitting ROSHAN_KILLED event",
+        );
+
+        io.of("/overlay").emit("ROSHAN_KILLED", {
+          killNumber,
+          clockTime,
+          teamName,
+          teamLogoUrl,
+          killerTeam: globalLastRoshanKillerTeam,
+          pickerTeam: aegisTeam,
+          pickerPlayerName,
+        });
+      }
+
+      // Update last known Roshan state
+      if (finalRoshanState) {
+        globalLastRoshanState = finalRoshanState;
       }
 
       patch.minimapState = {

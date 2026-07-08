@@ -19,7 +19,7 @@ type Ctx = {
   socket: Socket | null;
 };
 
-const OverlayContext = createContext<Ctx>({
+export const OverlayContext = createContext<Ctx>({
   state: createDefaultEnvelope(),
   socket: null,
 });

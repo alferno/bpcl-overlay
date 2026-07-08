@@ -48,6 +48,8 @@ export function LivePlayerCard() {
   const showTormTimer = tormMaxTimer > 0;
   const tormDead = !tormRadAlive && !tormDireAlive;
 
+  const isTestGame = typeof window !== "undefined" && window.location.pathname.includes("/test-game");
+
   return (
     <FadePanel
       show={visible && !!card}
@@ -55,7 +57,7 @@ export function LivePlayerCard() {
     >
       {/* 4 Minimap Buttons Above Map */}
       {visible && (
-        <div className="absolute left-4 bottom-[310px] flex flex-row items-center justify-start px-6 py-3 gap-5 pointer-events-none origin-bottom-left z-10 h-[84px]">
+        <div className="absolute left-[1px] bottom-[280px] flex flex-row items-center justify-start px-6 py-3 gap-5 pointer-events-none origin-bottom-left z-10 h-[84px]">
           {/* Arched Window Background */}
           <div className="absolute inset-0 bg-[#061016] rounded-l-[20px] rounded-r-[42px] border border-[rgba(55,76,93,0.5)] shadow-[0_12px_40px_rgba(0,0,0,0.7)] overflow-hidden z-0">
             {/* Spiderweb details inside arch */}
@@ -217,20 +219,26 @@ export function LivePlayerCard() {
         </div>
       )}
 
+      {isTestGame && card?.playerLabel && (
+        <div className="absolute left-[264px] top-[765px] w-[310px] text-white font-bold text-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] z-30 pointer-events-none text-center uppercase tracking-wider">
+          {card.playerLabel}
+        </div>
+      )}
+
       <div 
-        className="absolute left-[251px] top-[806px] w-[323px] h-[274px] flex flex-col items-center justify-end pointer-events-none origin-bottom-left z-20 transition-all duration-300"
+        className="absolute left-[264px] top-[806px] w-[310px] h-[274px] flex flex-col items-center justify-end pointer-events-none origin-bottom-left z-20 transition-all duration-300"
         style={{ 
           clipPath: (() => {
             const clampedAbilityCount = Math.min(card?.abilityCount ?? 4, 6);
             if (card?.heroId === 74) {
-              return "polygon(0 0, 100% 0, 100% 43%, 72% 43%, 72% 83%, 66.5% 84.1%, 62.5% 87.3%, 61% 91.5%, 62.5% 95.8%, 66.5% 98.9%, 72% 100%, 0 100%)";
+              return "polygon(0 0, 100% 0, 100% 43%, 74% 43%, 74% 83%, 65.5% 84.1%, 61.5% 87.3%, 60% 91.5%, 61.5% 95.8%, 65.5% 98.9%, 74% 100%, 0 100%)";
             }
             if (clampedAbilityCount === 4) {
-              return "polygon(0 0, 100% 0, 100% 43%, 90% 43%, 90% 83%, 84.5% 84.1%, 80.5% 87.3%, 79% 91.5%, 80.5% 95.8%, 84.5% 98.9%, 90% 100%, 0 100%)";
+              return "polygon(0 0, 100% 0, 100% 43%, 88% 43%, 88% 83%, 79.5% 84.1%, 75.5% 87.3%, 74% 91.5%, 75.5% 95.8%, 79.5% 98.9%, 88% 100%, 0 100%)";
             } else if (clampedAbilityCount === 5) {
-              return "polygon(0 0, 100% 0, 100% 43%, 85% 43%, 85% 83%, 79.5% 84.1%, 75.5% 87.3%, 74% 91.5%, 75.5% 95.8%, 79.5% 98.9%, 85% 100%, 0 100%)";
+              return "polygon(0 0, 100% 0, 100% 43%, 83% 43%, 83% 83%, 74.5% 84.1%, 70.5% 87.3%, 69% 91.5%, 70.5% 95.8%, 74.5% 98.9%, 83% 100%, 0 100%)";
             } else {
-              return "polygon(0 0, 100% 0, 100% 43%, 77% 43%, 77% 83%, 71.5% 84.1%, 67.5% 87.3%, 66% 91.5%, 67.5% 95.8%, 71.5% 98.9%, 77% 100%, 0 100%)";
+              return "polygon(0 0, 100% 0, 100% 43%, 75% 43%, 75% 83%, 66.5% 84.1%, 62.5% 87.3%, 61% 91.5%, 62.5% 95.8%, 66.5% 98.9%, 75% 100%, 0 100%)";
             }
           })()
         }}
@@ -240,22 +248,15 @@ export function LivePlayerCard() {
             <img
               src={withBaseUrl(`/cards/${card.steam32}${extensions[extIndex]}`)}
               alt=""
-              className="w-full h-full object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)]"
+              className="w-full h-full object-contain"
               onError={() => setExtIndex(e => e + 1)}
             />
           ) : (
-            <div className="scale-[0.65] origin-bottom">
-              <StatsPanelShell card={card} leagueConfig={state.leagueConfig}>
-                {card.playerAvatarUrl ? (
-                  <div className="flex flex-col items-center justify-center p-8 bg-slate-900/90 rounded-xl border border-white/20 backdrop-blur-md w-full h-[400px]">
-                    <img src={card.playerAvatarUrl} alt="" className="w-40 h-40 rounded-full mb-6 shadow-2xl border-4 border-slate-700/80" />
-                    <div className="text-4xl font-bold text-slate-100 drop-shadow-lg text-center whitespace-nowrap px-4">{card.playerLabel || "Unknown"}</div>
-                  </div>
-                ) : (
-                  <HeroStatsCardPanel card={card} />
-                )}
-              </StatsPanelShell>
-            </div>
+            <img
+              src={withBaseUrl(`/cards/sample.png`)}
+              alt="Fallback"
+              className="w-full h-full object-contain"
+            />
           )
         ) : null}
       </div>
