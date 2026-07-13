@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
@@ -8,10 +8,6 @@ import {
   resolveHeroPortraitSlug,
   heroPortraitHintsFromFields,
 } from "../hero-portrait";
-import {
-  resolveOverlayHeroAnimatedUrl,
-  loadHeroRenderManifest,
-} from "../hero-render-manifest";
 import type { StandoutPlayerCard } from "@bpc/shared-types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -163,71 +159,6 @@ function CombinedUpgradeBadge({
   );
 }
 
-function HeroVideo({
-  slug,
-  portraitUrl,
-}: {
-  slug: string | undefined;
-  portraitUrl: string | undefined;
-}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [webmUrl, setWebmUrl] = useState<string | undefined>(undefined);
-  const [videoError, setVideoError] = useState(false);
-
-  useEffect(() => {
-    if (!slug) return;
-    setVideoError(false);
-    loadHeroRenderManifest().then(() => {
-      const url = resolveOverlayHeroAnimatedUrl(slug);
-      setWebmUrl(url);
-    });
-  }, [slug]);
-
-  useEffect(() => {
-    if (videoRef.current && webmUrl) {
-      videoRef.current.load();
-      videoRef.current.play().catch(() => {});
-    }
-  }, [webmUrl]);
-
-  if (webmUrl && !videoError) {
-    return (
-      <video
-        key={webmUrl}
-        ref={videoRef}
-        src={webmUrl}
-        autoPlay
-        loop
-        muted
-        playsInline
-        onError={() => setVideoError(true)}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          objectPosition: "center bottom",
-        }}
-      />
-    );
-  }
-
-  if (portraitUrl) {
-    return (
-      <img
-        src={portraitUrl}
-        alt=""
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          objectPosition: "center bottom",
-        }}
-      />
-    );
-  }
-
-  return null;
-}
 
 function SkillIconsRow({ heroSlug }: { heroSlug: string | undefined }) {
   const [errors, setErrors] = useState<Record<number, boolean>>({});
@@ -290,6 +221,11 @@ export default function StandoutPlayerPage() {
   const visible = useRouteVisible("standoutplayer", state);
   const card = state.standoutPlayerCard;
 
+  const [cardError, setCardError] = useState(false);
+  useEffect(() => {
+    setCardError(false);
+  }, [card?.steam32]);
+
   const heroSlug = card
     ? resolveHeroPortraitSlug(
         card.heroId,
@@ -318,7 +254,7 @@ export default function StandoutPlayerPage() {
         show={visible}
         panelKey={`standout-${card?.steam32 ?? card?.heroId ?? "empty"}`}
       >
-        {/* ── Background ───────────────────────────────────────────────── */}
+        {/* -- Background ------------------------------------------------- */}
         <div className="absolute inset-0 bg-slate-950 pointer-events-none" />
         <div
           className="absolute inset-0 pointer-events-none"
@@ -343,7 +279,7 @@ export default function StandoutPlayerPage() {
 
         {card ? (
           <>
-            {/* ── HEADER ───────────────────────────────────────────────── */}
+            {/* -- HEADER ------------------------------------------------- */}
             <motion.div
               className="absolute top-0 inset-x-0 flex flex-col items-center pt-9"
               initial={{ opacity: 0, y: -24 }}
@@ -384,260 +320,278 @@ export default function StandoutPlayerPage() {
             </motion.div>
 
 
-            {/* ── 3-COLUMN MAIN LAYOUT ─────────────────────────────────── */}
+            {/* -- MAIN LAYOUT ----------------------------------- */}
             <div
-              className="absolute inset-x-0 flex items-start justify-center gap-6 px-10"
-              style={{ top: 182, bottom: 36 }}
+              className="absolute inset-x-0 flex flex-col items-center justify-start gap-10 px-10"
+              style={{ top: 160, bottom: 36 }}
             >
-              {/* ═══════════════════════════════════════════ LEFT COLUMN */}
-              <motion.div
-                className="flex flex-col gap-4"
-                style={{ width: 280, flexShrink: 0 }}
-                initial={{ opacity: 0, x: -40 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
-              >
-                <StatTile value={fmt(card.xpm)} label="XPM" delay={0.25} />
-                <StatTile value={fmt(card.gpm)} label="GPM" delay={0.32} />
-                <StatTile
-                  value={fmt(card.networth)}
-                  label="Total Networth"
-                  delay={0.39}
-                />
-                {/* Skill icons */}
+              {/* Top row with 3 columns */}
+              <div className="flex w-full max-w-[1300px] justify-between gap-16">
+                {/* ------------------------------------------- LEFT COLUMN */}
                 <motion.div
-                  className="mt-1"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.55 }}
+                  className="flex flex-col gap-6"
+                  style={{ width: 280, flexShrink: 0, paddingTop: 60 }}
+                  initial={{ opacity: 0, x: -40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
                 >
-                  <SkillIconsRow heroSlug={heroSlug} />
-                </motion.div>
-              </motion.div>
-
-              {/* ═══════════════════════════════════════════ CENTER COLUMN */}
-              <motion.div
-                className="flex flex-col items-center flex-1"
-                style={{ maxWidth: 380 }}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.65, delay: 0.1, ease: EASE }}
-              >
-                {/* Player name */}
-                <div
-                  className="w-full flex items-center justify-center rounded-xl mb-3 backdrop-blur-lg"
-                  style={{
-                    height: 52,
-                    background:
-                      "linear-gradient(135deg, rgba(4,20,15,0.8), rgba(0,0,0,0.9))",
-                    border: `1px solid rgba(16,185,129,0.3)`,
-                    boxShadow: `0 8px 32px rgba(0,0,0,0.6), inset 0 0 15px rgba(16,185,129,0.1)`,
-                  }}
-                >
-                  <span
-                    className="font-black uppercase tracking-wider text-white truncate px-4"
-                    style={{
-                      fontSize: "1.45rem",
-                      textShadow: `0 0 18px ${EMERALD}`,
-                    }}
-                  >
-                    {card.playerLabel}
-                  </span>
-                </div>
-
-                {/* Hero WebM */}
-                <div
-                  className="relative w-full overflow-hidden rounded-xl backdrop-blur-md"
-                  style={{
-                    height: 470,
-                    background:
-                      "linear-gradient(180deg, rgba(4,18,12,0.6) 0%, rgba(0,0,0,0.85) 100%)",
-                    border: `1px solid rgba(16,185,129,0.2)`,
-                    boxShadow: `0 12px 40px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.6)`,
-                  }}
-                >
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background:
-                        "radial-gradient(ellipse 80% 55% at 50% 85%, rgba(16,185,129,0.16) 0%, transparent 70%)",
-                    }}
+                  <StatTile value={fmt(card.xpm)} label="XPM" delay={0.25} />
+                  <StatTile value={fmt(card.gpm)} label="GPM" delay={0.32} />
+                  <StatTile
+                    value={fmt(card.networth)}
+                    label="Total Networth"
+                    delay={0.39}
                   />
-                  <div className="absolute inset-0 flex items-end justify-center">
-                    <HeroVideo slug={heroSlug} portraitUrl={portraitUrl} />
-                  </div>
-                </div>
+                </motion.div>
 
-                {/* KDA */}
-                <div className="mt-3 flex flex-col items-center">
-                  <span
-                    className="font-bold uppercase"
-                    style={{
-                      fontSize: "0.68rem",
-                      color: EMERALD,
-                      letterSpacing: "0.26em",
-                    }}
-                  >
-                    KDA
-                  </span>
-                  <span
-                    className="font-black"
-                    style={{
-                      fontSize: "1.95rem",
-                      color: "#fff",
-                      letterSpacing: "0.05em",
-                      textShadow: `0 0 18px ${EMERALD}`,
-                    }}
-                  >
-                    {card.kills}/{card.deaths}/{card.assists}
-                  </span>
-                </div>
-              </motion.div>
-
-              {/* ═══════════════════════════════════════════ RIGHT COLUMN */}
-              <motion.div
-                className="flex flex-col gap-4"
-                style={{ width: 340, flexShrink: 0 }}
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
-              >
-                <StatTile
-                  value={fmt(card.heroDamage)}
-                  label="Hero Damage"
-                  delay={0.25}
-                />
-                <StatTile
-                  value={fmt(card.lastHits)}
-                  label="Last Hits"
-                  delay={0.32}
-                />
-                <StatTile
-                  value={killParticipation(card)}
-                  label="Kill Participation"
-                  delay={0.39}
-                />
-
-                {/* ── Aghs + inventory row ─────────────────────────────── */}
+                {/* ------------------------------------------- CENTER COLUMN */}
                 <motion.div
-                  className="mt-1"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.55 }}
+                  className="flex flex-col items-center flex-1"
+                  style={{ maxWidth: 420 }}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.65, delay: 0.1, ease: EASE }}
                 >
-                  <div className="flex items-start gap-2.5 flex-wrap">
-                    {/* Scepter + Shard */}
-                    <div className="flex items-center">
+                  {/* HERO NAME */}
+                  <div
+                    className="w-full flex items-center justify-center rounded-xl mb-3 backdrop-blur-lg"
+                    style={{
+                      height: 52,
+                      background:
+                        "linear-gradient(135deg, rgba(4,20,15,0.8), rgba(0,0,0,0.9))",
+                      border: `1px solid rgba(16,185,129,0.3)`,
+                      boxShadow: `0 8px 32px rgba(0,0,0,0.6), inset 0 0 15px rgba(16,185,129,0.1)`,
+                    }}
+                  >
+                    <span
+                      className="font-black uppercase tracking-wider text-white truncate px-4"
+                      style={{
+                        fontSize: "1.45rem",
+                        textShadow: `0 0 18px ${EMERALD}`,
+                      }}
+                    >
+                      {card.heroName || "HERO"}
+                    </span>
+                  </div>
+
+                  {/* Player Card Image */}
+                  <div
+                    className="relative w-full overflow-hidden rounded-xl backdrop-blur-md flex items-center justify-center"
+                    style={{
+                      height: 470,
+                      background:
+                        "linear-gradient(180deg, rgba(4,18,12,0.6) 0%, rgba(0,0,0,0.85) 100%)",
+                      border: `1px solid rgba(16,185,129,0.2)`,
+                      boxShadow: `0 12px 40px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.6)`,
+                    }}
+                  >
+                    <img
+                      src={
+                        !cardError && card.bpcId
+                          ? `https://bpcleague.in/overlay/card/${card.bpcId}`
+                          : !cardError && card.steam32
+                          ? withBaseUrl(`/cards/${card.steam32}.png`)
+                          : portraitUrl || withBaseUrl(`/cards/sample.png`)
+                      }
+                      alt="Player/Hero"
+                      onError={() => setCardError(true)}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center top",
+                      }}
+                    />
+                  </div>
+
+                  {/* KDA */}
+                  <div className="mt-3 flex flex-col items-center">
+                    <span
+                      className="font-bold uppercase"
+                      style={{
+                        fontSize: "0.68rem",
+                        color: EMERALD,
+                        letterSpacing: "0.26em",
+                      }}
+                    >
+                      KDA
+                    </span>
+                    <span
+                      className="font-black"
+                      style={{
+                        fontSize: "1.95rem",
+                        color: "#fff",
+                        letterSpacing: "0.05em",
+                        textShadow: `0 0 18px ${EMERALD}`,
+                      }}
+                    >
+                      {card.kills}/{card.deaths}/{card.assists}
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* ------------------------------------------- RIGHT COLUMN */}
+                <motion.div
+                  className="flex flex-col gap-6"
+                  style={{ width: 280, flexShrink: 0, paddingTop: 60 }}
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
+                >
+                  <StatTile
+                    value={fmt(card.heroDamage)}
+                    label="Hero Damage"
+                    delay={0.25}
+                  />
+                  <StatTile
+                    value={fmt(card.lastHits)}
+                    label="Last Hits"
+                    delay={0.32}
+                  />
+                  <StatTile
+                    value={killParticipation(card)}
+                    label="Kill Participation"
+                    delay={0.39}
+                  />
+                </motion.div>
+              </div>
+
+              {/* ------------------------------------------- BOTTOM BAR (Hero Identity, Skills, Inventory) */}
+              <motion.div
+                className="w-full max-w-[1300px] mt-2 rounded-2xl flex items-stretch overflow-hidden backdrop-blur-md"
+                style={{
+                  background: "linear-gradient(90deg, rgba(4,20,15,0.8), rgba(0,0,0,0.6))",
+                  border: `1px solid rgba(16,185,129,0.25)`,
+                  boxShadow: `0 8px 32px rgba(0,0,0,0.5)`,
+                  height: 180,
+                }}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.45, ease: EASE }}
+              >
+                {/* Hero Portrait Left */}
+                <div 
+                  className="flex flex-col items-center justify-center p-4 border-r"
+                  style={{ width: 240, borderColor: "rgba(16,185,129,0.15)" }}
+                >
+                  <div 
+                    className="w-24 h-24 rounded-full overflow-hidden mb-2"
+                    style={{
+                      border: `2px solid ${EMERALD}`,
+                      boxShadow: `0 0 15px ${EMERALD_GLOW}`,
+                    }}
+                  >
+                    {portraitUrl && (
+                      <img
+        src={portraitUrl || withBaseUrl("/cards/sample.png")}
+        alt="Fallback" className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <span
+                    className="font-bold uppercase tracking-widest text-center"
+                    style={{ fontSize: "0.6rem", color: EMERALD, letterSpacing: "0.2em" }}
+                  >
+                    HERO IDENTITY
+                  </span>
+                  <span
+                    className="font-black uppercase tracking-wider text-white text-center truncate w-full"
+                    style={{ fontSize: "1rem" }}
+                  >
+                    {card.heroName || "HERO"}
+                  </span>
+                </div>
+
+                {/* Skills and Inventory Right */}
+                <div className="flex-1 flex flex-col justify-center px-8 py-3 gap-5">
+                  {/* Skills row */}
+                  <div className="flex items-center gap-6">
+                    <span
+                      className="font-bold uppercase tracking-widest flex-shrink-0"
+                      style={{ fontSize: "0.7rem", color: EMERALD, width: "120px" }}
+                    >
+                      ABILITIES
+                    </span>
+                    <SkillIconsRow heroSlug={heroSlug} />
+                  </div>
+
+                  {/* Inventory row */}
+                  <div className="flex items-center gap-6">
+                    <span
+                      className="font-bold uppercase tracking-widest flex-shrink-0"
+                      style={{ fontSize: "0.7rem", color: EMERALD, width: "120px" }}
+                    >
+                      LOADOUT
+                    </span>
+                    <div className="flex items-start gap-3 flex-wrap">
                       <CombinedUpgradeBadge
                         hasScepter={card.hasScepter ?? false}
                         hasShard={card.hasShard ?? false}
                       />
-                    </div>
-
-                    {/* Main inventory: 2 rows of 3 */}
-                    <div className="flex flex-col gap-1.5">
                       <div className="flex gap-1.5">
-                        {mainItems.slice(0, 3).map((id, i) => (
-                          <ItemSlot key={i} itemId={id} size={50} />
+                        {mainItems.slice(0, 6).map((id, i) => (
+                          <ItemSlot key={i} itemId={id} size={46} />
                         ))}
                       </div>
-                      <div className="flex gap-1.5">
-                        {mainItems.slice(3, 6).map((id, i) => (
-                          <ItemSlot key={i + 3} itemId={id} size={50} />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Neutral item — circular */}
-                    <div className="flex flex-col items-center gap-1">
+                      
+                      {/* Neutral Item */}
                       <div
-                        className="overflow-hidden"
+                        className="overflow-hidden flex-shrink-0"
                         style={{
-                          width: 48,
-                          height: 48,
+                          width: 42,
+                          height: 42,
                           borderRadius: "50%",
                           border: neutralItem
                             ? `2px solid ${EMERALD_DARK}`
                             : "2px solid rgba(255,255,255,0.1)",
-                          boxShadow: neutralItem
-                            ? `0 0 12px ${EMERALD_GLOW}`
-                            : "none",
+                          boxShadow: neutralItem ? `0 0 10px ${EMERALD_GLOW}` : "none",
                           background: "rgba(0,0,0,0.5)",
+                          marginLeft: 4,
                         }}
                       >
-                        {neutralItem
-                          ? (() => {
-                              const nu = itemIconUrl(neutralItem);
-                              return nu ? (
-                                <img
-                                  src={nu}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : null;
-                            })()
-                          : null}
+                        {neutralItem ? (
+                          <img
+                            src={itemIconUrl(neutralItem) || undefined}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            onError={(e) => (e.currentTarget.style.opacity = "0")}
+                          />
+                        ) : null}
                       </div>
-                      <span
-                        className="font-bold uppercase text-center"
-                        style={{
-                          fontSize: "0.42rem",
-                          color: "rgba(16,185,129,0.5)",
-                          letterSpacing: "0.1em",
-                        }}
-                      >
-                        NEUTRAL
-                      </span>
-                    </div>
 
-                    {/* Backpack: 3 smaller slots stacked */}
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex flex-col gap-1.5">
+                      {/* Backpack */}
+                      <div className="flex gap-1.5 ml-4">
                         {backpackItems.map((id, i) => (
                           <div
                             key={i}
                             className="overflow-hidden rounded"
                             style={{
-                              width: 42,
-                              height: 30,
+                              width: 36,
+                              height: 28,
                               border: id
                                 ? `1px solid rgba(16,185,129,0.3)`
                                 : "1px dashed rgba(255,255,255,0.1)",
                               background: "rgba(0,0,0,0.4)",
+                              marginTop: 7,
                             }}
                           >
-                            {id
-                              ? (() => {
-                                  const bu = itemIconUrl(id);
-                                  return bu ? (
-                                    <img
-                                      src={bu}
-                                      alt=""
-                                      className="h-full w-full object-cover"
-                                    />
-                                  ) : null;
-                                })()
-                              : null}
+                            {id ? (
+                              <img
+                                src={itemIconUrl(id) || undefined}
+                                alt=""
+                                className="h-full w-full object-cover"
+                                onError={(e) => (e.currentTarget.style.opacity = "0")}
+                              />
+                            ) : null}
                           </div>
                         ))}
                       </div>
-                      <span
-                        className="font-bold uppercase text-center"
-                        style={{
-                          fontSize: "0.42rem",
-                          color: "rgba(16,185,129,0.5)",
-                          letterSpacing: "0.1em",
-                        }}
-                      >
-                        BACKPACK
-                      </span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               </motion.div>
             </div>
 
-            {/* ── Bottom accent line ────────────────────────────────────── */}
+            {/* -- Bottom accent line -------------------------------------- */}
             <div
               className="absolute bottom-0 inset-x-0"
               style={{
@@ -653,7 +607,7 @@ export default function StandoutPlayerPage() {
               className="font-bold uppercase tracking-widest"
               style={{ fontSize: "1.5rem", color: "rgba(16,185,129,0.3)" }}
             >
-              Awaiting standout player data…
+              Awaiting standout player data�
             </span>
           </div>
         )}

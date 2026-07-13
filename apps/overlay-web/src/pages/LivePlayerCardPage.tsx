@@ -8,7 +8,8 @@ import { withBaseUrl } from "../asset-paths";
 
 export function LivePlayerCard() {
   const { state } = useOverlayState();
-  const visible = useRouteVisible("liveplayercard", state);
+  const livePlayerVisible = useRouteVisible("liveplayercard", state);
+  const minimapVisible = useRouteVisible("minimapIcons", state);
   const card = state.livePlayerCard;
   
   const extensions = [".png", ".jpg", ".gif"];
@@ -50,14 +51,32 @@ export function LivePlayerCard() {
 
   const isTestGame = typeof window !== "undefined" && window.location.pathname.includes("/test-game");
 
+  const mmLayout = state.production?.layoutConfig?.minimapIcons;
+  const mmLeft = mmLayout?.x ?? 1;
+  const mmBottom = mmLayout?.y ?? 280;
+  const mmScale = mmLayout?.scale ?? 1;
+
+  const cardLayout = state.production?.layoutConfig?.livePlayerCard;
+  const cardX = cardLayout?.x ?? 0;
+  const cardY = cardLayout?.y ?? 0;
+  const cardScale = cardLayout?.scale ?? 1;
+  const useInwardCut = cardLayout?.inwardCut !== false;
+
   return (
     <FadePanel
-      show={visible && !!card}
+      show={(livePlayerVisible || minimapVisible) && !!card}
       panelKey={`liveplayer-${card?.steam32 ?? card?.heroId ?? "empty"}`}
     >
       {/* 4 Minimap Buttons Above Map */}
-      {visible && (
-        <div className="absolute left-[1px] bottom-[280px] flex flex-row items-center justify-start px-6 py-3 gap-5 pointer-events-none origin-bottom-left z-10 h-[84px]">
+      {minimapVisible && (
+        <div 
+          className="absolute flex flex-row items-center justify-start px-6 py-3 gap-5 pointer-events-none origin-bottom-left z-10 h-[84px]"
+          style={{
+            left: mmLeft,
+            bottom: mmBottom,
+            transform: `scale(${mmScale})`
+          }}
+        >
           {/* Arched Window Background */}
           <div className="absolute inset-0 bg-[#061016] rounded-l-[20px] rounded-r-[42px] border border-[rgba(55,76,93,0.5)] shadow-[0_12px_40px_rgba(0,0,0,0.7)] overflow-hidden z-0">
             {/* Spiderweb details inside arch */}
@@ -219,47 +238,69 @@ export function LivePlayerCard() {
         </div>
       )}
 
-      {isTestGame && card?.playerLabel && (
-        <div className="absolute left-[264px] top-[765px] w-[310px] text-white font-bold text-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] z-30 pointer-events-none text-center uppercase tracking-wider">
-          {card.playerLabel}
+      {/* Batched Player Card & Label Container */}
+      {livePlayerVisible && (
+        <div 
+          className="absolute left-[264px] top-[765px] z-20 pointer-events-none origin-bottom-left transition-all duration-300"
+          style={{ transform: `translate(${cardX}px, ${cardY}px) scale(${cardScale})` }}
+        >
+          {/* Player Label */}
+          {card?.playerLabel && (
+            <div className="absolute left-[15px] top-[0px] w-[280px] bg-transparent rounded px-3 py-1 z-30 flex items-center justify-center">
+              <span className="text-white font-bold text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase tracking-wider truncate w-full text-center">
+                {card.playerLabel}
+              </span>
+            </div>
+          )}
+
+          {/* Player Card Main Body */}
+          <div 
+            className="absolute left-[0px] top-[41px] w-[310px] h-[274px] flex flex-col items-center justify-end z-20 transition-all duration-300"
+            style={{ 
+              clipPath: (() => {
+                if (!useInwardCut) return "polygon(0 0, 100% 0, 100% 43%, 100% 43%, 100% 83%, 100% 84.1%, 100% 87.3%, 100% 91.5%, 100% 95.8%, 100% 98.9%, 100% 100%, 0 100%)";
+                const clampedAbilityCount = Math.min(card?.abilityCount ?? 4, 6);
+                if (card?.heroId === 74) {
+                  return "polygon(0 0, 100% 0, 100% 43%, 74% 43%, 74% 83%, 65.5% 84.1%, 61.5% 87.3%, 60% 91.5%, 61.5% 95.8%, 65.5% 98.9%, 74% 100%, 0 100%)";
+                }
+                if (clampedAbilityCount === 4) {
+                  return "polygon(0 0, 100% 0, 100% 43%, 88% 43%, 88% 83%, 79.5% 84.1%, 75.5% 87.3%, 74% 91.5%, 75.5% 95.8%, 79.5% 98.9%, 88% 100%, 0 100%)";
+                } else if (clampedAbilityCount === 5) {
+                  return "polygon(0 0, 100% 0, 100% 43%, 83% 43%, 83% 83%, 74.5% 84.1%, 70.5% 87.3%, 69% 91.5%, 70.5% 95.8%, 74.5% 98.9%, 83% 100%, 0 100%)";
+                } else {
+                  return "polygon(0 0, 100% 0, 100% 43%, 75% 43%, 75% 83%, 66.5% 84.1%, 62.5% 87.3%, 61% 91.5%, 62.5% 95.8%, 66.5% 98.9%, 75% 100%, 0 100%)";
+                }
+              })()
+            }}
+          >
+            {card ? (
+              card.bpcId ? (
+                <img
+                  src={`https://bpcleague.in/overlay/card/${card.bpcId}`}
+                  alt=""
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.src = withBaseUrl(`/cards/sample.png`)!;
+                  }}
+                />
+              ) : card.steam32 && extIndex < extensions.length ? (
+                <img
+                  src={withBaseUrl(`/cards/${card.steam32}${extensions[extIndex]}`)}
+                  alt=""
+                  className="w-full h-full object-contain"
+                  onError={() => setExtIndex(e => e + 1)}
+                />
+              ) : (
+                <img
+                  src={withBaseUrl(`/cards/sample.png`)}
+                  alt="Fallback"
+                  className="w-full h-full object-contain"
+                />
+              )
+            ) : null}
+          </div>
         </div>
       )}
-
-      <div 
-        className="absolute left-[264px] top-[806px] w-[310px] h-[274px] flex flex-col items-center justify-end pointer-events-none origin-bottom-left z-20 transition-all duration-300"
-        style={{ 
-          clipPath: (() => {
-            const clampedAbilityCount = Math.min(card?.abilityCount ?? 4, 6);
-            if (card?.heroId === 74) {
-              return "polygon(0 0, 100% 0, 100% 43%, 74% 43%, 74% 83%, 65.5% 84.1%, 61.5% 87.3%, 60% 91.5%, 61.5% 95.8%, 65.5% 98.9%, 74% 100%, 0 100%)";
-            }
-            if (clampedAbilityCount === 4) {
-              return "polygon(0 0, 100% 0, 100% 43%, 88% 43%, 88% 83%, 79.5% 84.1%, 75.5% 87.3%, 74% 91.5%, 75.5% 95.8%, 79.5% 98.9%, 88% 100%, 0 100%)";
-            } else if (clampedAbilityCount === 5) {
-              return "polygon(0 0, 100% 0, 100% 43%, 83% 43%, 83% 83%, 74.5% 84.1%, 70.5% 87.3%, 69% 91.5%, 70.5% 95.8%, 74.5% 98.9%, 83% 100%, 0 100%)";
-            } else {
-              return "polygon(0 0, 100% 0, 100% 43%, 75% 43%, 75% 83%, 66.5% 84.1%, 62.5% 87.3%, 61% 91.5%, 62.5% 95.8%, 66.5% 98.9%, 75% 100%, 0 100%)";
-            }
-          })()
-        }}
-      >
-        {card ? (
-          card.steam32 && extIndex < extensions.length ? (
-            <img
-              src={withBaseUrl(`/cards/${card.steam32}${extensions[extIndex]}`)}
-              alt=""
-              className="w-full h-full object-contain"
-              onError={() => setExtIndex(e => e + 1)}
-            />
-          ) : (
-            <img
-              src={withBaseUrl(`/cards/sample.png`)}
-              alt="Fallback"
-              className="w-full h-full object-contain"
-            />
-          )
-        ) : null}
-      </div>
     </FadePanel>
   );
 }

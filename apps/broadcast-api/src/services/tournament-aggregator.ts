@@ -213,8 +213,8 @@ export class TournamentAggregator {
     return rows;
   }
 
-  async aggregateLeague(
-    leagueId: number,
+  async aggregateLeagues(
+    leagueIds: number[],
     client: OpenDotaClient,
     maxMatches = 80,
     onProgress?: (progress: AggregationProgress) => void,
@@ -235,18 +235,25 @@ export class TournamentAggregator {
 
     try {
       await ensureHeroRegistry(client);
-      const resolved = await resolveLeagueMatchIds(leagueId, maxMatches);
-      const matchIds = resolved.matchIds;
+      
+      const allMatchIds: number[] = [];
+      let combinedWarning = "";
+      for (const lid of leagueIds) {
+        const resolved = await resolveLeagueMatchIds(lid, maxMatches);
+        allMatchIds.push(...resolved.matchIds);
+        if (resolved.warning) {
+          combinedWarning += `[League ${lid}]: ${resolved.warning} `;
+          logger.warn({ leagueId: lid, warning: resolved.warning }, "League match resolve");
+        }
+      }
+      
+      const matchIds = Array.from(new Set(allMatchIds));
 
       if (matchIds.length === 0) {
         throw new Error(
-          resolved.warning ??
-            `No matches found for league ${leagueId}. Set STEAM_WEB_API_KEY in apps/broadcast-api/.env and/or LEAGUE_MATCH_IDS.`,
+          combinedWarning ||
+            `No matches found for leagues ${leagueIds.join(", ")}. Set STEAM_WEB_API_KEY in apps/broadcast-api/.env and/or LEAGUE_MATCH_IDS.`,
         );
-      }
-
-      if (resolved.warning) {
-        logger.warn({ leagueId, warning: resolved.warning }, "League match resolve");
       }
 
       this.progress.matchTotal = matchIds.length;
@@ -272,15 +279,15 @@ export class TournamentAggregator {
           if (
             detail.data.leagueid != null &&
             detail.data.leagueid !== 0 &&
-            detail.data.leagueid !== leagueId
+            !leagueIds.includes(detail.data.leagueid)
           ) {
             logger.warn(
               {
                 matchId,
-                expectedLeague: leagueId,
-                actualLeague: detail.data.leagueid,
+                expectedLeagues: leagueIds,
+                got: detail.data.leagueid,
               },
-              "Skipping match — leagueid mismatch",
+              "Match leagueId mismatch",
             );
           } else {
             this.ingestMatch(detail.data, heroAcc);

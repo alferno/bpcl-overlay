@@ -80,7 +80,9 @@ function PlayerCard({
   flipToHero: boolean;
   heroInfo?: any;
 }) {
-  const cardUrl = withBaseUrl(`/cards/${player.steam32}.png`)!;
+  const cardUrl = player.bpcId 
+    ? `https://bpcleague.in/overlay/card/${player.bpcId}` 
+    : withBaseUrl(`/cards/${player.steam32}.png`)!;
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => setImageError(false), [player.steam32]);
@@ -109,7 +111,14 @@ function PlayerCard({
               src={cardUrl}
               alt={player.displayName}
               className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-              onError={() => setImageError(true)}
+              onError={(e) => {
+                if (cardUrl !== withBaseUrl("/cards/sample.png")) {
+                  // Fallback to sample if original fails
+                  e.currentTarget.src = withBaseUrl("/cards/sample.png")!;
+                } else {
+                  setImageError(true);
+                }
+              }}
             />
           ) : (
             <FallbackPlayerAvatar player={player} color={color} logoPath={logoPath} />

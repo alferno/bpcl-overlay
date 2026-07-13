@@ -62,7 +62,17 @@ export default function OverlaySocketLayer({ children }: { children: ReactNode }
     };
   }, []);
 
-  const value = useMemo(() => ({ socket, state }), [socket, state]);
+  const value = useMemo(() => {
+    let effectiveState = state;
+    if (state.leagueConfig?.overlayStatsMode === "lifetime") {
+      effectiveState = {
+        ...state,
+        tournamentHeroIndex: state.lifetimeTournamentHeroIndex ?? state.tournamentHeroIndex,
+        playerHeroIndex: state.lifetimePlayerHeroIndex ?? state.playerHeroIndex,
+      };
+    }
+    return { socket, state: effectiveState };
+  }, [socket, state]);
 
   return (
     <OverlayContext.Provider value={value}>{children}</OverlayContext.Provider>

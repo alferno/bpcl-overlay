@@ -12,7 +12,7 @@ export default defineConfig({
                 vite: {
                     build: {
                         rollupOptions: {
-                            external: ['broadcast-api', 'obs-websocket-js', 'express', 'socket.io', 'ioredis', 'dotenv', 'pino', 'zod', 'cors', 'helmet', 'bottleneck']
+                            external: ['bufferutil', 'utf-8-validate']
                         }
                     }
                 }

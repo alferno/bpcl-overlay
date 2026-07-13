@@ -236,4 +236,40 @@ export class OBSController {
   ): void {
     this.client.on(event, handler as any);
   }
+
+  async createScene(sceneName: string): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.client.call("CreateScene", { sceneName });
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  async createInput(
+    sceneName: string,
+    inputName: string,
+    inputKind: string,
+    inputSettings: any,
+    sceneItemEnabled: boolean = true
+  ): Promise<{ ok: boolean; sceneItemId?: number; error?: string }> {
+    try {
+      const res = await this.client.call("CreateInput", {
+        sceneName,
+        inputName,
+        inputKind,
+        inputSettings,
+        sceneItemEnabled,
+      });
+      return { ok: true, sceneItemId: res.sceneItemId };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
 }

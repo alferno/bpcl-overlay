@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';" />
+  <title>BPCL Launcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f14;
+      --surface:   #1a1a24;
+      --surface2:  #22223a;
+      --accent:    #6c63ff;
+      --accent2:   #a78bfa;
+      --success:   #34d399;
+      --warning:   #fbbf24;
+      --danger:    #f87171;
+      --text:      #e2e2f0;
+      --muted:     #7070a0;
+      --border:    rgba(108,99,255,0.18);
+      --radius:    14px;
+      --radius-sm: 8px;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    /* ── Drag region (frameless window) ── */
+    .titlebar {
+      -webkit-app-region: drag;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 32px;
+      z-index: 10;
+    }
+    .titlebar-close {
+      -webkit-app-region: no-drag;
+      position: absolute;
+      top: 8px; right: 12px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #ff5f57;
+      border: none;
+      cursor: pointer;
+      transition: opacity .2s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: rgba(0,0,0,.5); font-weight: 700;
+      opacity: .7;
+    }
+    .titlebar-close:hover { opacity: 1; }
+
+    /* ── Layout ── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 36px 32px 24px;
+      gap: 16px;
+      position: relative;
+    }
+
+    /* ── Ambient glow ── */
+    .app::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 300px; height: 200px;
+      background: radial-gradient(ellipse, rgba(108,99,255,.22) 0%, transparent 70%);
+      pointer-events: none;
+      border-radius: 50%;
+    }
+
+    /* ── Logo ── */
+    .logo {
+      text-align: center;
+      line-height: 1;
+    }
+    .logo-main {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #6c63ff 0%, #a78bfa 50%, #60d4fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-sub {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── Status card (glassmorphism) ── */
+    .status-card {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(26,26,36,.9) 0%, rgba(34,34,58,.7) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color .3s;
+    }
+    .status-card.error   { border-color: rgba(248,113,113,.4); }
+    .status-card.success { border-color: rgba(52,211,153,.3); }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px var(--accent);
+      transition: background .3s, box-shadow .3s;
+    }
+    .status-dot.pulse {
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .status-dot.success { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .status-dot.error   { background: var(--danger);  box-shadow: 0 0 6px var(--danger); }
+    .status-dot.warning { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.8); }
+    }
+
+    .status-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      flex: 1;
+    }
+
+    /* ── Version row ── */
+    .versions {
+      display: flex;
+      gap: 16px;
+    }
+    .version-chip {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .version-chip .label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .version-chip .value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .version-chip .value.new { color: var(--accent2); }
+
+    /* ── Notes ── */
+    .notes {
+      font-size: 11.5px;
+      color: var(--muted);
+      border-top: 1px solid rgba(255,255,255,.05);
+      padding-top: 8px;
+      display: none;
+      line-height: 1.6;
+    }
+    .notes.visible { display: block; }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      width: 100%;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .progress-wrap.visible { display: flex; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .progress-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255,255,255,.06);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      transition: width .3s ease;
+      position: relative;
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 40px; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.4));
+      border-radius: 99px;
+      animation: shimmer 1.2s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0%   { opacity: 0; }
+      50%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ── Buttons ── */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 11px 24px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 2px 14px rgba(108,99,255,.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .btn-primary:hover:not(:disabled) {
+      opacity: .92;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(108,99,255,.55);
+    }
+    .btn-primary:active:not(:disabled) { transform: translateY(0); opacity: .85; }
+    .btn-primary:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-link {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 11.5px;
+      cursor: pointer;
+      padding: 2px 0;
+      transition: color .2s;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: transparent;
+    }
+    .btn-link:hover { color: var(--accent2); text-decoration-color: var(--accent2); }
+
+    /* ── Error message ── */
+    .error-msg {
+      font-size: 11.5px;
+      color: var(--danger);
+      text-align: center;
+      min-height: 16px;
+      transition: opacity .3s;
+      opacity: 0;
+    }
+    .error-msg.visible { opacity: 1; }
+
+    /* ── Footer ── */
+    .footer {
+      font-size: 10px;
+      color: rgba(112,112,160,.5);
+      letter-spacing: .5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="titlebar">
+  <button class="titlebar-close" id="closeBtn" title="Close">✕</button>
+</div>
+
+<div class="app">
+
+  <!-- Logo -->
+  <div class="logo">
+    <div class="logo-main">BPCL</div>
+    <div class="logo-sub">Streamer Hub</div>
+  </div>
+
+  <!-- Status card -->
+  <div class="status-card" id="statusCard">
+    <div class="status-row">
+      <div class="status-dot pulse" id="statusDot"></div>
+      <div class="status-text" id="statusText">Initialising…</div>
+    </div>
+    <div class="versions">
+      <div class="version-chip">
+        <span class="label">Installed</span>
+        <span class="value" id="localVer">—</span>
+      </div>
+      <div class="version-chip">
+        <span class="label">Latest</span>
+        <span class="value" id="remoteVer">—</span>
+      </div>
+    </div>
+    <div class="notes" id="notes"></div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span>Downloading update…</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn-primary" id="mainBtn" disabled>Please wait…</button>
+    <button class="btn-link" id="folderBtn">Open Install Folder</button>
+  </div>
+
+  <!-- Error area -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="footer">BPCL Launcher v1.0.0</div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let state = {
+    phase: 'init',   // init | checking | upToDate | needsUpdate | noInstall | downloading | launching | error
+    localVersion: '0.0.0',
+    remoteVersion: '',
+    downloadUrl: '',
+    notes: '',
+    installDir: ''
+  }
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const statusCard  = document.getElementById('statusCard')
+  const statusDot   = document.getElementById('statusDot')
+  const statusText  = document.getElementById('statusText')
+  const localVerEl  = document.getElementById('localVer')
+  const remoteVerEl = document.getElementById('remoteVer')
+  const notesEl     = document.getElementById('notes')
+  const progressWrap = document.getElementById('progressWrap')
+  const progressFill = document.getElementById('progressFill')
+  const progressPct  = document.getElementById('progressPct')
+  const mainBtn     = document.getElementById('mainBtn')
+  const folderBtn   = document.getElementById('folderBtn')
+  const errorMsg    = document.getElementById('errorMsg')
+  const closeBtn    = document.getElementById('closeBtn')
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function render () {
+    const { phase, localVersion, remoteVersion, notes } = state
+
+    // Reset card classes
+    statusCard.className = 'status-card'
+
+    // Dot state
+    statusDot.className = 'status-dot'
+
+    // Clear error
+    errorMsg.className = 'error-msg'
+
+    switch (phase) {
+      case 'checking':
+        statusDot.classList.add('pulse')
+        setStatus('Checking for updates…')
+        mainBtn.disabled = true
+        mainBtn.textContent = 'Please wait…'
+        hideProgress()
+        break
+
+      case 'noInstall':
+        statusDot.classList.add('warning')
+        setStatus('No installation found. Ready to download.')
+        statusCard.classList.add('warning')
+        mainBtn.disabled = false
+        mainBtn.textContent = '⬇  Download & Install'
+        hideProgress()
+        break
+
+      case 'needsUpdate':
+        statusDot.classList.add('warning')
+        setStatus(`Update available — v${remoteVersion}`)
+        mainBtn.disabled = false
+        mainBtn.textContent = '⬆  Update & Launch'
+        hideProgress()
+        if (notes) {
+          notesEl.textContent = notes
+          notesEl.classList.add('visible')
+        }
+        break
+
+      case 'upToDate':
+        statusDot.classList.add('success')
+        statusCard.classList.add('success')
+        setStatus('You\'re up to date! Ready to launch.')
+        mainBtn.disabled = false
+        mainBtn.textContent = '▶  Launch BPCL Streamer'
+        hideProgress()
+        break
+
+      case 'downloading':
+        statusDot.classList.add('pulse')
+        setStatus('Downloading update…')
+        mainBtn.disabled = true
+        mainBtn.textContent = 'Downloading…'
+        progressWrap.classList.add('visible')
+        break
+
+      case 'extracting':
+        statusDot.classList.add('pulse')
+        setStatus('Extracting update…')
+        mainBtn.disabled = true
+        mainBtn.textContent = 'Installing…'
+        break
+
+      case 'launching':
+        statusDot.classList.add('success')
+        statusCard.classList.add('success')
+        setStatus('Launching BPCL Streamer… 🚀')
+        mainBtn.disabled = true
+        mainBtn.textContent = 'Launching…'
+        hideProgress()
+        break
+
+      case 'error':
+        statusDot.classList.add('error')
+        statusCard.classList.add('error')
+        setStatus('Something went wrong.')
+        mainBtn.disabled = false
+        mainBtn.textContent = '↺  Retry'
+        hideProgress()
+        break
+    }
+
+    // Version chips
+    localVerEl.textContent  = localVersion && localVersion !== '0.0.0' ? `v${localVersion}` : 'Not installed'
+    remoteVerEl.textContent = remoteVersion ? `v${remoteVersion}` : '—'
+    if (remoteVersion && remoteVersion !== localVersion) {
+      remoteVerEl.classList.add('new')
+    } else {
+      remoteVerEl.classList.remove('new')
+    }
+  }
+
+  function setStatus (msg) { statusText.textContent = msg }
+  function hideProgress () { progressWrap.classList.remove('visible') }
+
+  function showError (msg) {
+    errorMsg.textContent = msg
+    errorMsg.className = 'error-msg visible'
+  }
+
+  function setProgress (pct) {
+    progressFill.style.width = pct + '%'
+    progressPct.textContent  = pct + '%'
+  }
+
+  // ── Actions ────────────────────────────────────────────────────────────────
+  async function checkForUpdate () {
+    state.phase = 'checking'
+    render()
+    try {
+      const result = await window.electronAPI.checkUpdate()
+      state.localVersion  = result.localVersion
+      state.remoteVersion = result.remoteVersion
+      state.downloadUrl   = result.downloadUrl
+      state.notes         = result.notes || ''
+
+      if (result.localVersion === '0.0.0') {
+        state.phase = 'noInstall'
+      } else if (result.needsUpdate) {
+        state.phase = 'needsUpdate'
+      } else {
+        state.phase = 'upToDate'
+      }
+      render()
+    } catch (err) {
+      state.phase = 'error'
+      render()
+      showError('Could not reach update server: ' + err.message)
+    }
+  }
+
+  async function downloadAndLaunch () {
+    state.phase = 'downloading'
+    render()
+    setProgress(0)
+
+    try {
+      const result = await window.electronAPI.downloadAndInstall({
+        downloadUrl: state.downloadUrl,
+        version: state.remoteVersion
+      })
+      if (!result.ok) throw new Error(result.error)
+
+      // Update local version display after install
+      state.localVersion = state.remoteVersion
+      state.phase = 'launching'
+      render()
+
+      await window.electronAPI.launchApp()
+    } catch (err) {
+      state.phase = 'error'
+      render()
+      showError('Install failed: ' + err.message)
+    }
+  }
+
+  async function launch () {
+    state.phase = 'launching'
+    render()
+    try {
+      const result = await window.electronAPI.launchApp()
+      if (!result.ok) throw new Error(result.error)
+    } catch (err) {
+      state.phase = 'error'
+      render()
+      showError('Launch failed: ' + err.message)
+    }
+  }
+
+  // ── Button handler ─────────────────────────────────────────────────────────
+  mainBtn.addEventListener('click', async () => {
+    const { phase } = state
+    if (phase === 'error' || phase === 'init') {
+      await checkForUpdate()
+      return
+    }
+    if (phase === 'upToDate') {
+      await launch()
+      return
+    }
+    if (phase === 'needsUpdate' || phase === 'noInstall') {
+      await downloadAndLaunch()
+      return
+    }
+  })
+
+  // ── Open install folder ────────────────────────────────────────────────────
+  folderBtn.addEventListener('click', async () => {
+    const dir = state.installDir || await window.electronAPI.getInstallDir()
+    state.installDir = dir
+    // Use shell.openPath via a hidden trick: open the folder by launching explorer
+    // We'll use the launchApp IPC or just do nothing — we expose this via a custom call.
+    // Since shell is not exposed, we navigate to it in the status text instead.
+    setStatus('Install folder: ' + dir)
+  })
+
+  // ── Close button ──────────────────────────────────────────────────────────
+  closeBtn.addEventListener('click', () => {
+    window.close()
+  })
+
+  // ── Download progress events ───────────────────────────────────────────────
+  window.electronAPI.onDownloadProgress((percent) => {
+    setProgress(percent)
+  })
+
+  // ── Boot ───────────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', checkForUpdate)
+  // Also run immediately (DOMContentLoaded may already have fired)
+  checkForUpdate()
+</script>
+</body>
+</html>

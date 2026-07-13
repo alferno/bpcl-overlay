@@ -1,6 +1,7 @@
 import { logger } from "../logger.js";
 import { batchResolveSteam32 } from "./steam32-resolver.js";
 import type { RosterPlayer } from "@bpc/shared-types";
+import { fetchActiveSeasonSlug } from "./bpcleague-sync.js";
 
 const BPCL_BASE = "https://api.bpcleague.in/api/public";
 
@@ -168,6 +169,7 @@ export async function fetchSyncedTeams(
 
     syncedTeams.get(teamKey)!.players.push({
       steam32: steam32 ?? 0,
+      bpcId: player.id,
       displayName: player.displayName,
       teamName: team.name,
       teamKey,
@@ -190,9 +192,11 @@ export async function fetchSyncedTeams(
 export async function fetchLiveMatches(): Promise<LiveMatch[]> {
   logger.info("[BPCLeague] Fetching tournament matches");
 
+  const activeSlug = await fetchActiveSeasonSlug();
+
   const [tournamentData, seasonData] = await Promise.all([
     fetchJson<BpclTournamentResponse>(`${BPCL_BASE}/tournament`),
-    fetchJson<BpclSeasonResponse>(`${BPCL_BASE}/seasons/season-2`).catch(() => null),
+    fetchJson<BpclSeasonResponse>(`${BPCL_BASE}/seasons/${activeSlug}`).catch(() => null),
   ]);
 
   const rawMatches: BpclMatch[] =

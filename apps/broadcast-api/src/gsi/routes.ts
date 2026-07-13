@@ -39,6 +39,69 @@ let globalRoshanKillCount = 0;
 let globalLastRoshanState: string | null = null;
 let globalLastRoshanKillerTeam: "radiant" | "dire" | null = null;
 
+let globalLastAutoReplaySaveAt = 0;
+
+// ── Bounty Rune Tracking ──────────────────────────────────────────────────────
+//
+// Patch 7.41d: bounty gold is determined at CONSUMPTION TIME (pickup),
+// not spawn time. Formula: goldPerHero = 40 + 6 * floor(clockTime / 240)
+// Team total = goldPerHero * 5
+//
+// This means stacked runes all share the same gold value when picked up
+// at a given moment — no FIFO pool needed, no spawn tracking needed.
+let globalBountyRadiantCount = 0;
+let globalBountyRadiantGold = 0;
+let globalBountyDireCount = 0;
+let globalBountyDireGold = 0;
+/**
+ * Total bounty pickup events seen so far in the events array.
+ * GSI resends the FULL events array every tick, so we track the running
+ * total to only process net-new events each tick.
+ */
+let globalBountyEventsProcessedTotal = 0;
+/** Fallback: previous rune_pickups per player key to detect delta. */
+const globalPrevRunePickups: Map<string, number> = new Map();
+
+/** Gold granted to the team for a bounty rune consumed at `clockTime`.
+ *
+ * Formula (from game data, patch 7.41d):
+ *   goldPerHero = 40 + 6 × floor(In-Game-Time-in-minutes / 5)
+ *               = 40 + 6 × floor(clockTime_seconds / 300)
+ *
+ * Note: Spawn interval = 240s (4 min), Gold increase interval = 300s (5 min) — different!
+ *
+ * Examples at consumption time:
+ *   0:00 →  40g/hero → 200g team
+ *   5:00 →  46g/hero → 230g team
+ *  10:00 →  52g/hero → 260g team
+ *  15:00 →  58g/hero → 290g team
+ */
+function bountyGoldAtConsumption(clockTime: number): number {
+  const goldPerHero = 40 + 6 * Math.floor(Math.max(0, clockTime) / 300);
+  return goldPerHero * 5;
+}
+
+// ── Wisdom Rune Tracking ──────────────────────────────────────────────────────
+let globalWisdomRadiantCount = 0;
+let globalWisdomRadiantXp = 0;
+let globalWisdomDireCount = 0;
+let globalWisdomDireXp = 0;
+const globalPrevXp: Map<string, number> = new Map();
+
+export function getWisdomStats() {
+  return {
+    radiant: { count: globalWisdomRadiantCount, xp: globalWisdomRadiantXp },
+    dire:    { count: globalWisdomDireCount,    xp: globalWisdomDireXp },
+  };
+}
+
+export function getBountyStats() {
+  return {
+    radiant: { count: globalBountyRadiantCount, gold: globalBountyRadiantGold },
+    dire:    { count: globalBountyDireCount,    gold: globalBountyDireGold },
+  };
+}
+
 const SHARD_VALUE = 1400;
 const TOLERANCE = 100;
 const RESPAWN_SECONDS = 600;
@@ -127,14 +190,19 @@ function detectTormentorKillViaShard(
 let postGameMvpFiredForMatchId: number | string = 0;
 let lastKnownGameState = "";
 
+import type { OBSController } from "../obs-controller.js";
+import type { ReplayManager } from "../services/replay-manager.js";
+
 export function attachGsiRoutes(opts: {
   app: Express;
   state: StateManager;
   broadcast: BroadcastFns;
   opendota: OpenDotaClient;
   io: IOServer;
+  obs: OBSController;
+  replayManager: ReplayManager;
 }): void {
-  const { app, state, broadcast, opendota, io } = opts;
+  const { app, state, broadcast, opendota, io, obs, replayManager } = opts;
 
   app.post("/gsi", async (req, res) => {
     const token =
@@ -227,6 +295,20 @@ export function attachGsiRoutes(opts: {
         globalRoshanKillCount = 0;
         globalLastRoshanState = null;
         globalLastRoshanKillerTeam = null;
+        // Reset bounty tracking for new match
+        globalBountyRadiantCount = 0;
+        globalBountyRadiantGold = 0;
+        globalBountyDireCount = 0;
+        globalBountyDireGold = 0;
+        globalBountyEventsProcessedTotal = 0;
+        globalPrevRunePickups.clear();
+
+        // Reset wisdom tracking
+        globalWisdomRadiantCount = 0;
+        globalWisdomRadiantXp = 0;
+        globalWisdomDireCount = 0;
+        globalWisdomDireXp = 0;
+        globalPrevXp.clear();
       } else if (clockTime < prevClockTime || clockTime < (globalLastTormentorKillClockTime || 0)) {
         globalLastTormentorKillClockTime = null;
         globalLastProcessedEventTime = 0;
@@ -237,13 +319,161 @@ export function attachGsiRoutes(opts: {
         globalLastDireScanCooldown = 0;
       }
 
+
+      // ── Event Array Processing ────────────────────────────────────────────────
+      let bountyDetectedViaEvents = false;
       if (payload?.events && Array.isArray(payload.events)) {
         for (const ev of payload.events) {
           if (ev.game_time && ev.game_time > globalLastProcessedEventTime) {
             if (ev.event_type === "roshan_killed") {
               globalLastRoshanKillerTeam = ev.killer_team === 2 ? "radiant" : ev.killer_team === 3 ? "dire" : null;
             }
+            
+            // Auto-Replay Triggers
+            if (
+              ev.event_type === "first_blood" || 
+              ev.event_type === "aegis_stolen" || 
+              ev.event_type === "roshan_killed" ||
+              (ev.event_type === "kill_streak" && ev.kill_streak >= 3)
+            ) {
+              const now = Date.now();
+              if (now - globalLastAutoReplaySaveAt > 30000) {
+                globalLastAutoReplaySaveAt = now;
+                logger.info({ event: ev.event_type, game_time: ev.game_time }, "Triggering auto-replay save via GSI event");
+                // Delay slightly to let the play finish before saving
+                setTimeout(() => {
+                  replayManager.triggerSaveReplay(30, obs).catch(e => logger.error(e, "Auto-replay save failed"));
+                }, 5000);
+              }
+            }
+
             globalLastProcessedEventTime = ev.game_time;
+          }
+        }
+
+        // ── Bounty Rune pickup via events array (primary detection) ────────────
+        // Patch 7.41d: gold is at consumption time = current clockTime.
+        // Every rune in a stack picked at the same moment has the SAME value.
+        // GSI resends the full events array each tick, so we track the running
+        // total to find only net-new events.
+        const allBountyEvents = (payload.events as any[]).filter(
+          (ev) => ev.event_type === "bounty_rune_pickup" && typeof ev.game_time === "number",
+        );
+        const newBountyCount = allBountyEvents.length - globalBountyEventsProcessedTotal;
+
+        if (newBountyCount > 0) {
+          bountyDetectedViaEvents = true;
+          const newEvents = allBountyEvents.slice(globalBountyEventsProcessedTotal);
+          globalBountyEventsProcessedTotal = allBountyEvents.length;
+
+          // Gold is the same for every rune picked right now (consumption-time)
+          const goldPerRune = bountyGoldAtConsumption(clockTime);
+          const radiantPickups = newEvents.filter((ev) => ev.team === 2).length;
+          const direPickups    = newEvents.filter((ev) => ev.team === 3).length;
+
+          if (radiantPickups > 0) {
+            globalBountyRadiantCount += radiantPickups;
+            globalBountyRadiantGold  += goldPerRune * radiantPickups;
+            logger.info(
+              { radiantPickups, goldPerRune, totalGold: goldPerRune * radiantPickups },
+              "[bounty] Radiant bounty pickups (events array, 7.41d consumption-time)",
+            );
+          }
+          if (direPickups > 0) {
+            globalBountyDireCount += direPickups;
+            globalBountyDireGold  += goldPerRune * direPickups;
+            logger.info(
+              { direPickups, goldPerRune, totalGold: goldPerRune * direPickups },
+              "[bounty] Dire bounty pickups (events array, 7.41d consumption-time)",
+            );
+          }
+        }
+      }
+
+      // ── Bounty Rune Fallback: rune_pickups delta ──────────────────────────────
+      // Used when bounty_rune_pickup events are not present in the events array.
+      // rune_pickups tracks ALL rune types, so to reduce noise we only count
+      // a pickup as "bounty" if it's within 30s of a 4-min spawn boundary.
+      if (!bountyDetectedViaEvents && clockTime > 0) {
+        const nearestSpawnDiff = clockTime % 240;
+        const nearBountyWindow = nearestSpawnDiff <= 30 || nearestSpawnDiff >= 210;
+        const goldPerRune = bountyGoldAtConsumption(clockTime);
+        for (const [teamKey, side] of [["team2", "radiant"], ["team3", "dire"]] as const) {
+          const teamPlayers = (payload?.player as any)?.[teamKey];
+          if (!teamPlayers) continue;
+          for (let i = 0; i < 5; i++) {
+            const pKey = `player${i}`;
+            const player = teamPlayers[pKey];
+            if (!player) continue;
+            const currentPickups = Number(player.rune_pickups ?? 0);
+            const cacheKey = `${teamKey}-${pKey}`;
+            const prevPickups = globalPrevRunePickups.get(cacheKey) ?? currentPickups;
+            if (currentPickups > prevPickups && nearBountyWindow) {
+              const delta = currentPickups - prevPickups;
+              if (side === "radiant") {
+                globalBountyRadiantCount += delta;
+                globalBountyRadiantGold  += goldPerRune * delta;
+              } else {
+                globalBountyDireCount += delta;
+                globalBountyDireGold  += goldPerRune * delta;
+              }
+              logger.debug(
+                { team: side, delta, goldPerRune, cacheKey },
+                "[bounty] Rune pickups delta fallback (near spawn window, 7.41d consumption-time)",
+              );
+            }
+            globalPrevRunePickups.set(cacheKey, currentPickups);
+          }
+        }
+      }
+
+      // ── Wisdom Rune Fallback: XP jump delta ──────────────────────────────
+      if (clockTime >= 420) {
+        const currentInterval = Math.floor(clockTime / 420);
+        const expectedXpPerHero = 280 * currentInterval;
+        const expectedTeamXp = expectedXpPerHero * 2;
+        
+        for (const [teamKey, side] of [["team2", "radiant"], ["team3", "dire"]] as const) {
+          const teamPlayers = (payload?.player as any)?.[teamKey];
+          if (!teamPlayers) continue;
+          
+          let heroesGotSpike = 0;
+          
+          for (let i = 0; i < 5; i++) {
+            const pKey = `player${i}`;
+            const player = teamPlayers[pKey];
+            if (!player) continue;
+            
+            const currentXp = Number(player.experience ?? 0);
+            const cacheKey = `${teamKey}-${pKey}`;
+            const prevXp = globalPrevXp.get(cacheKey) ?? currentXp;
+            
+            if (currentXp > prevXp) {
+              const delta = currentXp - prevXp;
+              // 0.85 tolerance because in rare edge cases XP might be slightly misreported or split across ticks
+              if (delta >= expectedXpPerHero * 0.85) {
+                heroesGotSpike += 1;
+              }
+            }
+            globalPrevXp.set(cacheKey, currentXp);
+          }
+          
+          // Wisdom rune hits 2 heroes (picker + lowest XP). 
+          if (heroesGotSpike >= 2) {
+            const runesPicked = Math.floor(heroesGotSpike / 2);
+            if (runesPicked > 0) {
+              if (side === "radiant") {
+                globalWisdomRadiantCount += runesPicked;
+                globalWisdomRadiantXp += expectedTeamXp * runesPicked;
+              } else {
+                globalWisdomDireCount += runesPicked;
+                globalWisdomDireXp += expectedTeamXp * runesPicked;
+              }
+              logger.info(
+                { team: side, heroesGotSpike, runesPicked, expectedTeamXp },
+                "[wisdom] Wisdom Rune pickup detected via XP spike fallback"
+              );
+            }
           }
         }
       }
@@ -496,6 +726,7 @@ export function attachGsiRoutes(opts: {
               ...(cardChanged ? {
                 livePlayerCard: {
                   steam32,
+                  bpcId: player?.bpcId,
                   heroId,
                   playerLabel: displayName,
                   playerAvatarUrl: player?.avatarUrl,

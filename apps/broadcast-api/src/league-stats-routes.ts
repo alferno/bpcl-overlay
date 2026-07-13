@@ -1,5 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
+import { logger } from "./logger.js";
 import type { Express } from "express";
 import type { Server as IOServer } from "socket.io";
 import { z } from "zod";
@@ -39,9 +41,10 @@ import {
   draftPatchFromMatchSetup,
 } from "./services/match-setup.js";
 import { enrichRosterAvatars } from "./services/steam-profile.js";
-import { fetchRosterFromBpcLeague, fetchMatchesFromBpcLeague, fetchSeasonsFromBpcLeague, fetchSeasonConfigFromBpcLeague } from "./services/bpcleague-sync.js";
+import { fetchRosterFromBpcLeague, fetchMatchesFromBpcLeague, fetchSeasonsFromBpcLeague, fetchSeasonConfigFromBpcLeague, fetchActiveSeasonSlug } from "./services/bpcleague-sync.js";
 import { tournamentAggregator } from "./services/tournament-aggregator.js";
 import { autopilotManager } from "./services/autopilot.js";
+import { appendMatchLog } from "./services/cast-log.js";
 import {
   buildCarouselFromHeroCard,
   buildMatchupCard,
@@ -87,14 +90,23 @@ export function attachLeagueAndStatsRoutes(opts: {
   });
 
   app.post("/api/league/config", requireBroadcastAuth, async (req, res) => {
-    const schema = z.object({ leagueId: z.number() });
+    const schema = z.object({ 
+      leagueId: z.number().optional(),
+      leagueIds: z.array(z.number()).optional(),
+      overlayStatsMode: z.enum(["current_season", "lifetime"]).optional(),
+    });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error });
     }
     const snap = await state.getState();
     const next = await state.patchState({
-      leagueConfig: { ...snap.leagueConfig, leagueId: parsed.data.leagueId },
+      leagueConfig: { 
+        ...snap.leagueConfig, 
+        ...(parsed.data.leagueId != null ? { leagueId: parsed.data.leagueId } : {}),
+        ...(parsed.data.leagueIds != null ? { leagueIds: parsed.data.leagueIds } : {}),
+        ...(parsed.data.overlayStatsMode != null ? { overlayStatsMode: parsed.data.overlayStatsMode } : {}),
+      },
     });
     await broadcast.broadcastFull(next);
     res.json({ ok: true, leagueConfig: next.leagueConfig });
@@ -118,6 +130,7 @@ export function attachLeagueAndStatsRoutes(opts: {
 
     void runLeagueAggregation({
       leagueId: snap.leagueConfig?.leagueId ?? env.LEAGUE_ID,
+      leagueIds: snap.leagueConfig?.leagueIds,
       state,
       opendota,
       broadcast,
@@ -201,7 +214,11 @@ export function attachLeagueAndStatsRoutes(opts: {
       return res.status(400).json({ error: parsed.error.flatten() });
 
     try {
-      const seasonSlug = parsed.data.seasonSlug || "season-1";
+      // Auto-detect active season if not provided
+      const seasonSlug = parsed.data.seasonSlug
+        ? parsed.data.seasonSlug.trim().toLowerCase()
+        : await fetchActiveSeasonSlug();
+
       const rawRoster = await fetchRosterFromBpcLeague({
         seasonSlug,
         steamApiKey: env.STEAM_WEB_API_KEY,
@@ -210,11 +227,20 @@ export function attachLeagueAndStatsRoutes(opts: {
       const roster = await enrichRosterAvatars(rawRoster, opendota);
       const teamColors = teamColorsFromRoster(roster);
 
-      // Save CSV
+      // Save the generic "active" roster CSV (used by the API at startup)
       const csvPath = env.ROSTER_CSV_PATH;
       await mkdir(path.dirname(csvPath), { recursive: true });
       const csvContent = serializeRosterCsv(roster);
       await writeFile(csvPath, csvContent, "utf8");
+
+      // Also save a season-named CSV to the Documents handoff folder
+      // so any caster can pick it up later
+      try {
+        const { saveSeasonRosterCsv } = await import("./services/cast-log.js");
+        await saveSeasonRosterCsv(seasonSlug, csvContent);
+      } catch (logErr) {
+        logger.warn({ logErr }, "[roster-sync] Failed to save season roster CSV to Documents (non-fatal)");
+      }
 
       // Fetch Season Config for sponsors
       const seasonConfig = await fetchSeasonConfigFromBpcLeague(seasonSlug);
@@ -243,7 +269,14 @@ export function attachLeagueAndStatsRoutes(opts: {
       });
       await broadcast.broadcastFull(next);
 
-      res.json({ ok: true, count: roster.length, teamColors, roster });
+      res.json({
+        ok: true,
+        count: roster.length,
+        seasonSlug,
+        teamColors,
+        teams: [...new Set(roster.map((p) => p.teamName).filter(Boolean))],
+        roster,
+      });
     } catch (err) {
       res.status(500).json({
         error: err instanceof Error ? err.message : "Internal Server Error during sync",
@@ -329,6 +362,65 @@ export function attachLeagueAndStatsRoutes(opts: {
       });
     }
   });
+
+  // ── Cast log endpoints ─────────────────────────────────────────────────
+  // POST /api/match/log — log a completed match (auto-detects season from state)
+  app.post("/api/match/log", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({
+      matchId:    z.union([z.number(), z.string()]).default(0),
+      team1:      z.string().min(1),
+      team2:      z.string().min(1),
+      winner:     z.string().nullable().default(null),
+      seriesType: z.string().default("bo1"),
+      stageKey:   z.string().optional(),
+      castedBy:   z.string().optional(),
+      replayFile: z.string().optional(),
+      notes:      z.string().optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success)
+      return res.status(400).json({ error: parsed.error.flatten() });
+
+    const snap = await state.getState();
+    const seasonSlug = snap.leagueConfig?.seasonSlug ?? await fetchActiveSeasonSlug();
+    const castedBy = parsed.data.castedBy || os.hostname();
+
+    await appendMatchLog(seasonSlug, {
+      ...parsed.data,
+      castedBy,
+      castedAt: new Date().toISOString(),
+    });
+
+    const { getMatchLogSummary } = await import("./services/cast-log.js");
+    res.json({ ok: true, seasonSlug, summary: getMatchLogSummary(seasonSlug) });
+  });
+
+  // GET /api/match/log — retrieve all logged matches for the active season
+  app.get("/api/match/log", requireBroadcastAuth, async (_req, res) => {
+    const snap = await state.getState();
+    const seasonSlug = snap.leagueConfig?.seasonSlug ?? await fetchActiveSeasonSlug();
+    const { getMatchLog, getMatchLogSummary, broadcastDocumentsRoot } = await import("./services/cast-log.js");
+    res.json({
+      seasonSlug,
+      dataRoot: broadcastDocumentsRoot(),
+      summary: getMatchLogSummary(seasonSlug),
+      entries: getMatchLog(seasonSlug),
+    });
+  });
+
+  // GET /api/cast/info — returns the Documents data folder path for the UI
+  app.get("/api/cast/info", requireBroadcastAuth, async (_req, res) => {
+    const snap = await state.getState();
+    const seasonSlug = snap.leagueConfig?.seasonSlug ?? await fetchActiveSeasonSlug();
+    const { broadcastDocumentsRoot, seasonDir, getMatchLogSummary } = await import("./services/cast-log.js");
+    res.json({
+      seasonSlug,
+      dataRoot: broadcastDocumentsRoot(),
+      seasonDataDir: seasonDir(seasonSlug),
+      summary: getMatchLogSummary(seasonSlug),
+    });
+  });
+  // ──────────────────────────────────────────────────────────────────────
 
   app.post(
     "/api/league/stats/resolve",

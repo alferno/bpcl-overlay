@@ -7,6 +7,9 @@ import { RankMedalsHUD } from "../components/RankMedalsHUD";
 import { LivePlayerCard } from "./LivePlayerCardPage";
 import { LiveStatsHud } from "../components/LiveStatsHud";
 import { RoshanKillAlert } from "../components/RoshanKillAlert";
+import { BountyRuneCard } from "../components/BountyRuneCard";
+import { WisdomRuneCard } from "../components/WisdomRuneCard";
+
 
 export default function GameCanvas() {
   const { state } = useOverlayState();
@@ -23,6 +26,8 @@ export default function GameCanvas() {
       <PowerSpikeAlert />
       <LiveStatsHud />
       <RoshanKillAlert />
+      <BountyRuneCard />
+      <WisdomRuneCard />
     </HudCanvas>
   );
 }

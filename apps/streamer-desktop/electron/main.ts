@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, clipboard, shell } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn, type ChildProcess } from 'node:child_process'
@@ -37,9 +37,11 @@ if (!process.env.CORS_ORIGINS)        process.env.CORS_ORIGINS        = '*'
 if (!process.env.STEAM_WEB_API_KEY)   process.env.STEAM_WEB_API_KEY   = 'E5DE5CF0D74F982E7FCB0AC3DE13393F'
 if (!process.env.LEAGUE_AUTO_AGGREGATE) process.env.LEAGUE_AUTO_AGGREGATE = 'false'
 
-// Replay & CSV paths — portable mode (inside the app folder)
-const exeDir = path.dirname(app.getPath('exe'))
-const bpclBase = app.isPackaged ? path.join(exeDir, 'BroadcastData') : path.join(process.env.APP_ROOT, 'BroadcastData')
+// ── Broadcast data base — stored in Documents\BPCLBroadcast for portability ─
+// This lets any caster open the folder, share it via OneDrive, and see the
+// same roster CSVs and match logs regardless of where the exe lives.
+const docsDir = app.getPath('documents')
+const bpclBase = path.join(docsDir, 'BPCLBroadcast')
 if (!process.env.REPLAY_DB_FILE)              process.env.REPLAY_DB_FILE              = path.join(bpclBase, 'System', 'replay_db.csv')
 if (!process.env.REPLAY_MATCH_FILE)           process.env.REPLAY_MATCH_FILE           = path.join(bpclBase, 'System', 'active_match.txt')
 if (!process.env.REPLAY_LAST_COMPLETED_FILE)  process.env.REPLAY_LAST_COMPLETED_FILE  = path.join(bpclBase, 'System', 'last_completed_match.txt')
@@ -171,6 +173,18 @@ app.whenReady().then(async () => {
 
 ipcMain.handle('get-tunnel-url', () => tunnelUrl)
 ipcMain.handle('get-broadcast-secret', () => process.env.BROADCAST_SECRET)
+ipcMain.handle('get-broadcast-data-dir', () => bpclBase)
+
+/** Opens the BPCLBroadcast folder in Windows Explorer */
+ipcMain.handle('open-data-folder', async () => {
+  try {
+    const { shell: electronShell } = await import('electron')
+    await electronShell.openPath(bpclBase)
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: String(err) }
+  }
+})
 
 ipcMain.handle('obs-connect', async (_, host, port, password) => {
   if (!apiInstances) return { ok: false, error: 'API not started' }

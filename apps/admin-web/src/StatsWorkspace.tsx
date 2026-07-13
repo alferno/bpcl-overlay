@@ -76,7 +76,8 @@ export function StatsWorkspace({
     };
     steamApiConfigured?: boolean;
   } | null>(null);
-  const [leagueId, setLeagueId] = useState("");
+  const [leagueIdsInput, setLeagueIdsInput] = useState("");
+  const [overlayStatsMode, setOverlayStatsMode] = useState("current_season");
   const [heroes, setHeroes] = useState<HeroMeta[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const [selectedHero, setSelectedHero] = useState("");
@@ -137,6 +138,8 @@ export function StatsWorkspace({
       .then(
         (info: {
           leagueId?: number;
+          leagueIds?: number[];
+          overlayStatsMode?: string;
           statsDir?: string;
           statsStorage?: {
             dir?: string;
@@ -146,7 +149,12 @@ export function StatsWorkspace({
           };
           steamApiConfigured?: boolean;
         }) => {
-          if (info.leagueId != null) setLeagueId(String(info.leagueId));
+          if (info.leagueIds && info.leagueIds.length > 0) {
+            setLeagueIdsInput(info.leagueIds.join(", "));
+          } else if (info.leagueId != null) {
+            setLeagueIdsInput(String(info.leagueId));
+          }
+          if (info.overlayStatsMode) setOverlayStatsMode(info.overlayStatsMode);
           setLeagueInfo(info);
         },
       )
@@ -154,8 +162,11 @@ export function StatsWorkspace({
   }, [origin, token]);
 
   useEffect(() => {
-    if (lc?.leagueId != null) setLeagueId(String(lc.leagueId));
-  }, [lc?.leagueId]);
+    if (lc?.leagueIds && lc.leagueIds.length > 0) setLeagueIdsInput(lc.leagueIds.join(", "));
+    else if (lc?.leagueId != null) setLeagueIdsInput(String(lc.leagueId));
+    
+    if (lc?.overlayStatsMode) setOverlayStatsMode(lc.overlayStatsMode);
+  }, [lc?.leagueId, lc?.leagueIds, lc?.overlayStatsMode]);
 
   useEffect(() => {
     if (lc?.aggregationStatus === "ready" || lc?.aggregationStatus === "error") {
@@ -244,18 +255,41 @@ export function StatsWorkspace({
           </p>
         ) : null}
         <div className="max-w-md">
-          <label className="text-xs uppercase text-slate-500">League ID</label>
+          <label className="text-xs uppercase text-slate-500">League IDs (Comma Separated)</label>
           <div className="flex gap-2 mt-1">
             <input
               className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-slate-400 text-xs"
-              value={leagueId}
-              onChange={(e) => setLeagueId(e.target.value)}
-              placeholder="from LEAGUE_ID env"
+              value={leagueIdsInput}
+              onChange={(e) => setLeagueIdsInput(e.target.value)}
+              placeholder="e.g. 19721, 19921"
             />
             <Btn
               variant="ghost"
-              disabled={busy || !leagueId}
-              onClick={() => void post("/api/league/config", { leagueId: Number(leagueId) })}
+              disabled={busy || !leagueIdsInput}
+              onClick={() => void post("/api/league/config", { 
+                leagueIds: leagueIdsInput.split(",").map(s => Number(s.trim())).filter(n => !isNaN(n))
+              })}
+            >
+              Save
+            </Btn>
+          </div>
+        </div>
+
+        <div className="max-w-md">
+          <label className="text-xs uppercase text-slate-500">Overlay Stats Mode</label>
+          <div className="flex gap-2 mt-1">
+            <select
+              className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-slate-400 text-xs"
+              value={overlayStatsMode}
+              onChange={(e) => setOverlayStatsMode(e.target.value)}
+            >
+              <option value="current_season">Current Season (Last ID Only)</option>
+              <option value="lifetime">Lifetime (All IDs Combined)</option>
+            </select>
+            <Btn
+              variant="ghost"
+              disabled={busy}
+              onClick={() => void post("/api/league/config", { overlayStatsMode })}
             >
               Save
             </Btn>
@@ -272,7 +306,7 @@ export function StatsWorkspace({
           <Btn
             disabled={
               busy ||
-              !leagueId ||
+              !leagueIdsInput ||
               lc?.aggregationStatus === "running" ||
               aggBusy
             }

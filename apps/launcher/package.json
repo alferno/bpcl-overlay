@@ -1,0 +1,15 @@
+{
+  "name": "bpcl-launcher",
+  "version": "1.0.0",
+  "description": "BPCL Streamer Launcher — auto-updates and launches the streamer desktop app",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . \"BPCL Launcher\" --platform=win32 --arch=x64 --out=release --overwrite --electron-version=31.3.1 --ignore=\"^/release\""
+  },
+  "devDependencies": {
+    "electron": "31.3.1",
+    "@electron/packager": "^20.0.1"
+  }
+}

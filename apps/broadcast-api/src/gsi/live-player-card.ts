@@ -110,24 +110,37 @@ function countAbilities(
  */
 function parseEnemyHeroKills(
   killedMap: unknown,
-  enemyTeamHeroes: Array<{ heroClass: string; heroId: number | null }>
+  enemyTeamHeroes: Array<{ heroClass: string; heroId: number | null; playerIndex: number }>
 ): EnemyHeroKill[] {
   // Build a map of heroClass -> kill count from the killed map
   const killsByClass = new Map<string, number>();
+  const killsByVictimId = new Map<number, number>();
+  
   if (killedMap && typeof killedMap === "object") {
     for (const [key, val] of Object.entries(killedMap as Record<string, unknown>)) {
+      const count = typeof val === "number" ? val : Number(val) || 0;
       if (key.startsWith("npc_dota_hero_")) {
-        const count = typeof val === "number" ? val : Number(val) || 0;
         killsByClass.set(key, count);
+      } else if (key.startsWith("victimid_")) {
+        const id = parseInt(key.replace("victimid_", ""), 10);
+        if (!isNaN(id)) {
+          killsByVictimId.set(id, count);
+        }
       }
     }
   }
 
-  return enemyTeamHeroes.map(({ heroClass, heroId }) => ({
-    heroId: heroId ?? 0,
-    heroClass,
-    kills: killsByClass.get(heroClass) ?? 0,
-  }));
+  return enemyTeamHeroes.map(({ heroClass, heroId, playerIndex }) => {
+    let kills = killsByClass.get(heroClass) ?? 0;
+    if (killsByVictimId.has(playerIndex)) {
+      kills = Math.max(kills, killsByVictimId.get(playerIndex) || 0);
+    }
+    return {
+      heroId: heroId ?? 0,
+      heroClass,
+      kills,
+    };
+  });
 }
 
 /**
@@ -137,12 +150,12 @@ function parseEnemyHeroKills(
 function getEnemyTeamHeroes(
   payload: any,
   enemyTeamKey: "team2" | "team3"
-): Array<{ heroClass: string; heroId: number | null }> {
+): Array<{ heroClass: string; heroId: number | null; playerIndex: number }> {
   const teamHeroData = payload?.hero?.[enemyTeamKey];
   if (!teamHeroData || typeof teamHeroData !== "object") return [];
 
-  const result: Array<{ heroClass: string; heroId: number | null }> = [];
-  for (let i = 0; i < 5; i++) {
+  const result: Array<{ heroClass: string; heroId: number | null; playerIndex: number }> = [];
+  for (let i = 0; i <= 9; i++) {
     const heroEntry = teamHeroData[`player${i}`];
     if (!heroEntry || typeof heroEntry !== "object") continue;
 
@@ -161,7 +174,7 @@ function getEnemyTeamHeroes(
     }
 
     if (heroId || heroClass) {
-      result.push({ heroClass: heroClass || `npc_dota_hero_unknown_${i}`, heroId });
+      result.push({ heroClass: heroClass || `npc_dota_hero_unknown_${i}`, heroId, playerIndex: i });
     }
   }
   return result;
@@ -204,18 +217,19 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
         // In spectator mode we don't know which team the focused player is on from root player alone;
         // best-effort: try to find them in team2 or team3 to determine enemy side
         let enemyHeroKills: EnemyHeroKill[] | undefined;
-        const killedMap = rootPlayer.killed;
+        const killedMap = rootPlayer.kill_list;
 
         // Try to determine which team the focused player is on
         for (const teamKey of ["team2", "team3"] as const) {
           const teamPlayerData = payload?.player?.[teamKey];
           if (!teamPlayerData) continue;
-          for (let i = 0; i < 5; i++) {
+          for (let i = 0; i <= 9; i++) {
             const p = teamPlayerData[`player${i}`];
             if (p?.accountid && parseInt(String(p.accountid), 10) === accountid) {
               const enemyTeam = teamKey === "team2" ? "team3" : "team2";
               const enemyHeroes = getEnemyTeamHeroes(payload, enemyTeam);
-              enemyHeroKills = parseEnemyHeroKills(killedMap, enemyHeroes);
+              // Use p.kill_list as a fallback if rootPlayer.kill_list is empty
+              enemyHeroKills = parseEnemyHeroKills(killedMap || p.kill_list, enemyHeroes);
               break;
             }
           }
@@ -287,7 +301,7 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
           // Enemy heroes on opposite team
           const enemyTeam = teamKey === "team2" ? "team3" : "team2";
           const enemyHeroes = getEnemyTeamHeroes(payload, enemyTeam);
-          const enemyHeroKills = parseEnemyHeroKills(player?.killed, enemyHeroes);
+          const enemyHeroKills = parseEnemyHeroKills(player?.kill_list, enemyHeroes);
 
           return { 
             steam32, 

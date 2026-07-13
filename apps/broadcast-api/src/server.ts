@@ -14,6 +14,7 @@ import { logger } from "./logger.js";
 import type { OBSController } from "./obs-controller.js";
 import type { OpenDotaClient } from "./opendota-client.js";
 import { attachRestRoutes } from "./routes.js";
+import { ReplayManager } from "./services/replay-manager.js";
 import { attachLeagueAndStatsRoutes } from "./league-stats-routes.js";
 import { attachGsiRoutes, attachGsiHeartbeat } from "./gsi/routes.js";
 
@@ -121,6 +122,9 @@ export async function createBroadcastServer(deps: {
     transports: ["websocket", "polling"],
   });
 
+  const replayManager = new ReplayManager();
+  replayManager.init(obs);
+
   const broadcastFns = {
     async broadcastFull(envelope?: OverlayEnvelope) {
       const envelopeToSend = envelope ?? await state.getState();
@@ -140,6 +144,7 @@ export async function createBroadcastServer(deps: {
     broadcast: broadcastFns,
     obs,
     opendota,
+    replayManager,
   });
 
   attachLeagueAndStatsRoutes({
@@ -156,6 +161,8 @@ export async function createBroadcastServer(deps: {
     broadcast: broadcastFns,
     opendota,
     io,
+    replayManager,
+    obs,
   });
 
   attachGsiHeartbeat(state, broadcastFns, io);

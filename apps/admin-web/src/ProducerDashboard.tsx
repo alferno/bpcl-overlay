@@ -28,9 +28,10 @@ import { StandoutPlayerPanel } from "./components/StandoutPlayerPanel";
 import { ReplayManagerPanel } from "./components/ReplayManagerPanel";
 import { CasterDeckPanel } from "./components/CasterDeckPanel";
 import { OverlayTestPanel } from "./components/OverlayTestPanel";
+import { OverlayLayoutControls } from "./components/OverlayLayoutControls";
 import { ErrBox } from "./components/Common";
 
-type TabId = "dashboard" | "match_obs" | "stats" | "roster" | "lower_thirds" | "replays" | "testing";
+type TabId = "dashboard" | "match_obs" | "stats" | "roster" | "lower_thirds" | "replays" | "in_game_controller" | "testing";
 
 export function ProducerDashboard() {
   const persisted = loadConnection();
@@ -213,6 +214,16 @@ export function ProducerDashboard() {
                 </div>
               )}
 
+              {activeTab === "in_game_controller" && (
+                <div className="grid gap-6 items-start max-w-3xl">
+                  <OverlayLayoutControls
+                    state={state}
+                    busy={busy}
+                    onPatch={patch}
+                  />
+                </div>
+              )}
+
               {activeTab === "match_obs" && (
                 <div className="grid gap-6 lg:grid-cols-2 items-start">
                   <MatchSetupPanel
@@ -297,7 +308,7 @@ export function ProducerDashboard() {
 
               {activeTab === "testing" && (
                 <div className="grid gap-6 items-start">
-                  <OverlayTestPanel state={state} patch={patch} />
+                  <OverlayTestPanel state={state} patch={patch} origin={origin} token={token} />
                 </div>
               )}
             </motion.div>
@@ -370,6 +381,15 @@ function Sidebar({
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      id: "in_game_controller" as TabId,
+      label: "In-Game Controller",
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
         </svg>
       ),
     },

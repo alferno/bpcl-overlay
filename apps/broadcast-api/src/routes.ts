@@ -22,12 +22,16 @@ import type { OpenDotaClient } from "./opendota-client.js";
 import { parseOverlayPatch } from "./state-setup.js";
 import { ReplayManager } from "./services/replay-manager.js";
 import { env } from "./env.js";
+import { autoSetupOBS } from "./services/obs-setup-service.js";
 import { rankMvpCandidates, DEFAULT_MVP_WEIGHTS, type MvpWeights } from "./services/mvp-scorer.js";
 import {
   ensureHeroRegistry,
   heroPortraitFieldsForHero,
   findRosterPlayer,
 } from "./services/hero-registry.js";
+import { getBountyStats } from "./gsi/routes.js";
+import { leagueTitleFromSlug } from "@bpc/shared-types";
+
 
 export type BroadcastFns = {
   broadcastFull(envelope?: OverlayEnvelope): Promise<void>;
@@ -40,11 +44,9 @@ export function attachRestRoutes(opts: {
   broadcast: BroadcastFns;
   obs: OBSController;
   opendota: OpenDotaClient;
+  replayManager: ReplayManager;
 }): void {
-  const { app, state, io, broadcast, obs, opendota } = opts;
-
-  const replayManager = new ReplayManager();
-  replayManager.init(obs);
+  const { app, state, io, broadcast, obs, opendota, replayManager } = opts;
 
   // Serve original replays directly to avoid remuxing
   app.use(
@@ -215,6 +217,17 @@ export function attachRestRoutes(opts: {
       ok: true,
     });
     res.json({ ok: true });
+  });
+
+  app.post("/api/obs/setup", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({
+      overlayBaseUrl: z.string().url().default("http://127.0.0.1:8080/overlay/"),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const result = await autoSetupOBS(obs, parsed.data);
+    res.json(result);
   });
 
   app.get("/api/obs/scenes", requireBroadcastAuth, async (_req, res) => {
@@ -608,6 +621,7 @@ export function attachRestRoutes(opts: {
       heroId:      winner.heroId,
       heroName:    winner.heroName,
       steam32:     winner.accountId,
+      bpcId:       rosterPlayer?.bpcId,
       ...portraitFields,
       xpm:         winner.raw.xpm,
       gpm:         winner.raw.gpm,
@@ -673,6 +687,10 @@ export function attachRestRoutes(opts: {
       rosterPlayer?.displayName ??
       (typeof cardData.personaname === "string" ? cardData.personaname : undefined) ??
       `Player ${cardData.steam32 ?? "?"}`;
+      
+    if (rosterPlayer?.bpcId && !cardData.bpcId) {
+      cardData.bpcId = rosterPlayer.bpcId;
+    }
 
     const patch: OverlayPatch = {
       standoutPlayerCard: cardData as OverlayPatch["standoutPlayerCard"],
@@ -696,5 +714,95 @@ export function attachRestRoutes(opts: {
     });
     await broadcast.broadcastFull(next);
     res.json({ ok: true });
+  });
+
+  /**
+   * POST /api/gsi/bounty-snapshot
+   * Reads current accumulated bounty rune stats (tracked live from GSI events),
+   * resolves team names from draft/matchSetup state, and emits BOUNTY_STATS
+   * to the overlay namespace so the BountyRuneCard component can display it.
+   */
+  app.post("/api/gsi/bounty-snapshot", requireBroadcastAuth, async (_req, res) => {
+    const snap = await state.getState();
+    const bounty = getBountyStats();
+
+    const draft = snap.draft;
+    const matchSetup = snap.leagueConfig?.matchSetup;
+    const seasonSlug = snap.leagueConfig?.seasonSlug;
+
+    const radiantName =
+      draft?.radiant?.name ??
+      matchSetup?.radiantTeamKey ??
+      "Radiant";
+    const direName =
+      draft?.dire?.name ??
+      matchSetup?.direTeamKey ??
+      "Dire";
+
+    const leagueTitle = leagueTitleFromSlug(seasonSlug);
+
+    const payload = {
+      leagueTitle,
+      radiant: {
+        name: radiantName,
+        count: bounty.radiant.count,
+        gold:  bounty.radiant.gold,
+      },
+      dire: {
+        name: direName,
+        count: bounty.dire.count,
+        gold:  bounty.dire.gold,
+      },
+    };
+
+    io.of(NAMESPACES.OVERLAY).emit("BOUNTY_STATS", payload);
+    logger.info(payload, "[bounty] BOUNTY_STATS emitted to overlay");
+
+    res.json({ ok: true, ...payload });
+  });
+
+  /**
+   * POST /api/gsi/wisdom-snapshot
+   * Reads current accumulated wisdom rune stats (tracked live from GSI events),
+   * resolves team names, and emits WISDOM_STATS to the overlay namespace.
+   */
+  app.post("/api/gsi/wisdom-snapshot", requireBroadcastAuth, async (_req, res) => {
+    const snap = await state.getState();
+    const { getWisdomStats } = await import("./gsi/routes.js");
+    const wisdom = getWisdomStats();
+
+    const draft = snap.draft;
+    const matchSetup = snap.leagueConfig?.matchSetup;
+    const seasonSlug = snap.leagueConfig?.seasonSlug;
+
+    const radiantName =
+      draft?.radiant?.name ??
+      matchSetup?.radiantTeamKey ??
+      "Radiant";
+    const direName =
+      draft?.dire?.name ??
+      matchSetup?.direTeamKey ??
+      "Dire";
+
+    const leagueTitle = leagueTitleFromSlug(seasonSlug);
+
+    const payload = {
+      leagueTitle,
+      radiant: {
+        name: radiantName,
+        count: wisdom.radiant.count,
+        xp:    wisdom.radiant.xp,
+      },
+      dire: {
+        name: direName,
+        count: wisdom.dire.count,
+        xp:    wisdom.dire.xp,
+      },
+    };
+
+    io.of(NAMESPACES.OVERLAY).emit("WISDOM_STATS", payload);
+    logger.info(payload, "[wisdom] WISDOM_STATS emitted to overlay");
+
+    res.json({ ok: true, ...payload });
   });
 }

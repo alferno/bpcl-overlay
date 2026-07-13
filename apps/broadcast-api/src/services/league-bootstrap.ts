@@ -67,11 +67,12 @@ export async function loadLeagueStatsFromCsvFile(opts: {
 
 export async function runLeagueAggregation(opts: {
   leagueId: number;
+  leagueIds?: number[];
   state: StateManager;
   opendota: OpenDotaClient;
   broadcast: BroadcastFns;
 }): Promise<void> {
-  const { leagueId, state, opendota, broadcast } = opts;
+  const { leagueId, leagueIds, state, opendota, broadcast } = opts;
 
   if (tournamentAggregator.isBusy()) {
     logger.info("League aggregation already running");
@@ -91,8 +92,11 @@ export async function runLeagueAggregation(opts: {
   await broadcast.broadcastFull(runningPatch);
 
   try {
-    const index = await tournamentAggregator.aggregateLeague(
-      leagueId,
+    const targetLeagueIds = leagueIds && leagueIds.length > 0 ? leagueIds : [leagueId];
+    const currentLeagueId = targetLeagueIds[targetLeagueIds.length - 1] ?? leagueId;
+
+    const currentIndex = await tournamentAggregator.aggregateLeagues(
+      [currentLeagueId],
       opendota,
       80,
       async (prog) => {
@@ -107,34 +111,59 @@ export async function runLeagueAggregation(opts: {
         await broadcast.broadcastFull(next);
       },
     );
+    const currentPlayerHeroes = tournamentAggregator.exportPlayerHeroRows();
+    let currentMatchTotal = tournamentAggregator.getProgress().matchTotal;
+    let currentMatchDone = tournamentAggregator.getProgress().matchDone;
 
-    const prog = tournamentAggregator.getProgress();
+    let lifetimeIndex = currentIndex;
+    let lifetimePlayerHeroes = currentPlayerHeroes;
+
+    if (targetLeagueIds.length > 1) {
+      lifetimeIndex = await tournamentAggregator.aggregateLeagues(
+        targetLeagueIds,
+        opendota,
+        800, // higher limit for historical
+        async (prog) => {
+          const next = await state.patchState({
+            leagueConfig: {
+              aggregationStatus: "running",
+              aggregationProgress: prog.progress,
+              aggregationMatchTotal: prog.matchTotal,
+              aggregationMatchDone: prog.matchDone,
+            },
+          });
+          await broadcast.broadcastFull(next);
+        },
+      );
+      lifetimePlayerHeroes = tournamentAggregator.exportPlayerHeroRows();
+    }
     const aggregatedAt = new Date().toISOString();
 
     await saveLeagueStatsToDisk({
-      heroIndex: index,
-      playerHeroes: tournamentAggregator.exportPlayerHeroRows(),
+      heroIndex: currentIndex,
+      playerHeroes: currentPlayerHeroes,
       meta: {
-        leagueId,
-        matchTotal: prog.matchTotal,
-        matchDone: prog.matchDone,
+        leagueId: currentLeagueId,
+        matchTotal: currentMatchTotal,
+        matchDone: currentMatchDone,
         aggregatedAt,
         source: "api",
       },
     });
 
     const next = await state.patchState({
-      tournamentHeroIndex: index,
-      playerHeroIndex: buildPlayerHeroIndex(
-        tournamentAggregator.exportPlayerHeroRows(),
-      ),
+      tournamentHeroIndex: currentIndex,
+      playerHeroIndex: buildPlayerHeroIndex(currentPlayerHeroes),
+      lifetimeTournamentHeroIndex: lifetimeIndex,
+      lifetimePlayerHeroIndex: buildPlayerHeroIndex(lifetimePlayerHeroes),
       leagueConfig: {
-        leagueId,
+        leagueId: currentLeagueId,
+        leagueIds: targetLeagueIds,
         aggregationStatus: "ready",
         aggregatedAt,
         aggregationProgress: 100,
-        aggregationMatchTotal: prog.matchTotal,
-        aggregationMatchDone: prog.matchDone,
+        aggregationMatchTotal: currentMatchTotal,
+        aggregationMatchDone: currentMatchDone,
         aggregationError: undefined,
         aggregationSource: "api",
         statsCsvDir: leagueStatsDir(),
@@ -142,7 +171,7 @@ export async function runLeagueAggregation(opts: {
     });
     await broadcast.broadcastFull(next);
     logger.info(
-      { leagueId, matches: prog.matchTotal, dir: leagueStatsDir() },
+      { leagueId: currentLeagueId, matches: currentMatchTotal, dir: leagueStatsDir() },
       "League aggregation ready — saved to CSV",
     );
   } catch (err) {

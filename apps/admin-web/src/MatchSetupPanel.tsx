@@ -515,17 +515,39 @@ export function MatchSetupPanel({
           ) : null}
 
           {matchSetup ? (
-            <p className="mt-3 text-xs text-emerald-400">
-              Active: {matchSetup.radiantTeamKey} (Radiant) vs{" "}
-              {matchSetup.direTeamKey} (Dire) · BO{matchSetup.seriesBestOf ?? 3}{" "}
-              game {matchSetup.seriesGame ?? 1}
-              {matchSetup.scoreA || matchSetup.scoreB
-                ? ` · ${matchSetup.scoreA ?? 0}–${matchSetup.scoreB ?? 0}`
-                : ""}
-              {matchSetup.stageLabel
-                ? ` · “${matchSetup.stageLabel}”`
-                : ""}
-            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              <p className="text-xs text-emerald-400">
+                Active: {matchSetup.radiantTeamKey} (Radiant) vs{" "}
+                {matchSetup.direTeamKey} (Dire) · BO{matchSetup.seriesBestOf ?? 3}{" "}
+                game {matchSetup.seriesGame ?? 1}
+                {matchSetup.scoreA || matchSetup.scoreB
+                  ? ` · ${matchSetup.scoreA ?? 0}–${matchSetup.scoreB ?? 0}`
+                  : ""}
+                {matchSetup.stageLabel
+                  ? ` · “${matchSetup.stageLabel}”`
+                  : ""}
+              </p>
+              
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs text-slate-500 uppercase tracking-wider font-bold">Unique Match Slug:</span>
+                <code className="text-xs text-violet-300 bg-violet-950/50 px-2 py-0.5 rounded border border-violet-500/20 select-all">
+                  bpcl_s2_{matchSetup.radiantTeamKey}_vs_{matchSetup.direTeamKey}_game_{matchSetup.seriesGame ?? 1}
+                </code>
+                <button
+                  type="button"
+                  className="text-[10px] uppercase font-bold tracking-wider text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors"
+                  onClick={(e) => {
+                    const slug = `bpcl_s2_${matchSetup.radiantTeamKey}_vs_${matchSetup.direTeamKey}_game_${matchSetup.seriesGame ?? 1}`;
+                    navigator.clipboard.writeText(slug);
+                    const btn = e.currentTarget;
+                    btn.textContent = "COPIED!";
+                    setTimeout(() => { btn.textContent = "COPY"; }, 2000);
+                  }}
+                >
+                  COPY
+                </button>
+              </div>
+            </div>
           ) : null}
 
           {(radiantTeam || direTeam) && (

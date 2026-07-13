@@ -1,6 +1,8 @@
 import type { DraftSlot, DraftState, OverlayEnvelope, HeroStatsCard } from "@bpc/shared-types";
 import { useState } from "react";
 import { SectionPanel } from "./Common";
+import { apiFetch } from "../api";
+
 
 // Using some common Dota hero IDs for the mock
 const MOCK_HERO_IDS = [1, 2, 4, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20];
@@ -13,13 +15,20 @@ function getRandomHeroes(count: number): number[] {
 export function OverlayTestPanel({
   state,
   patch,
+  origin,
+  token,
 }: {
   state: OverlayEnvelope | null;
   patch: (body: Record<string, unknown>) => Promise<void>;
+  origin: string;
+  token: string;
 }) {
   const [busy, setBusy] = useState(false);
+  const [bountyResult, setBountyResult] = useState<{ radiant: { name: string; count: number; gold: number }; dire: { name: string; count: number; gold: number } } | null>(null);
+  const [wisdomResult, setWisdomResult] = useState<{ radiant: { name: string; count: number; xp: number }; dire: { name: string; count: number; xp: number } } | null>(null);
   const matchSetup = state?.leagueConfig?.matchSetup;
   const roster = state?.leagueConfig?.roster ?? [];
+
 
   const handleMockDraft = async (gameState: string) => {
     setBusy(true);
@@ -167,6 +176,37 @@ export function OverlayTestPanel({
     }
   };
 
+  const handleShowBountyCard = async () => {
+    setBusy(true);
+    setBountyResult(null);
+    try {
+      const r = await apiFetch(origin, token, "/api/gsi/bounty-snapshot", { method: "POST" });
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json() as { radiant: { name: string; count: number; gold: number }; dire: { name: string; count: number; gold: number } };
+      setBountyResult(data);
+    } catch (e) {
+      console.error("[bounty] Failed to show bounty card:", e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleShowWisdomCard = async () => {
+    setBusy(true);
+    setWisdomResult(null);
+    try {
+      const r = await apiFetch(origin, token, "/api/gsi/wisdom-snapshot", { method: "POST" });
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json() as { radiant: { name: string; count: number; xp: number }; dire: { name: string; count: number; xp: number } };
+      setWisdomResult(data);
+    } catch (e) {
+      console.error("[wisdom] Failed to show wisdom card:", e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+
   return (
     <SectionPanel title="Developer Testing Area" icon="🧪">
       <div className="space-y-6">
@@ -244,6 +284,67 @@ export function OverlayTestPanel({
               Clear / Hide Card
             </button>
           </div>
+        </div>
+        {/* Bounty Rune Stats */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2">Bounty Rune Stats</h3>
+          <p className="text-xs text-slate-400 mb-4">
+            Reads live bounty rune pickups tracked from GSI and shows the BountyRuneCard on the overlay for 8 seconds.
+          </p>
+
+          <button
+            onClick={() => void handleShowBountyCard()}
+            disabled={busy}
+            className="w-full py-3 rounded-lg bg-slate-800/50 border border-emerald-500/30 hover:bg-slate-800 hover:border-emerald-500 text-emerald-400 font-bold text-sm transition-colors disabled:opacity-50"
+          >
+            💰 Show Bounty Card
+          </button>
+
+          {bountyResult && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-lg p-3">
+                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Radiant — {bountyResult.radiant.name}</div>
+                <div className="text-white font-bold text-lg">{bountyResult.radiant.count} <span className="text-slate-400 text-xs font-normal">bounties</span></div>
+                <div className="text-yellow-400 font-semibold text-sm">+{bountyResult.radiant.gold}g total</div>
+              </div>
+              <div className="bg-red-900/20 border border-red-700/30 rounded-lg p-3">
+                <div className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Dire — {bountyResult.dire.name}</div>
+                <div className="text-white font-bold text-lg">{bountyResult.dire.count} <span className="text-slate-400 text-xs font-normal">bounties</span></div>
+                <div className="text-yellow-400 font-semibold text-sm">+{bountyResult.dire.gold}g total</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Wisdom Rune Stats */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2">Wisdom Rune Stats</h3>
+          <p className="text-xs text-slate-400 mb-4">
+            Reads live wisdom rune pickups tracked from GSI and shows the WisdomRuneCard on the overlay for 8 seconds.
+          </p>
+
+          <button
+            onClick={() => void handleShowWisdomCard()}
+            disabled={busy}
+            className="w-full py-3 rounded-lg bg-slate-800/50 border border-purple-500/30 hover:bg-slate-800 hover:border-purple-500 text-purple-400 font-bold text-sm transition-colors disabled:opacity-50"
+          >
+            🔮 Show Wisdom Card
+          </button>
+
+          {wisdomResult && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="bg-purple-900/20 border border-purple-700/30 rounded-lg p-3">
+                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Radiant — {wisdomResult.radiant.name}</div>
+                <div className="text-white font-bold text-lg">{wisdomResult.radiant.count} <span className="text-slate-400 text-xs font-normal">runes</span></div>
+                <div className="text-purple-400 font-semibold text-sm">+{wisdomResult.radiant.xp} XP total</div>
+              </div>
+              <div className="bg-purple-900/20 border border-purple-700/30 rounded-lg p-3">
+                <div className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Dire — {wisdomResult.dire.name}</div>
+                <div className="text-white font-bold text-lg">{wisdomResult.dire.count} <span className="text-slate-400 text-xs font-normal">runes</span></div>
+                <div className="text-purple-400 font-semibold text-sm">+{wisdomResult.dire.xp} XP total</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </SectionPanel>

@@ -26,6 +26,7 @@ export const OVERLAY_ROUTES = [
   "liveplayercard",
   "rankmedals",
   "standoutplayer",
+  "highlights",
   "global_kill_switch",
 ] as const;
 
@@ -81,6 +82,8 @@ export const rosterPlayerSchema = z.object({
   roles: z.array(z.string()).optional(),
   /** Player MMR from BPCL API for dynamic rank medals */
   mmr: z.number().optional(),
+  /** BPC ID from the BPCL network */
+  bpcId: z.string().optional(),
 });
 
 export type RosterPlayer = z.infer<typeof rosterPlayerSchema>;
@@ -123,6 +126,7 @@ export type MatchSetup = z.infer<typeof matchSetupSchema>;
 
 export const leagueConfigSchema = z.object({
   leagueId: z.number().nullable(),
+  leagueIds: z.array(z.number()).optional(),
   seasonSlug: z.string().optional(),
   roster: z.array(rosterPlayerSchema).default([]),
   matchSetup: matchSetupSchema.nullable().optional(),
@@ -139,6 +143,7 @@ export const leagueConfigSchema = z.object({
   /** Where stats were last loaded from */
   aggregationSource: z.enum(["csv", "api"]).optional(),
   statsCsvDir: z.string().optional(),
+  overlayStatsMode: z.enum(["current_season", "lifetime"]).default("current_season"),
 });
 
 export type LeagueConfig = z.infer<typeof leagueConfigSchema>;
@@ -204,6 +209,15 @@ export const statCarouselSchema = z.object({
 
 export type StatCarouselState = z.infer<typeof statCarouselSchema>;
 
+export const overlayLayoutSchema = z.object({
+  x: z.number().optional(),
+  y: z.number().optional(),
+  scale: z.number().optional(),
+  inwardCut: z.boolean().optional(),
+});
+
+export type OverlayLayout = z.infer<typeof overlayLayoutSchema>;
+
 export const productionSettingsSchema = z.object({
   gsiManualOverride: z.boolean().default(false),
   autoShowStatsOnPick: z.boolean().default(false),
@@ -213,6 +227,11 @@ export const productionSettingsSchema = z.object({
   playerMappingPublished: z.boolean().default(false),
   /** Increment to clear overlay draft reveal queue (OBS cache reset) */
   overlayDraftEpoch: z.number().optional(),
+  layoutConfig: z.object({
+    minimapIcons: overlayLayoutSchema.optional(),
+    livePlayerCard: overlayLayoutSchema.optional(),
+    kdaCard: overlayLayoutSchema.optional(),
+  }).optional(),
 });
 
 export type ProductionSettings = z.infer<typeof productionSettingsSchema>;
@@ -317,6 +336,7 @@ export const standoutPlayerCardSchema = z.object({
   heroPortraitSlug: z.string().optional(),
   heroPortraitUrl: z.string().optional(),
   steam32: z.number().optional(),
+  bpcId: z.string().optional(),
   // ── Left column ──────────────────────────────────────────────────────────
   xpm: z.number(),
   gpm: z.number(),
@@ -386,6 +406,7 @@ export const heroStatsCardSchema = z.object({
   /** Drives overlay layout; set when composing league stats cards */
   statsCardKind: heroStatsCardKindSchema.optional(),
   steam32: z.number().optional(),
+  bpcId: z.string().optional(),
   playerLabel: z.string(),
   heroId: z.number(),
   heroName: z.string().optional(),
@@ -529,8 +550,10 @@ export const overlayEnvelopeSchema = z.object({
   sceneHints: obsRemoteHintsSchema.optional(),
   leagueConfig: leagueConfigSchema.optional(),
   tournamentHeroIndex: z.record(tournamentHeroAggregateSchema).optional(),
+  lifetimeTournamentHeroIndex: z.record(tournamentHeroAggregateSchema).optional(),
   /** `${steam32}:${heroId}` → league player×hero stats from CSV */
   playerHeroIndex: z.record(playerHeroLeagueStatsSchema).optional(),
+  lifetimePlayerHeroIndex: z.record(playerHeroLeagueStatsSchema).optional(),
   production: productionSettingsSchema.optional(),
   statCarousel: statCarouselSchema.nullable().optional(),
   draft: draftStateSchema.nullable().optional(),
@@ -551,7 +574,9 @@ export const overlayPatchSchema = z.object({
   overlayVisibility: z.record(visibilityModeSchema).optional(),
   leagueConfig: leagueConfigSchema.partial().optional(),
   tournamentHeroIndex: z.record(tournamentHeroAggregateSchema).optional(),
+  lifetimeTournamentHeroIndex: z.record(tournamentHeroAggregateSchema).optional(),
   playerHeroIndex: z.record(playerHeroLeagueStatsSchema).optional(),
+  lifetimePlayerHeroIndex: z.record(playerHeroLeagueStatsSchema).optional(),
   production: productionSettingsSchema.partial().optional(),
   minimapState: minimapStateSchema.partial().optional(),
   statCarousel: z
@@ -615,6 +640,8 @@ export function defaultOverlayVisibility(): OverlayVisibility {
 export function defaultLeagueConfig(): LeagueConfig {
   return {
     leagueId: null,
+    leagueIds: [],
+    overlayStatsMode: "lifetime",
     roster: [],
     matchSetup: null,
     teamColors: {},

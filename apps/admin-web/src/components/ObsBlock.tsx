@@ -9,6 +9,7 @@ export function ObsBlock(props: { origin: string; token: string }) {
   const [pick, setPick] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [overlayBaseUrl, setOverlayBaseUrl] = useState("http://127.0.0.1:8080/overlay/");
 
   const post = async (path: string, body: Record<string, unknown>) => {
     setBusy(true);
@@ -90,6 +91,29 @@ export function ObsBlock(props: { origin: string; token: string }) {
         <Btn variant="ghost" className="!text-[10px]" disabled={busy} onClick={() => void post("/api/obs/config", { host, port, password: pass })}>
           Save Configuration
         </Btn>
+      </div>
+
+      <div className="mt-6 border-t border-white/5 pt-5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400 mb-2">Auto-Setup</h3>
+        <p className="text-[10px] text-slate-500 mb-3">
+          Automatically create standard scenes and browser sources. Will safely abort if existing scenes are found.
+        </p>
+        <div className="flex gap-3 items-end">
+          <div className="flex-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Overlay Base URL</label>
+            <input className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-2.5 py-1.5 text-xs text-white" value={overlayBaseUrl} onChange={(e) => setOverlayBaseUrl(e.target.value)} />
+          </div>
+          <Btn
+            variant="ghost"
+            disabled={busy}
+            onClick={async () => {
+              const res = await post("/api/obs/setup", { overlayBaseUrl });
+              if (res && res.message) alert(res.message);
+            }}
+          >
+            Run Setup
+          </Btn>
+        </div>
       </div>
 
       <div className="mt-6 flex flex-wrap items-end gap-3 border-t border-white/5 pt-5">

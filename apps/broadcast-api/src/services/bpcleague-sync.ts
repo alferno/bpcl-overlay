@@ -5,6 +5,37 @@ import type { RosterPlayer } from "@bpc/shared-types";
 import { normalizeTeamColorHex } from "./roster-parser.js";
 import { logger } from "../logger.js";
 
+// ---- Active season slug cache (refreshed on each sync call) ------------
+let _activeSeasonSlugCache: string | null = null;
+let _activeSeasonSlugFetchedAt = 0;
+const SLUG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Fetches the active season slug from the bpcleague.in API.
+ * Returns the first season with `isActive: true`, or falls back to "season-2".
+ * Result is cached for 5 minutes to avoid redundant calls during a session.
+ */
+export async function fetchActiveSeasonSlug(): Promise<string> {
+  const now = Date.now();
+  if (_activeSeasonSlugCache && now - _activeSeasonSlugFetchedAt < SLUG_CACHE_TTL_MS) {
+    return _activeSeasonSlugCache;
+  }
+  try {
+    const payload = await fetchUrlJson("https://api.bpcleague.in/api/public/seasons");
+    const seasons: Array<{ slug: string; name: string; isActive?: boolean }> =
+      payload.seasons || payload || [];
+    const active = seasons.find((s) => s.isActive);
+    const slug = active?.slug ?? "season-2";
+    _activeSeasonSlugCache = slug;
+    _activeSeasonSlugFetchedAt = now;
+    logger.info({ slug }, "[BPCLeague] Active season slug resolved");
+    return slug;
+  } catch (err) {
+    logger.warn({ err }, "[BPCLeague] Failed to fetch seasons list — falling back to season-2");
+    return "season-2";
+  }
+}
+
 // ---- Persistent vanity → steam32 cache --------------------------------
 const CACHE_FILE = path.join(process.cwd(), "steam32-vanity-cache.json");
 let _vanityCache: Record<string, number> | null = null;
@@ -32,6 +63,7 @@ function saveVanityCache(cache: Record<string, number>): void {
 // -----------------------------------------------------------------------
 
 type RawPlayer = {
+  id?: string;
   displayName: string;
   name?: string;
   steamProfile?: string;
@@ -135,7 +167,9 @@ export async function fetchRosterFromBpcLeague(opts: {
   seasonSlug?: string;
   steamApiKey?: string;
 }): Promise<RosterPlayer[]> {
-  const slug = (opts.seasonSlug || "season-1").trim().toLowerCase();
+  const slug = opts.seasonSlug
+    ? opts.seasonSlug.trim().toLowerCase()
+    : await fetchActiveSeasonSlug();
   logger.info({ slug }, "Starting roster sync from bpcleague.in");
 
   let rawTeams: RawTeam[] = [];
@@ -193,8 +227,10 @@ export async function fetchRosterFromBpcLeague(opts: {
     const roles = player.roles || [];
     const mmr = player.mmr;
 
+    const bpcId = player.id;
+
     if (steam32 != null && steam32 > 0) {
-      roster.push({ displayName, steam32, teamName, teamKey, teamColor, roles, mmr });
+      roster.push({ displayName, steam32, teamName, teamKey, teamColor, roles, mmr, bpcId });
     } else {
       logger.warn({ displayName, url: player.steamProfile }, "[steam32] Could not resolve — player skipped");
     }
@@ -217,7 +253,9 @@ export type BpcMatch = {
 };
 
 export async function fetchMatchesFromBpcLeague(seasonSlug?: string): Promise<BpcMatch[]> {
-  const slug = (seasonSlug || "season-1").trim().toLowerCase();
+  const slug = seasonSlug
+    ? seasonSlug.trim().toLowerCase()
+    : await fetchActiveSeasonSlug();
   logger.info({ slug }, "Fetching tournament matches from bpcleague.in");
 
   try {
@@ -279,7 +317,9 @@ export async function fetchSeasonsFromBpcLeague(): Promise<BpcSeason[]> {
 }
 
 export async function fetchSeasonConfigFromBpcLeague(seasonSlug?: string): Promise<any> {
-  const slug = (seasonSlug || "season-1").trim().toLowerCase();
+  const slug = seasonSlug
+    ? seasonSlug.trim().toLowerCase()
+    : await fetchActiveSeasonSlug();
   logger.info({ slug }, "Fetching season config from bpcleague.in");
 
   try {

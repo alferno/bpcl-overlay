@@ -37,6 +37,8 @@ function MiniHeroPortrait({
 
   const hasKills = kills > 0;
 
+  const [imgError, setImgError] = useState(false);
+
   return (
     <div className="relative flex-shrink-0" style={{ width: 30, height: 30 }}>
       {/* Hero portrait circle */}
@@ -50,12 +52,13 @@ function MiniHeroPortrait({
           filter: hasKills ? "none" : "grayscale(40%) brightness(0.65)",
         }}
       >
-        {portraitUrl ? (
+        {portraitUrl && !imgError ? (
           <img
             src={withBaseUrl(portraitUrl)}
             alt=""
             className="w-full h-full object-cover object-top"
             style={{ transform: "scale(1.15) translateY(4px)" }}
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="w-full h-full bg-slate-800" />
@@ -105,23 +108,26 @@ function FocusedHeroPortrait({ heroId, heroName, portraitUrl: initialPortraitUrl
     });
   }, [heroId, heroName]);
 
+  const [imgError, setImgError] = useState(false);
+
   return (
     <div
       className="relative flex-shrink-0 overflow-hidden"
       style={{
-        width: 52,
-        height: 52,
+        width: 46,
+        height: 46,
         borderRadius: 4,
         border: "1px solid rgba(251,191,36,0.4)",
         boxShadow: "0 0 12px rgba(0,0,0,0.8), inset 0 0 8px rgba(0,0,0,0.5)",
       }}
     >
-      {portraitUrl ? (
+      {portraitUrl && !imgError ? (
         <img
           src={withBaseUrl(portraitUrl)}
           alt=""
           className="w-full h-full object-cover object-top"
           style={{ transform: "scale(1.15) translateY(4px)" }}
+          onError={() => setImgError(true)}
         />
       ) : (
         <div className="w-full h-full bg-slate-800" />
@@ -183,7 +189,7 @@ function StatRow({
 
 export function LiveStatsHud() {
   const { state } = useOverlayState();
-  const visible = useRouteVisible("liveplayercard", state);
+  const visible = useRouteVisible("kdaCard", state);
   const card = state.livePlayerCard;
 
   if (!visible || !card) return null;
@@ -199,14 +205,21 @@ export function LiveStatsHud() {
 
   const enemyKills = card.enemyHeroKills ?? [];
 
+  const layout = state.production?.layoutConfig?.kdaCard;
+  const top = layout?.y ?? 8;
+  const left = layout?.x ?? 16;
+  const scale = layout?.scale ?? 1;
+
   return (
     <div
       className="absolute pointer-events-none"
       style={{
-        top: 16,
-        left: 16,
-        width: 220,
+        top,
+        left,
+        width: 260,
         zIndex: 50,
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
         // Entrance animation
         animation: "hudSlideIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
       }}
@@ -214,11 +227,11 @@ export function LiveStatsHud() {
       {/* ── Banner Row ─────────────────────────────────────────────────── */}
       <div
         style={{
-          background: "linear-gradient(135deg, rgba(10,14,26,0.97) 0%, rgba(16,20,38,0.97) 100%)",
+          background: "linear-gradient(135deg, rgb(10,14,26) 0%, rgb(16,20,38) 100%)",
           borderRadius: "6px 6px 0 0",
           borderBottom: "1px solid rgba(251,191,36,0.25)",
           border: "1px solid rgba(251,191,36,0.2)",
-          padding: "5px 10px",
+          padding: "4px 10px",
           display: "flex",
           flexDirection: "column",
           gap: 1,
@@ -265,11 +278,11 @@ export function LiveStatsHud() {
       {/* ── Stats + Hero Row ─────────────────────────────────────────── */}
       <div
         style={{
-          background: "linear-gradient(135deg, rgba(8,12,22,0.96) 0%, rgba(12,16,30,0.96) 100%)",
+          background: "linear-gradient(135deg, rgb(8,12,22) 0%, rgb(12,16,30) 100%)",
           border: "1px solid rgba(255,255,255,0.08)",
           borderTop: "none",
           borderRadius: enemyKills.length > 0 ? 0 : "0 0 6px 6px",
-          padding: "7px 10px",
+          padding: "5px 10px",
           display: "flex",
           alignItems: "center",
           gap: 8,
@@ -326,11 +339,11 @@ export function LiveStatsHud() {
       {enemyKills.length > 0 && (
         <div
           style={{
-            background: "linear-gradient(135deg, rgba(6,9,20,0.96) 0%, rgba(10,13,28,0.96) 100%)",
+            background: "linear-gradient(135deg, rgb(6,9,20) 0%, rgb(10,13,28) 100%)",
             border: "1px solid rgba(255,255,255,0.07)",
             borderTop: "1px solid rgba(255,255,255,0.05)",
             borderRadius: "0 0 6px 6px",
-            padding: "6px 10px",
+            padding: "4px 10px",
             display: "flex",
             alignItems: "center",
             gap: 5,

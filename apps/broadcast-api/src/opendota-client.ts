@@ -231,10 +231,32 @@ export class OpenDotaClient {
   }
 
   async matchDetails(matchId: number | string): Promise<CachedResponse<OpenDotaMatch>> {
-    return this.getCached<OpenDotaMatch>(
+    const { existsSync } = await import("node:fs");
+    const { readFile, writeFile, mkdir } = await import("node:fs/promises");
+    const path = await import("node:path");
+
+    const diskPath = path.resolve(process.cwd(), `data/matches/${matchId}.json`);
+    try {
+      if (existsSync(diskPath)) {
+        const raw = await readFile(diskPath, "utf-8");
+        return { ok: true, status: 200, data: JSON.parse(raw) };
+      }
+    } catch {}
+
+    const res = await this.getCached<OpenDotaMatch>(
       `matches:${matchId}:detail`,
       `/matches/${matchId}`,
     );
+
+    if (res.ok && res.data && res.data.players && res.data.players.length > 0) {
+      try {
+        await mkdir(path.resolve(process.cwd(), "data/matches"), { recursive: true });
+        await writeFile(diskPath, JSON.stringify(res.data));
+      } catch (err) {
+        logger.warn(err, "Failed to write match to cold storage");
+      }
+    }
+    return res;
   }
 
   async heroesConstants(): Promise<CachedResponse<unknown[]>> {

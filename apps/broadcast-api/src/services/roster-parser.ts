@@ -39,6 +39,8 @@ export function parseRosterCsv(text: string): RosterPlayer[] {
     let teamKey: string | undefined;
     let teamColor: string | undefined;
     let avatarUrl: string | undefined;
+    let roles: string[] | undefined;
+    let bpcId: string | undefined;
 
     if (parts.length >= 4) {
       teamName = parts[2] || undefined;
@@ -57,12 +59,24 @@ export function parseRosterCsv(text: string): RosterPlayer[] {
           avatarUrl = sixth;
         }
       }
+      if (parts.length >= 7) {
+        const seventh = parts[6] ?? "";
+        if (seventh) {
+          roles = seventh.split("|").map(r => r.trim()).filter(Boolean);
+        }
+      }
+      if (parts.length >= 8) {
+        const eighth = parts[7] ?? "";
+        if (eighth) {
+          bpcId = eighth;
+        }
+      }
     } else if (parts.length === 3) {
       teamKey = parts[2] || undefined;
       teamName = teamKey?.replace(/_/g, " ");
     }
 
-    out.push({ displayName, steam32, teamName, teamKey, teamColor, avatarUrl });
+    out.push({ displayName, steam32, teamName, teamKey, teamColor, avatarUrl, roles, bpcId });
   }
   return out;
 }
@@ -74,10 +88,10 @@ function escapeCsvField(value: string): string {
   return value;
 }
 
-/** CSV with avatarUrl column: displayName,steam32,teamName,teamKey,teamColor,avatarUrl */
+/** CSV with avatarUrl, roles, and bpcId column: displayName,steam32,teamName,teamKey,teamColor,avatarUrl,roles,bpcId */
 export function serializeRosterCsv(roster: RosterPlayer[]): string {
   const header =
-    "displayName,steam32,teamName,teamKey,teamColor,avatarUrl";
+    "displayName,steam32,teamName,teamKey,teamColor,avatarUrl,roles,bpcId";
   const rows = roster.map((p) =>
     [
       p.displayName,
@@ -86,6 +100,8 @@ export function serializeRosterCsv(roster: RosterPlayer[]): string {
       p.teamKey ?? "",
       p.teamColor ?? "",
       p.avatarUrl ?? "",
+      p.roles ? p.roles.join("|") : "",
+      p.bpcId ?? "",
     ]
       .map(escapeCsvField)
       .join(","),

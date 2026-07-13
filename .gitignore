@@ -60,3 +60,10 @@ steam32-vanity-cache.json
 # Broadcast API runtime data
 apps/broadcast-api/league-stats/
 apps/broadcast-api/replays/
+
+# Launcher build output (large binaries — distribute separately)
+apps/launcher/release/
+apps/launcher/node_modules/
+
+# Release zip artifacts (upload to GitHub Releases, don't commit)
+releases/*.zip
