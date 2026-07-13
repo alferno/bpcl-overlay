@@ -1,6 +1,6 @@
 {
-    "version":  "1.0.8",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.8/BPCL-Streamer-v1.0.8.zip",
-    "notes":  "Added Season 2 Team Logos",
-    "publishedAt":  "2026-07-13T22:41:48.8885903+05:30"
+    "version":  "1.0.9",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.9/BPCL-Streamer-v1.0.9.zip",
+    "notes":  "Fix roster CSV role parsing",
+    "publishedAt":  "2026-07-13T23:05:47.3537882+05:30"
 }
