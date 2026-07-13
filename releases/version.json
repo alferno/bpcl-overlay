@@ -1,6 +1,6 @@
 ﻿{
-    "version":  "1.0.2",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.2/BPCL-Streamer-v1.0.2.zip",
-    "notes":  "Added automated release script and multi-caster data folder sync",
-    "publishedAt":  "2026-07-13T19:55:09.3827881+05:30"
+    "version":  "1.0.6",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.6/BPCL-Streamer-v1.0.6.zip",
+    "notes":  "Reverted back to GitHub Releases for file hosting.",
+    "publishedAt":  "2026-07-13T21:30:20.0393450+05:30"
 }
