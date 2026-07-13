@@ -1,6 +1,7 @@
 {
-    "version":  "1.0.11",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.11/BPCL-Streamer-v1.0.11.zip",
-    "notes":  "Automated overlay update (HTML Iframe fixes for Player Cards)",
-    "publishedAt":  "2026-07-14T01:49:04.3628254+05:30"
+    "version":  "1.0.12",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.12/BPCL-Streamer-v1.0.12-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.12/BPCL-Streamer-v1.0.12-Update.zip",
+    "notes":  "Added Smart Delta Updates and Force Full Update fallback button",
+    "publishedAt":  "2026-07-14T02:01:12.9849506+05:30"
 }
