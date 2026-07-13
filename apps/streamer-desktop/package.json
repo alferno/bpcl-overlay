@@ -1,6 +1,6 @@
 {
   "name": "streamer-desktop",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "dist-electron/main.js",
   "private": true,
   "type": "module",
