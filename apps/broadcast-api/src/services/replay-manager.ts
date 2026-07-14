@@ -366,7 +366,7 @@ export class ReplayManager {
     }
   }
 
-  async generateHighlights(matchId: number) {
+  async generateHighlights(matchId: number, slug?: string) {
     try {
       const state = await this.getReplayState();
       const favorites = state.replays.filter(r => r.match === matchId && r.favorite);
@@ -389,7 +389,7 @@ export class ReplayManager {
       const lines = favorites.map(r => `file '${r.file.replace(/\\/g, "/")}'`);
       fs.writeFileSync(concatFile, lines.join("\n") + "\n", "utf-8");
       
-      const outputFile = path.join(this.highlightsDir, `Match_${matchId}_Highlights.mp4`);
+      const outputFile = path.join(this.highlightsDir, slug ? `${slug}.mp4` : `Match_${matchId}_Highlights.mp4`);
       
       const cmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" -c copy "${outputFile}"`;
       logger.info({ cmd }, "Generating highlights");

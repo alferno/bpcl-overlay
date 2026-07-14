@@ -25,22 +25,22 @@ export default function HighlightsPage() {
   const team2 = team2Raw.replace(/-/g, " ").toUpperCase();
 
   return (
-    <HudCanvas blend={false}>
+    <HudCanvas blend={true}>
       <FadePanel show={visible}>
         <div className="absolute inset-0 pointer-events-none flex items-end justify-end">
           {/* Main Container anchored bottom-right */}
           <div 
-            className="relative w-[650px] bg-[#0c0d10] text-white flex flex-col pt-8 pb-6 pl-16 pr-8 border-r-[6px] border-cyan-400 shadow-2xl"
+            className="relative w-[800px] min-h-[400px] bg-[#0c0d10] text-white flex flex-col pt-10 pb-8 pl-16 pr-10 border-r-[6px] border-cyan-400 shadow-2xl"
             style={{ clipPath: "polygon(10% 0, 100% 0, 100% 100%, 0 100%)" }}
           >
             {/* Top Row: Team Names & Sponsor */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-baseline gap-2 font-black text-3xl tracking-wide font-sans">
-                <span>{team1}</span>
+            <div className="flex flex-col items-center justify-center mb-8 pl-8">
+              <div className="flex items-baseline justify-center w-full gap-4 font-black text-3xl tracking-wide font-sans">
+                <span className="flex-1 text-right">{team1}</span>
                 <span className="text-cyan-400 text-xl italic font-bold">vs</span>
-                <span>{team2}</span>
+                <span className="flex-1 text-left">{team2}</span>
               </div>
-              <div className="flex items-center gap-2 text-cyan-400 text-[10px] font-bold tracking-widest uppercase">
+              <div className="flex items-center gap-2 mt-2 text-cyan-400 text-[10px] font-bold tracking-widest uppercase">
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8z"/>
                 </svg>
@@ -49,7 +49,7 @@ export default function HighlightsPage() {
             </div>
 
             {/* Score & Details Row */}
-            <div className="flex items-start gap-12 mb-6">
+            <div className="flex items-start gap-12 mb-6 pl-8">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Series Score</span>
                 <div className="bg-cyan-800 text-cyan-300 font-black px-3 py-1 text-sm tracking-widest uppercase border border-cyan-500/50">
@@ -59,14 +59,14 @@ export default function HighlightsPage() {
             </div>
 
             {/* Main Heading */}
-            <div className="mb-4">
+            <div className="mb-4 pl-8">
               <h1 className="text-5xl font-black text-cyan-400 tracking-wider uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">
                 {mainHeading}
               </h1>
             </div>
 
             {/* Cyan Dividers */}
-            <div className="flex gap-2 mb-6">
+            <div className="flex gap-2 mb-6 pl-8">
               <div className="h-1 w-24 bg-cyan-400"></div>
               <div className="h-1 w-8 bg-cyan-700"></div>
               <div className="h-1 w-8 bg-cyan-900"></div>
@@ -74,7 +74,7 @@ export default function HighlightsPage() {
 
             {/* Up Next List */}
             {upNext.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-2 pl-8">
                 {upNext.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between bg-[#15171c] py-3 px-4 border border-white/5">
                     <div className="flex items-center gap-3">

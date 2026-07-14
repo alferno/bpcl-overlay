@@ -85,9 +85,14 @@ export function ReplayManagerPanel({
     setBusy(true);
     setLocalErr(null);
     try {
+      const matchSetup = state?.leagueConfig?.matchSetup;
+      const slug = matchSetup ? `bpcl_s2_${matchSetup.radiantTeamKey}_vs_${matchSetup.direTeamKey}_game_${matchSetup.seriesGame ?? 1}` : undefined;
       const res = await apiFetch(origin, token, "/api/replays/generate-highlights", { 
         method: "POST",
-        body: JSON.stringify({ matchId: lastCompletedMatch || currentMatch })
+        body: JSON.stringify({ 
+          matchId: lastCompletedMatch || currentMatch,
+          slug
+        })
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();

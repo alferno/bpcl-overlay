@@ -13,6 +13,8 @@ import {
 import type { StateManager } from "@bpc/state-manager";
 import express from "express";
 import type { Express, Request, Response } from "express";
+import path from "path";
+import fs from "fs";
 import type { Server as IOServer } from "socket.io";
 import { z } from "zod";
 import { requireBroadcastAuth } from "./auth-middleware.js";
@@ -468,12 +470,33 @@ export function attachRestRoutes(opts: {
   });
 
   app.post("/api/replays/generate-highlights", requireBroadcastAuth, async (req, res) => {
-    const schema = z.object({ matchId: z.number() });
+    const schema = z.object({ matchId: z.number(), slug: z.string().optional() });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-    const result = await replayManager.generateHighlights(parsed.data.matchId);
+    const result = await replayManager.generateHighlights(parsed.data.matchId, parsed.data.slug);
     res.json(result);
+  });
+
+  app.post("/api/obs/push-highlight", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({ slug: z.string() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const highlightsDir = (env as any).HIGHLIGHTS_FOLDER || path.resolve(process.cwd(), "../../data/highlights");
+    const highlightPath = path.join(highlightsDir, `${parsed.data.slug}.mp4`);
+
+    if (!fs.existsSync(highlightPath)) {
+      return res.status(404).json({ error: `Highlight file not found: ${highlightPath}` });
+    }
+
+    try {
+      await obs.setInputSettings("HighlightPlayer", { local_file: highlightPath });
+      await obs.restartMediaInput("HighlightPlayer");
+      res.json({ ok: true, file: highlightPath });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    }
   });
 
   app.post("/api/replays/hotkey", requireBroadcastAuth, async (req, res) => {

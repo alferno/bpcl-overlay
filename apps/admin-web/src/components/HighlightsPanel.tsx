@@ -24,6 +24,32 @@ export function HighlightsPanel({
   const [score2, setScore2] = useState(currentHighlights.score2 ?? 0);
   const [seriesFormat, setSeriesFormat] = useState(currentHighlights.seriesFormat ?? "");
 
+  const [pushStatus, setPushStatus] = useState<string | null>(null);
+
+  const handlePushToOBS = async () => {
+    const ms = config?.matchSetup;
+    if (!ms) {
+      setPushStatus("Error: No Match Setup");
+      return;
+    }
+    const slug = `bpcl_s2_${ms.radiantTeamKey}_vs_${ms.direTeamKey}_game_${ms.seriesGame ?? 1}`;
+    setPushStatus("Pushing...");
+    try {
+      const origin = window.location.origin;
+      const token = localStorage.getItem("bpcl_token") || "";
+      const res = await fetch(`${origin}/api/obs/push-highlight`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ slug }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setPushStatus("Pushed to OBS!");
+      setTimeout(() => setPushStatus(null), 3000);
+    } catch (err) {
+      setPushStatus(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const [newItem, setNewItem] = useState("");
 
   const handleFetchFromMatchSetup = () => {
@@ -183,7 +209,21 @@ export function HighlightsPanel({
           </form>
         </div>
 
-        <div className="pt-6 mt-6 border-t border-slate-700 flex justify-end">
+        <div className="pt-6 mt-6 border-t border-slate-700 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handlePushToOBS}
+              disabled={busy}
+              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 transition-colors flex items-center gap-2"
+            >
+              Push to OBS HighlightPlayer
+            </button>
+            {pushStatus && (
+              <span className={`text-sm font-semibold ${pushStatus.startsWith("Error") ? "text-red-400" : "text-emerald-400"}`}>
+                {pushStatus}
+              </span>
+            )}
+          </div>
           <button
             onClick={handleSave}
             disabled={busy}
