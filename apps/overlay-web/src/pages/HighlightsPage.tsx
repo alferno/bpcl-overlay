@@ -5,7 +5,8 @@ import { withBaseUrl } from "../asset-paths";
 
 export default function HighlightsPage() {
   const { state } = useOverlayState();
-  const visible = routeVisible("highlights", state);
+  // Always visible because it's used in a standalone OBS scene for highlights
+  const visible = true;
 
   const matchSetup = state.leagueConfig?.matchSetup;
   const teamColors = state.leagueConfig?.teamColors || {};
