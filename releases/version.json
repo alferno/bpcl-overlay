@@ -1,7 +1,7 @@
 {
-    "version":  "1.0.23",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.23/BPCL-Streamer-v1.0.23-Update.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.23/BPCL-Streamer-v1.0.23-Update.zip",
-    "notes":  "Added Push to OBS for highlights, transparent background for highlights overlay, and centered layout",
-    "publishedAt":  "2026-07-14T18:41:22.2365507+05:30"
+    "version":  "1.0.24",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.24/BPCL-Streamer-v1.0.24-Update.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.24/BPCL-Streamer-v1.0.24-Update.zip",
+    "notes":  "Added spinning/wobbling Highlights box above the card",
+    "publishedAt":  "2026-07-14T19:04:36.3818164+05:30"
 }

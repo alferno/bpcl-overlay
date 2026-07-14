@@ -26,6 +26,13 @@ export default function HighlightsPage() {
 
   return (
     <HudCanvas blend={true}>
+      <style>{`
+        @keyframes slow-spin-wobble {
+          0% { transform: translateY(0px) rotate(-4deg) scale(1); }
+          50% { transform: translateY(-8px) rotate(4deg) scale(1.05); }
+          100% { transform: translateY(0px) rotate(-4deg) scale(1); }
+        }
+      `}</style>
       <FadePanel show={visible}>
         <div className="absolute inset-0 pointer-events-none flex items-end justify-end">
           {/* Main Container anchored bottom-right */}
@@ -33,6 +40,13 @@ export default function HighlightsPage() {
             className="relative w-[800px] min-h-[400px] bg-[#0c0d10] text-white flex flex-col pt-10 pb-8 pl-16 pr-10 border-r-[6px] border-cyan-400 shadow-2xl"
             style={{ clipPath: "polygon(10% 0, 100% 0, 100% 100%, 0 100%)" }}
           >
+            {/* Spinning/Wobbling Highlights Box */}
+            <div 
+              className="absolute -top-6 right-16 bg-cyan-600 text-white font-black uppercase tracking-[0.25em] px-8 py-2 border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] z-10"
+              style={{ animation: "slow-spin-wobble 3.5s infinite ease-in-out" }}
+            >
+              Highlights
+            </div>
             {/* Top Row: Team Names & Sponsor */}
             <div className="flex flex-col items-center justify-center mb-8 pl-8">
               <div className="flex items-baseline justify-center w-full gap-4 font-black text-3xl tracking-wide font-sans">
