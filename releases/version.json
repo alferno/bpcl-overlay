@@ -1,7 +1,7 @@
 {
-    "version":  "1.0.27",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.27/BPCL-Streamer-v1.0.27-Update.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.27/BPCL-Streamer-v1.0.27-Update.zip",
-    "notes":  "Automated overlay and API update",
-    "publishedAt":  "2026-07-14T22:56:20.4945014+05:30"
+    "version":  "1.0.28",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.28/BPCL-Streamer-v1.0.28-Update.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.28/BPCL-Streamer-v1.0.28-Update.zip",
+    "notes":  "Fix 3D sponsor widget and set it hidden by default",
+    "publishedAt":  "2026-07-14T23:03:42.7161238+05:30"
 }
