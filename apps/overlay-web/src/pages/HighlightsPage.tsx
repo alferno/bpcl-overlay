@@ -1,7 +1,5 @@
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
-import { routeVisible } from "../visibility";
-import { withBaseUrl } from "../asset-paths";
 
 export default function HighlightsPage() {
   const { state } = useOverlayState();
@@ -9,7 +7,7 @@ export default function HighlightsPage() {
   const visible = true;
 
   const matchSetup = state.leagueConfig?.matchSetup;
-  const teamColors = state.leagueConfig?.teamColors || {};
+  const highlights = state.leagueConfig?.highlights || {};
 
   if (!matchSetup) {
     return null;
@@ -17,75 +15,86 @@ export default function HighlightsPage() {
 
   const { radiantTeamKey, direTeamKey, scoreA, scoreB, seriesBestOf } = matchSetup;
   
-  const radiantLogo = withBaseUrl(`/teams/${radiantTeamKey}.png`);
-  const direLogo = withBaseUrl(`/teams/${direTeamKey}.png`);
-  const radiantColor = teamColors[radiantTeamKey] || "#10b981"; // Default emerald
-  const direColor = teamColors[direTeamKey] || "#ef4444"; // Default red
+  const sponsorText = highlights.sponsorText || "Powered by: Nuvorn Technologies";
+  const mainHeading = highlights.mainHeading || "CURRENT SERIES";
+  const upNext = highlights.upNext || [];
 
   // Determine series string
   const seriesString = seriesBestOf === 1 ? "BO1" : `BO${seriesBestOf}`;
+
+  // Formatted names
+  const team1 = radiantTeamKey.replace(/-/g, " ").toUpperCase();
+  const team2 = direTeamKey.replace(/-/g, " ").toUpperCase();
 
   return (
     <HudCanvas blend={false}>
       <FadePanel show={visible}>
         <div className="absolute inset-0 pointer-events-none flex items-end justify-end">
-          {/* Diagonal Container anchored bottom-right */}
+          {/* Main Container anchored bottom-right */}
           <div 
-            className="relative w-[800px] h-[220px] bg-slate-950/95 shadow-2xl overflow-hidden flex items-center pl-24 pr-12 text-white border-t-2 border-l-2 border-white/10"
-            style={{ clipPath: "polygon(15% 0, 100% 0, 100% 100%, 0 100%)" }}
+            className="relative w-[650px] bg-[#0c0d10] text-white flex flex-col pt-8 pb-6 pl-16 pr-8 border-r-[6px] border-cyan-400 shadow-2xl"
+            style={{ clipPath: "polygon(10% 0, 100% 0, 100% 100%, 0 100%)" }}
           >
-            {/* Background Accent Gradients based on team colors */}
-            <div 
-              className="absolute inset-0 opacity-20"
-              style={{
-                background: `linear-gradient(135deg, ${radiantColor} 0%, transparent 40%, transparent 60%, ${direColor} 100%)`
-              }}
-            />
-            
-            {/* Content Wrapper */}
-            <div className="relative z-10 flex w-full items-center justify-between gap-8 mt-4">
-              
-              {/* Radiant Side */}
-              <div className="flex flex-col items-center gap-2 flex-1">
-                <img 
-                  src={radiantLogo} 
-                  alt={radiantTeamKey} 
-                  className="h-20 w-20 object-contain drop-shadow-lg"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <div 
-                  className="h-1 w-12 rounded-full" 
-                  style={{ backgroundColor: radiantColor }}
-                />
+            {/* Top Row: Team Names & Sponsor */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-baseline gap-2 font-black text-3xl tracking-wide font-sans">
+                <span>{team1}</span>
+                <span className="text-cyan-400 text-xl italic font-bold">vs</span>
+                <span>{team2}</span>
               </div>
+              <div className="flex items-center gap-2 text-cyan-400 text-[10px] font-bold tracking-widest uppercase">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8z"/>
+                </svg>
+                {sponsorText}
+              </div>
+            </div>
 
-              {/* Score Center */}
-              <div className="flex flex-col items-center justify-center min-w-[200px]">
-                <p className="text-sm font-black tracking-[0.3em] uppercase text-cyan-400 mb-1 drop-shadow-md">
-                  {seriesString} Match Score
-                </p>
-                <div className="flex items-center gap-6 text-[4rem] font-black leading-none drop-shadow-2xl font-mono">
-                  <span style={{ color: radiantColor }}>{scoreA}</span>
-                  <span className="text-slate-500 pb-2">-</span>
-                  <span style={{ color: direColor }}>{scoreB}</span>
+            {/* Score & Details Row */}
+            <div className="flex items-start gap-12 mb-6">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Series Score</span>
+                <div className="bg-cyan-800 text-cyan-300 font-black px-3 py-1 text-sm tracking-widest uppercase border border-cyan-500/50">
+                  {seriesString} {scoreA}-{scoreB}
                 </div>
               </div>
-
-              {/* Dire Side */}
-              <div className="flex flex-col items-center gap-2 flex-1">
-                <img 
-                  src={direLogo} 
-                  alt={direTeamKey} 
-                  className="h-20 w-20 object-contain drop-shadow-lg"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <div 
-                  className="h-1 w-12 rounded-full" 
-                  style={{ backgroundColor: direColor }}
-                />
-              </div>
-
             </div>
+
+            {/* Main Heading */}
+            <div className="mb-4">
+              <h1 className="text-5xl font-black text-cyan-400 tracking-wider uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">
+                {mainHeading}
+              </h1>
+            </div>
+
+            {/* Cyan Dividers */}
+            <div className="flex gap-2 mb-6">
+              <div className="h-1 w-24 bg-cyan-400"></div>
+              <div className="h-1 w-8 bg-cyan-700"></div>
+              <div className="h-1 w-8 bg-cyan-900"></div>
+            </div>
+
+            {/* Up Next List */}
+            {upNext.length > 0 && (
+              <div className="space-y-2">
+                {upNext.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-[#15171c] py-3 px-4 border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 tracking-wider uppercase">
+                        UP NEXT
+                      </span>
+                      <span className="text-sm font-bold tracking-wide text-slate-100">
+                        {item}
+                      </span>
+                    </div>
+                    <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            )}
+            
           </div>
         </div>
       </FadePanel>

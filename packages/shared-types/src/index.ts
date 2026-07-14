@@ -144,6 +144,11 @@ export const leagueConfigSchema = z.object({
   aggregationSource: z.enum(["csv", "api"]).optional(),
   statsCsvDir: z.string().optional(),
   overlayStatsMode: z.enum(["current_season", "lifetime"]).default("current_season"),
+  highlights: z.object({
+    sponsorText: z.string().optional(),
+    mainHeading: z.string().optional(),
+    upNext: z.array(z.string()).optional(),
+  }).optional(),
 });
 
 export type LeagueConfig = z.infer<typeof leagueConfigSchema>;
