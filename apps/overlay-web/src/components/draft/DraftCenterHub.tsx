@@ -56,12 +56,12 @@ export function DraftCenterHub({
         <div className="flex flex-col items-center justify-center relative w-16">
           {showTurnArrow ? (
             <div 
-              className="text-slate-400 font-bold text-4xl leading-none transition-transform duration-300"
+              className="text-emerald-400 font-bold text-4xl leading-none transition-transform duration-300"
               style={{
                 transform: draft.activeTeam === "radiant" ? "scaleX(-1)" : "none",
               }}
             >
-              —
+              ➤
             </div>
           ) : (
             <div className="text-slate-600 font-bold text-2xl">—</div>

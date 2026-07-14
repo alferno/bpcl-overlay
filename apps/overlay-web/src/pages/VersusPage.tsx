@@ -247,10 +247,16 @@ export default function VersusPage() {
   const radiantPicks = state?.draft?.radiant?.slots?.filter((s) => s.type === "pick" && s.heroId) || [];
   const direPicks = state?.draft?.dire?.slots?.filter((s) => s.type === "pick" && s.heroId) || [];
   const gameState = state?.draft?.gameState;
-  const isStrategyTime = gameState === "DOTA_GAMERULES_STATE_STRATEGY_TIME" || 
-                         gameState === "DOTA_GAMERULES_STATE_PRE_GAME" || 
+  const startSeconds = state?.draft?.startSecondsRemaining ?? 30;
+  
+  // Strategy time starts at 30 seconds and counts down.
+  // We want to wait 10 seconds into strategy time before flipping the cards.
+  const isStrategyTimeAndReady = gameState === "DOTA_GAMERULES_STATE_STRATEGY_TIME" && startSeconds <= 20;
+  
+  const isPostStrategy = gameState === "DOTA_GAMERULES_STATE_PRE_GAME" || 
                          gameState === "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS";
-  const flipToHero = isStrategyTime;
+                         
+  const flipToHero = isStrategyTimeAndReady || isPostStrategy;
 
   // Helper to map player to hero pick via steam32
   const getHeroInfo = (steam32: number, side: "radiant" | "dire") => {

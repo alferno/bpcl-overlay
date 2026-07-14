@@ -425,6 +425,49 @@ export function attachGsiRoutes(opts: {
         };
       }
 
+      // ── Overlay Orchestration Automation ─────────────────────────────────────
+      const prevPhase = current.draft?.phase;
+      const newPhase = parsed.draftPatch?.phase ?? prevPhase;
+      const prevGameState = current.draft?.gameState;
+      const newGameState = parsed.draftPatch?.gameState ?? prevGameState;
+
+      const overlayVisibilityPatch: Record<string, string> = {};
+
+      // Transition 1: Draft ➔ Versus (when picks/bans finish)
+      if (prevPhase !== "done" && newPhase === "done") {
+        overlayVisibilityPatch.draft = "hidden";
+        overlayVisibilityPatch.versus = "visible";
+        logger.info("[GSI Automation] Draft done, switching to Versus overlay");
+      }
+
+      // Transition 2: Versus ➔ Game (20s after Strategy Time ends and Horn is pending)
+      if (prevGameState !== "DOTA_GAMERULES_STATE_PRE_GAME" && newGameState === "DOTA_GAMERULES_STATE_PRE_GAME") {
+        logger.info("[GSI Automation] Pre-game started, scheduling Game overlay transition in 20s");
+        setTimeout(async () => {
+          try {
+            const snap = await state.getState();
+            await state.patchState({
+              overlayVisibility: {
+                ...(snap.overlayVisibility ?? {}),
+                versus: "hidden",
+                game: "visible",
+              }
+            });
+            broadcast.broadcastFull(await state.getState());
+            logger.info("[GSI Automation] Switched to Game overlay");
+          } catch (e) {
+            logger.error({ err: e }, "[GSI Automation] Failed to transition to game overlay");
+          }
+        }, 20000);
+      }
+
+      if (Object.keys(overlayVisibilityPatch).length > 0) {
+        patch.overlayVisibility = {
+          ...(current.overlayVisibility ?? {}),
+          ...overlayVisibilityPatch,
+        };
+      }
+
       const radiantScanCooldown = (payload?.map as any)?.radiant_scan_cooldown ?? 0;
       const direScanCooldown = (payload?.map as any)?.dire_scan_cooldown ?? 0;
       const radiantGlyphCooldown = (payload?.map as any)?.radiant_glyph_cooldown ?? 0;
