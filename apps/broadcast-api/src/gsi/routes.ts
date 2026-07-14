@@ -19,6 +19,7 @@ import {
   manualPickSteam32,
   pickSlotOrderForHero,
 } from "@bpc/shared-types";
+import type { RosterPlayer, MatchSetup } from "@bpc/shared-types";
 import { assertLeagueStatsReady } from "../services/league-stats-guard.js";
 import { parsePostGamePayload } from "../services/post-game-mvp.js";
 import { rankMvpCandidates } from "../services/mvp-scorer.js";
@@ -40,6 +41,120 @@ let globalLastRoshanState: string | null = null;
 let globalLastRoshanKillerTeam: "radiant" | "dire" | null = null;
 
 let globalLastAutoReplaySaveAt = 0;
+
+// ── Substitute Detection ───────────────────────────────────────────────────
+// We only run substitute detection once per unique set of 10 lobby players.
+// This avoids spamming the community API on every GSI tick.
+let globalLastLobbyKey: string = "";
+
+/**
+ * Extract the 10 actual steam32 IDs currently in the GSI lobby.
+ * Returns [radiantIds (5), direIds (5)] or null if not available.
+ */
+function extractGsiLobbyPlayers(payload: Record<string, unknown>): { radiant: (number | null)[]; dire: (number | null)[] } | null {
+  const playerRoot = payload.player as Record<string, any> | undefined;
+  if (!playerRoot) return null;
+
+  const extractTeam = (gsiKey: string): (number | null)[] => {
+    const teamData = playerRoot[gsiKey] as Record<string, any> | undefined;
+    if (!teamData) return [null, null, null, null, null];
+    return [0, 1, 2, 3, 4].map((i) => {
+      const pData = teamData[`player${i}`] as Record<string, any> | undefined;
+      if (!pData) return null;
+      const accountId = pData.accountid;
+      if (accountId == null) return null;
+      const n = parseInt(String(accountId), 10);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    });
+  };
+
+  const radiant = extractTeam("team2");
+  const dire = extractTeam("team3");
+
+  // Only return if we have at least some players
+  const total = [...radiant, ...dire].filter(Boolean).length;
+  if (total === 0) return null;
+
+  return { radiant, dire };
+}
+
+/**
+ * Detect substitute players: compare actual GSI lobby players against the current matchSetup.pickPlayers.
+ * If mismatches are found, patch matchSetup.pickPlayers to reflect the actual players.
+ * For unknown players (not in roster), attempts to look them up in the community API.
+ * Returns the patched pickPlayers, or null if no changes were needed.
+ */
+async function detectAndApplySubstitutes(
+  lobbyPlayers: { radiant: (number | null)[]; dire: (number | null)[] },
+  currentRoster: RosterPlayer[],
+  currentMatchSetup: MatchSetup | null | undefined,
+): Promise<{ radiant: (number | null)[]; dire: (number | null)[] } | null> {
+  const existingRadiant: (number | null)[] = currentMatchSetup?.pickPlayers?.radiant ?? [null, null, null, null, null];
+  const existingDire: (number | null)[] = currentMatchSetup?.pickPlayers?.dire ?? [null, null, null, null, null];
+
+  // Build existing set of all assigned steam32 IDs from the match setup
+  const existingSet = new Set<number>(
+    [...existingRadiant, ...existingDire].filter((x): x is number => x != null && x > 0)
+  );
+
+  // Check if the lobby players match the existing pickPlayers exactly
+  const lobbySet = new Set<number>(
+    [...lobbyPlayers.radiant, ...lobbyPlayers.dire].filter((x): x is number => x != null && x > 0)
+  );
+
+  // If lobby is empty or doesn't have enough players, skip
+  if (lobbySet.size < 2) return null;
+
+  // Build a key to track if this is a new lobby configuration
+  const lobbyKey = [...lobbySet].sort().join(",");
+  if (lobbyKey === globalLastLobbyKey) return null;
+
+  // Check if all lobby players match exactly — if so, no substitute detected
+  const allMatch = lobbySet.size === existingSet.size && [...lobbySet].every((id) => existingSet.has(id));
+  if (allMatch) {
+    globalLastLobbyKey = lobbyKey;
+    return null;
+  }
+
+  // There's a mismatch — detect which players are subs (in lobby but not in existing setup)
+  const rosterMap = new Map<number, RosterPlayer>(currentRoster.map((p) => [p.steam32, p]));
+
+  const resolvePlayer = (steam32: number): { displayName: string; avatarUrl?: string; bpcId?: string } => {
+    // Check main roster first
+    const rosterEntry = rosterMap.get(steam32);
+    if (rosterEntry) return { displayName: rosterEntry.displayName, avatarUrl: rosterEntry.avatarUrl, bpcId: rosterEntry.bpcId };
+    // Player not in roster — they are a substitute. We can't match by steam32 in the community API
+    // (it doesn't expose steam32), so just mark as unknown sub. Roster sync will handle adding them.
+    return { displayName: `Sub#${steam32}` };
+  };
+
+  logger.info(
+    { lobbySet: [...lobbySet], existingSet: [...existingSet] },
+    "[GSI] Substitute detected — updating pickPlayers from lobby",
+  );
+
+  // Build the new pickPlayers directly from lobby positions
+  const newRadiant = lobbyPlayers.radiant.map((id, i) => {
+    if (id && id > 0) return id;
+    // Fall back to existing slot if lobby slot is empty
+    return existingRadiant[i] ?? null;
+  });
+  const newDire = lobbyPlayers.dire.map((id, i) => {
+    if (id && id > 0) return id;
+    return existingDire[i] ?? null;
+  });
+
+  // Log any new (substitute) players
+  [...newRadiant, ...newDire].forEach((id) => {
+    if (id && !existingSet.has(id) && !rosterMap.has(id)) {
+      const info = resolvePlayer(id);
+      logger.info({ steam32: id, ...info }, "[GSI] Sub player resolved from community");
+    }
+  });
+
+  globalLastLobbyKey = lobbyKey;
+  return { radiant: newRadiant, dire: newDire };
+}
 
 // ── Bounty Rune Tracking ──────────────────────────────────────────────────────
 //
@@ -239,6 +354,45 @@ export function attachGsiRoutes(opts: {
       parsed.focusedPlayerHeroId = focusedPlayer.heroId;
       parsed.focusedPlayerName = focusedPlayer.playerName;
       (parsed as any).focusedPlayerAbilityCount = focusedPlayer.abilityCount;
+    }
+
+    // ── Substitute Detection ────────────────────────────────────────────────
+    // Extract the actual 10 players from the GSI lobby and compare against
+    // matchSetup.pickPlayers. If a substitute is detected, patch the state.
+    const lobbyPlayers = extractGsiLobbyPlayers(payload);
+    if (lobbyPlayers && matchSetup) {
+      // Run async but don't block the main apply path
+      detectAndApplySubstitutes(lobbyPlayers, roster, matchSetup).then(async (newPickPlayers) => {
+        if (!newPickPlayers) return;
+        try {
+          const cur = await state.getState();
+          const currentSetup = cur.leagueConfig?.matchSetup;
+          if (!currentSetup) return;
+          await state.patchState({
+            leagueConfig: {
+              ...(cur.leagueConfig ?? {}),
+              matchSetup: {
+                ...currentSetup,
+                pickPlayers: newPickPlayers,
+              },
+            },
+          });
+          logger.info({ newPickPlayers }, "[GSI] Patched pickPlayers with substitute data");
+        } catch (err) {
+          logger.warn({ err }, "[GSI] Failed to patch pickPlayers after substitute detection");
+        }
+      }).catch((err) => {
+        logger.warn({ err }, "[GSI] Substitute detection error");
+      });
+    } else if (lobbyPlayers && !matchSetup) {
+      // No matchSetup: store lobby players as a best-effort pickPlayers
+      // This allows the draft overlay to show correct data even without a full match setup
+      const lobbyKey = [...[...lobbyPlayers.radiant, ...lobbyPlayers.dire].filter(Boolean)].sort().join(",");
+      if (lobbyKey !== globalLastLobbyKey && lobbyKey.length > 0) {
+        globalLastLobbyKey = lobbyKey;
+        // Don't auto-create a matchSetup, just log for now
+        logger.info({ radiant: lobbyPlayers.radiant, dire: lobbyPlayers.dire }, "[GSI] Lobby players detected (no matchSetup)");
+      }
     }
 
     const apply = async () => {

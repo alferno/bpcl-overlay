@@ -330,3 +330,34 @@ export async function fetchSeasonConfigFromBpcLeague(seasonSlug?: string): Promi
 }
 
 
+// ── Community player lookup (for substitute detection) ─────────────────────
+let _communityPlayersCache: Array<{ bpcId: string; displayName: string; slug: string; avatarUrl?: string }> | null = null;
+let _communityPlayersFetchedAt = 0;
+const COMMUNITY_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Fetches all community players from bpcleague.in and caches for 10 minutes.
+ * Used to look up substitute players who aren't in the main roster.
+ */
+export async function fetchCommunityPlayers(): Promise<Array<{ bpcId: string; displayName: string; slug: string; avatarUrl?: string }>> {
+  const now = Date.now();
+  if (_communityPlayersCache && now - _communityPlayersFetchedAt < COMMUNITY_CACHE_TTL_MS) {
+    return _communityPlayersCache;
+  }
+  try {
+    const payload = await fetchUrlJson("https://api.bpcleague.in/api/public/community");
+    const players = (payload.players || []).map((p: any) => ({
+      bpcId: p.bpcId || "",
+      displayName: p.displayName || "",
+      slug: p.slug || "",
+      avatarUrl: p.avatarUrl || p.card?.avatarUrl || undefined,
+    }));
+    _communityPlayersCache = players;
+    _communityPlayersFetchedAt = now;
+    logger.info({ count: players.length }, "[Community] Fetched community player list");
+    return players;
+  } catch (err) {
+    logger.warn({ err }, "[Community] Failed to fetch community players");
+    return _communityPlayersCache || [];
+  }
+}

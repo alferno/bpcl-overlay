@@ -682,6 +682,47 @@ export function parseGsiToDraft(
   let radiantSlots = parseSideSlots(radiantRaw, "radiant");
   let direSlots = parseSideSlots(direRaw, "dire");
 
+  // ── Non-CM / All Pick fallback ───────────────────────────────────────────
+  // If the draft node has no picks/bans (e.g. All Pick, Turbo, or lobby
+  // without CM enabled), reconstruct picks from the player+hero GSI nodes so
+  // the draft overlay still shows hero portraits for whatever is in the game.
+  const hasDraftSlots = radiantSlots.length > 0 || direSlots.length > 0;
+  if (!hasDraftSlots && inDraft) {
+    const synthRadiant = collectGsiPlayerHeroByOrder(payload, "radiant");
+    const synthDire = collectGsiPlayerHeroByOrder(payload, "dire");
+
+    for (const [pickOrder, { heroId }] of synthRadiant) {
+      if (heroId > 0) {
+        const media = mediaForHero(heroId, undefined, undefined, `synth-r-pick${pickOrder}`);
+        radiantSlots.push({
+          order: pickOrder,
+          type: "pick",
+          heroId,
+          heroName: displayNameForHero(heroId),
+          heroPortraitSlug: media.slug,
+          heroPortraitUrl: media.staticUrl,
+          heroPortraitAnimatedUrl: media.animatedUrl,
+        });
+      }
+    }
+    for (const [pickOrder, { heroId }] of synthDire) {
+      if (heroId > 0) {
+        const media = mediaForHero(heroId, undefined, undefined, `synth-d-pick${pickOrder}`);
+        direSlots.push({
+          order: pickOrder,
+          type: "pick",
+          heroId,
+          heroName: displayNameForHero(heroId),
+          heroPortraitSlug: media.slug,
+          heroPortraitUrl: media.staticUrl,
+          heroPortraitAnimatedUrl: media.animatedUrl,
+        });
+      }
+    }
+    radiantSlots.sort((a, b) => a.order - b.order);
+    direSlots.sort((a, b) => a.order - b.order);
+  }
+
   const rosterComplete = draftRosterComplete(radiantSlots, direSlots);
   if (rosterComplete) {
     radiantSlots = applyPlayerHeroLocks(radiantSlots, "radiant", payload);

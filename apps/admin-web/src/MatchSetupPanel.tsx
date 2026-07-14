@@ -133,8 +133,10 @@ export function MatchSetupPanel({
   const [matchSeason, setMatchSeason] = useState<string>("");
   const [availableSeasons, setAvailableSeasons] = useState<{slug: string, name: string}[]>([]);
   const [playerMemes, setPlayerMemes] = useState<Record<string, string>>({});
+  const [subDetectedBanner, setSubDetectedBanner] = useState<string | null>(null);
   const pickPlayersDirtyRef = useRef(false);
   const matchSetupDirtyRef = useRef(false);
+  const prevPickPlayersRef = useRef({ radiant: "", dire: "" });
 
   const matchSetup = state?.leagueConfig?.matchSetup;
   const roster = state?.leagueConfig?.roster ?? [];
@@ -221,6 +223,37 @@ export function MatchSetupPanel({
   );
 
   useEffect(() => {
+    const prevR = prevPickPlayersRef.current.radiant;
+    const prevD = prevPickPlayersRef.current.dire;
+    const changed = prevR !== "" && (prevR !== serverRadiantPickPlayers || prevD !== serverDirePickPlayers);
+
+    // Force-sync if the server changed pickPlayers (GSI substitute detection)
+    // even if the streamer had locally touched the dropdowns
+    if (changed) {
+      // Detect which slots changed to show banner
+      const oldR: (number | null)[] = prevR ? JSON.parse(prevR) : [];
+      const newR: (number | null)[] = matchSetup?.pickPlayers?.radiant ?? [];
+      const oldD: (number | null)[] = prevD ? JSON.parse(prevD) : [];
+      const newD: (number | null)[] = matchSetup?.pickPlayers?.dire ?? [];
+      const subSteam32s: number[] = [
+        ...newR.filter((id, i) => id && id !== oldR[i]),
+        ...newD.filter((id, i) => id && id !== oldD[i]),
+      ] as number[];
+      if (subSteam32s.length > 0) {
+        const rosterAll = state?.leagueConfig?.roster ?? [];
+        const names = subSteam32s.map(id => {
+          const p = rosterAll.find(r => r.steam32 === id);
+          return p ? p.displayName : `#${id}`;
+        });
+        setSubDetectedBanner(`⚡ GSI detected sub(s): ${names.join(", ")} — lineup auto-updated`);
+        setTimeout(() => setSubDetectedBanner(null), 15000);
+      }
+      // Force sync the local dropdowns from server
+      pickPlayersDirtyRef.current = false;
+    }
+
+    prevPickPlayersRef.current = { radiant: serverRadiantPickPlayers, dire: serverDirePickPlayers };
+
     if (pickPlayersDirtyRef.current) return;
     if (matchSetup?.pickPlayers?.radiant) {
       setRadiantPickPlayers(
@@ -602,30 +635,38 @@ export function MatchSetupPanel({
           ) : null}
 
           {(radiantTeam || direTeam) && (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {radiantTeam ? (
-                <PickSlotSelects
-                  label={`${radiantTeam.teamName} — Radiant pick slots`}
-                  players={radiantTeam.players}
-                  values={radiantPickPlayers}
-                  onChange={(next) => {
-                    pickPlayersDirtyRef.current = true;
-                    setRadiantPickPlayers(next);
-                  }}
-                />
-              ) : null}
-              {direTeam ? (
-                <PickSlotSelects
-                  label={`${direTeam.teamName} — Dire pick slots`}
-                  players={direTeam.players}
-                  values={direPickPlayers}
-                  onChange={(next) => {
-                    pickPlayersDirtyRef.current = true;
-                    setDirePickPlayers(next);
-                  }}
-                />
-              ) : null}
-            </div>
+            <>
+              {subDetectedBanner && (
+                <div className="mt-4 rounded-lg border border-amber-400/40 bg-amber-950/50 px-4 py-2 text-xs font-bold text-amber-300 flex items-center gap-2">
+                  <span>⚡</span>
+                  <span>{subDetectedBanner}</span>
+                </div>
+              )}
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {radiantTeam ? (
+                  <PickSlotSelects
+                    label={`${radiantTeam.teamName} — Radiant pick slots`}
+                    players={radiantTeam.players}
+                    values={radiantPickPlayers}
+                    onChange={(next) => {
+                      pickPlayersDirtyRef.current = true;
+                      setRadiantPickPlayers(next);
+                    }}
+                  />
+                ) : null}
+                {direTeam ? (
+                  <PickSlotSelects
+                    label={`${direTeam.teamName} — Dire pick slots`}
+                    players={direTeam.players}
+                    values={direPickPlayers}
+                    onChange={(next) => {
+                      pickPlayersDirtyRef.current = true;
+                      setDirePickPlayers(next);
+                    }}
+                  />
+                ) : null}
+              </div>
+            </>
           )}
 
           {(radiantTeam || direTeam) && (
