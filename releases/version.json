@@ -1,7 +1,7 @@
 {
-    "version":  "1.1.1",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.1/BPCL-Streamer-v1.1.1-Update.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.1/BPCL-Streamer-v1.1.1-Update.zip",
+    "version":  "1.1.2",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.2/BPCL-Streamer-v1.1.2-Update.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.2/BPCL-Streamer-v1.1.2-Update.zip",
     "notes":  "Automated overlay and API update",
-    "publishedAt":  "2026-07-15T03:29:18.2468502+05:30"
+    "publishedAt":  "2026-07-15T03:49:28.4757126+05:30"
 }
