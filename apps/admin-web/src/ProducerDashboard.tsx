@@ -30,6 +30,7 @@ import { CasterDeckPanel } from "./components/CasterDeckPanel";
 import { OverlayTestPanel } from "./components/OverlayTestPanel";
 import { OverlayLayoutControls } from "./components/OverlayLayoutControls";
 import { HighlightsPanel } from "./components/HighlightsPanel";
+import { HighlightsManagerPanel } from "./components/HighlightsManagerPanel";
 import { ErrBox } from "./components/Common";
 
 type TabId = "dashboard" | "match_obs" | "stats" | "roster" | "lower_thirds" | "replays" | "in_game_controller" | "testing" | "highlights";
@@ -316,6 +317,7 @@ export function ProducerDashboard() {
               {activeTab === "highlights" && (
                 <div className="grid gap-6 items-start">
                   <HighlightsPanel state={state} busy={busy} onPatch={patch} />
+                  <HighlightsManagerPanel origin={origin} token={token} />
                 </div>
               )}
             </motion.div>
@@ -422,9 +424,9 @@ function Sidebar({
 
   return (
     <aside className="w-64 border-r border-white/5 bg-slate-900/80 flex flex-col justify-between shrink-0 select-none">
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Logo and branding */}
-        <div className="px-6 py-8 flex items-center gap-3 border-b border-white/5">
+        <div className="px-6 py-8 flex items-center gap-3 border-b border-white/5 shrink-0">
           <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center font-black text-slate-950 text-xs tracking-tighter">
             BPC
           </div>
@@ -435,7 +437,7 @@ function Sidebar({
         </div>
 
         {/* Tab Navigation items */}
-        <nav className="p-4 space-y-1.5 flex-1 mt-4">
+        <nav className="p-4 space-y-1.5 flex-1 mt-2 overflow-y-auto">
           {tabs.map((tab) => {
             const active = activeTab === tab.id;
             return (

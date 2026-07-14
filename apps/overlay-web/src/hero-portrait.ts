@@ -164,7 +164,7 @@ export function resolveHeroPortraitSlug(
     const { slug } = resolveHeroSlug(
       {
         heroId,
-        heroClass: hints?.heroClass ?? undefined,
+        heroClass: hints?.heroClass ?? heroName ?? undefined,
         heroName: heroName ?? undefined,
       },
       index,

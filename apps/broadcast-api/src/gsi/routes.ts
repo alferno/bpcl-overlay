@@ -6,6 +6,7 @@ import { detectPowerSpikes } from "./power-spikes.js";
 import { detectFocusedPlayer } from "./live-player-card.js";
 import { ensureHeroRegistry } from "../services/hero-registry.js";
 import type { BroadcastFns } from "../routes.js";
+import { emitBountyStats, emitWisdomStats } from "../routes.js";
 import { logger } from "../logger.js";
 import { env } from "../env.js";
 import {
@@ -14,7 +15,7 @@ import {
   buildTournamentHeroCard,
 } from "../services/stats-builder.js";
 import type { OpenDotaClient } from "../opendota-client.js";
-import { findRosterPlayer, heroPortraitFieldsForHero } from "../services/hero-registry.js";
+import { findRosterPlayer, heroPortraitFieldsForHero, heroDisplayName } from "../services/hero-registry.js";
 import {
   manualPickSteam32,
   pickSlotOrderForHero,
@@ -133,16 +134,38 @@ async function detectAndApplySubstitutes(
     "[GSI] Substitute detected — updating pickPlayers from lobby",
   );
 
-  // Build the new pickPlayers directly from lobby positions
-  const newRadiant = lobbyPlayers.radiant.map((id, i) => {
-    if (id && id > 0) return id;
-    // Fall back to existing slot if lobby slot is empty
-    return existingRadiant[i] ?? null;
-  });
-  const newDire = lobbyPlayers.dire.map((id, i) => {
-    if (id && id > 0) return id;
-    return existingDire[i] ?? null;
-  });
+  // Smart swap logic to preserve Pos 1-5 overlay layout:
+  // 1. Clear slots for players who left the lobby.
+  // 2. Insert new players into the newly emptied (or already empty) slots.
+  const smartSwapTeam = (existing: (number | null)[], lobby: (number | null)[]) => {
+    const lobbySet = new Set(lobby.filter((id): id is number => id != null && id > 0));
+    const existingSet = new Set(existing.filter((id): id is number => id != null && id > 0));
+    
+    const leftIds = new Set(existing.filter((id): id is number => id != null && id > 0 && !lobbySet.has(id)));
+    const joinedIds = lobby.filter((id): id is number => id != null && id > 0 && !existingSet.has(id));
+
+    const result = [...existing];
+    
+    // Clear slots for players who left
+    for (let i = 0; i < result.length; i++) {
+      if (result[i] && leftIds.has(result[i]!)) {
+        result[i] = null;
+      }
+    }
+
+    // Insert new players into available slots
+    for (const newId of joinedIds) {
+      const emptyIndex = result.indexOf(null);
+      if (emptyIndex !== -1) {
+        result[emptyIndex] = newId;
+      }
+    }
+
+    return result;
+  };
+
+  const newRadiant = smartSwapTeam(existingRadiant, lobbyPlayers.radiant);
+  const newDire = smartSwapTeam(existingDire, lobbyPlayers.dire);
 
   // Log any new (substitute) players
   [...newRadiant, ...newDire].forEach((id) => {
@@ -202,6 +225,9 @@ let globalWisdomRadiantXp = 0;
 let globalWisdomDireCount = 0;
 let globalWisdomDireXp = 0;
 const globalPrevXp: Map<string, number> = new Map();
+
+let globalLastBountyCountForEmit = 0;
+let globalLastWisdomCountForEmit = 0;
 
 export function getWisdomStats() {
   return {
@@ -433,8 +459,16 @@ export function attachGsiRoutes(opts: {
 
       const overlayVisibilityPatch: Record<string, string> = {};
 
-      // Transition 1: Draft ➔ Versus (when picks/bans finish)
-      if (prevPhase !== "done" && newPhase === "done") {
+      // Transition 0: None ➔ Draft (when draft starts)
+      if (newGameState === "DOTA_GAMERULES_STATE_HERO_SELECTION" && prevGameState !== "DOTA_GAMERULES_STATE_HERO_SELECTION") {
+        overlayVisibilityPatch.draft = "visible";
+        overlayVisibilityPatch.versus = "hidden";
+        overlayVisibilityPatch.game = "hidden";
+        logger.info("[GSI Automation] Draft started, switching to Draft overlay");
+      }
+
+      // Transition 1: Draft ➔ Versus (when picks/bans finish and still in-game)
+      if (prevPhase !== "done" && newPhase === "done" && parsed.inDraft) {
         overlayVisibilityPatch.draft = "hidden";
         overlayVisibilityPatch.versus = "visible";
         logger.info("[GSI Automation] Draft done, switching to Versus overlay");
@@ -459,6 +493,17 @@ export function attachGsiRoutes(opts: {
             logger.error({ err: e }, "[GSI Automation] Failed to transition to game overlay");
           }
         }, 20000);
+      }
+
+      // Transition 3: Game ➔ Post-Game or Disconnect
+      if (
+        newGameState === "DOTA_GAMERULES_STATE_POST_GAME" ||
+        newGameState === "DOTA_GAMERULES_STATE_DISCONNECT"
+      ) {
+        if (current.overlayVisibility?.game === "visible") {
+          overlayVisibilityPatch.game = "hidden";
+          logger.info("[GSI Automation] Game ended/disconnected, hiding Game overlay");
+        }
       }
 
       if (Object.keys(overlayVisibilityPatch).length > 0) {
@@ -1013,10 +1058,12 @@ export function attachGsiRoutes(opts: {
               const standoutCard = {
                 playerLabel:
                   rosterPlayer?.displayName ??
+                  winner.personaname ??
                   `Player ${winner.accountId ?? "?"}`,
                 heroId: winner.heroId,
-                heroName: winner.heroName,
+                heroName: winner.heroId ? heroDisplayName(winner.heroId) : winner.heroName,
                 steam32: winner.accountId,
+                bpcId: rosterPlayer?.bpcId,
                 ...portraitFields,
                 xpm: winner.raw.xpm,
                 gpm: winner.raw.gpm,
@@ -1134,6 +1181,18 @@ export function attachGsiRoutes(opts: {
     gsiDebounce = setTimeout(() => {
       void apply().catch((err) => logger.error(err, "gsi apply failed"));
     }, 150);
+
+    const currentBountyCount = globalBountyRadiantCount + globalBountyDireCount;
+    if (currentBountyCount !== globalLastBountyCountForEmit) {
+      globalLastBountyCountForEmit = currentBountyCount;
+      emitBountyStats(io, state).catch(e => logger.error(e, "failed to emit bounty stats"));
+    }
+
+    const currentWisdomCount = globalWisdomRadiantCount + globalWisdomDireCount;
+    if (currentWisdomCount !== globalLastWisdomCountForEmit) {
+      globalLastWisdomCountForEmit = currentWisdomCount;
+      emitWisdomStats(io, state).catch(e => logger.error(e, "failed to emit wisdom stats"));
+    }
 
     res.json({ ok: true, inDraft: parsed.inDraft });
   });

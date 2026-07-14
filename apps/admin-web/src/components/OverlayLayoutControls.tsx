@@ -2,6 +2,7 @@ import { type OverlayEnvelope } from "@bpc/shared-types";
 import { useState, useEffect } from "react";
 import { VisToggle, stringifyMode } from "./Common";
 import { routeVisible } from "../visibility";
+import { SponsorWidgetControls } from "./SponsorWidgetControls";
 
 function LayoutInput({ value, placeholder, onUpdate, step }: { value: any; placeholder: string; onUpdate: (val: string) => void; step?: string }) {
   const [local, setLocal] = useState(value ?? "");
@@ -177,6 +178,9 @@ export function OverlayLayoutControls({ state, busy, onPatch }: Props) {
           </div>
           {renderControls("Layout Overrides", "minimapIcons")}
         </div>
+
+        {/* Sponsor Widget Group */}
+        <SponsorWidgetControls state={state} onPatch={onPatch} />
       </div>
     </div>
   );

@@ -4,11 +4,7 @@ import path from "node:path";
 import type { RosterPlayer } from "@bpc/shared-types";
 import { normalizeTeamColorHex } from "./roster-parser.js";
 import { logger } from "../logger.js";
-
-// ---- Active season slug cache (refreshed on each sync call) ------------
-let _activeSeasonSlugCache: string | null = null;
-let _activeSeasonSlugFetchedAt = 0;
-const SLUG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+import { fetchCachedJson } from "./bpcleague-cache.js";
 
 /**
  * Fetches the active season slug from the bpcleague.in API.
@@ -16,18 +12,12 @@ const SLUG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
  * Result is cached for 5 minutes to avoid redundant calls during a session.
  */
 export async function fetchActiveSeasonSlug(): Promise<string> {
-  const now = Date.now();
-  if (_activeSeasonSlugCache && now - _activeSeasonSlugFetchedAt < SLUG_CACHE_TTL_MS) {
-    return _activeSeasonSlugCache;
-  }
   try {
-    const payload = await fetchUrlJson("https://api.bpcleague.in/api/public/seasons");
+    const payload = await fetchCachedJson<any>("https://api.bpcleague.in/api/public/seasons", 5 * 60 * 1000);
     const seasons: Array<{ slug: string; name: string; isActive?: boolean }> =
       payload.seasons || payload || [];
     const active = seasons.find((s) => s.isActive);
     const slug = active?.slug ?? "season-2";
-    _activeSeasonSlugCache = slug;
-    _activeSeasonSlugFetchedAt = now;
     logger.info({ slug }, "[BPCLeague] Active season slug resolved");
     return slug;
   } catch (err) {
@@ -145,25 +135,7 @@ export async function extractSteam32FromUrl(steamProfileUrl: string, steamApiKey
   return null;
 }
 
-function fetchUrlJson(url: string): Promise<any> {
-  return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
-      if (res.statusCode !== 200) {
-        reject(new Error(`BPC League API returned HTTP ${res.statusCode} for ${url}`));
-        return;
-      }
-      let data = "";
-      res.on("data", (chunk) => { data += chunk; });
-      res.on("end", () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (err) {
-          reject(err);
-        }
-      });
-    }).on("error", reject);
-  });
-}
+
 
 export async function fetchRosterFromBpcLeague(opts: {
   seasonSlug?: string;
@@ -178,10 +150,10 @@ export async function fetchRosterFromBpcLeague(opts: {
 
   try {
     if (slug === "latest" || slug === "active") {
-      const payload = await fetchUrlJson("https://api.bpcleague.in/api/public/tournament");
+      const payload = await fetchCachedJson<any>("https://api.bpcleague.in/api/public/tournament", 15 * 60 * 1000);
       rawTeams = payload.teams || [];
     } else {
-      const payload = await fetchUrlJson(`https://api.bpcleague.in/api/public/seasons/${slug}`);
+      const payload = await fetchCachedJson<any>(`https://api.bpcleague.in/api/public/seasons/${slug}`, 15 * 60 * 1000);
       if (payload.tournament && payload.tournament.teams) {
         rawTeams = payload.tournament.teams;
       }
@@ -258,9 +230,9 @@ export async function fetchMatchesFromBpcLeague(seasonSlug?: string): Promise<Bp
   try {
     let payload;
     if (slug === "latest" || slug === "active") {
-      payload = await fetchUrlJson("https://api.bpcleague.in/api/public/tournament");
+      payload = await fetchCachedJson<any>("https://api.bpcleague.in/api/public/tournament", 2 * 60 * 1000);
     } else {
-      payload = await fetchUrlJson(`https://api.bpcleague.in/api/public/seasons/${slug}`);
+      payload = await fetchCachedJson<any>(`https://api.bpcleague.in/api/public/seasons/${slug}`, 2 * 60 * 1000);
     }
 
     let rawMatches: any[] = [];
@@ -296,7 +268,7 @@ export type BpcSeason = {
 export async function fetchSeasonsFromBpcLeague(): Promise<BpcSeason[]> {
   logger.info("Fetching seasons list from bpcleague.in");
   try {
-    const payload = await fetchUrlJson("https://api.bpcleague.in/api/public/seasons");
+    const payload = await fetchCachedJson<any>("https://api.bpcleague.in/api/public/seasons", 15 * 60 * 1000);
     const rawSeasons = payload.seasons || [];
     return rawSeasons.map((s: any) => ({
       slug: s.slug,
@@ -318,9 +290,9 @@ export async function fetchSeasonConfigFromBpcLeague(seasonSlug?: string): Promi
   try {
     let payload;
     if (slug === "latest" || slug === "active") {
-      payload = await fetchUrlJson("https://api.bpcleague.in/api/public/tournament");
+      payload = await fetchCachedJson<any>("https://api.bpcleague.in/api/public/tournament", 15 * 60 * 1000);
     } else {
-      payload = await fetchUrlJson(`https://api.bpcleague.in/api/public/seasons/${slug}`);
+      payload = await fetchCachedJson<any>(`https://api.bpcleague.in/api/public/seasons/${slug}`, 15 * 60 * 1000);
     }
     return payload.season || payload.tournament || null;
   } catch (err) {
@@ -331,33 +303,24 @@ export async function fetchSeasonConfigFromBpcLeague(seasonSlug?: string): Promi
 
 
 // ── Community player lookup (for substitute detection) ─────────────────────
-let _communityPlayersCache: Array<{ bpcId: string; displayName: string; slug: string; avatarUrl?: string }> | null = null;
-let _communityPlayersFetchedAt = 0;
-const COMMUNITY_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 /**
  * Fetches all community players from bpcleague.in and caches for 10 minutes.
  * Used to look up substitute players who aren't in the main roster.
  */
 export async function fetchCommunityPlayers(): Promise<Array<{ bpcId: string; displayName: string; slug: string; avatarUrl?: string }>> {
-  const now = Date.now();
-  if (_communityPlayersCache && now - _communityPlayersFetchedAt < COMMUNITY_CACHE_TTL_MS) {
-    return _communityPlayersCache;
-  }
   try {
-    const payload = await fetchUrlJson("https://api.bpcleague.in/api/public/community");
+    const payload = await fetchCachedJson<any>("https://api.bpcleague.in/api/public/community", 10 * 60 * 1000);
     const players = (payload.players || []).map((p: any) => ({
       bpcId: p.bpcId || "",
       displayName: p.displayName || "",
       slug: p.slug || "",
       avatarUrl: p.avatarUrl || p.card?.avatarUrl || undefined,
     }));
-    _communityPlayersCache = players;
-    _communityPlayersFetchedAt = now;
     logger.info({ count: players.length }, "[Community] Fetched community player list");
     return players;
   } catch (err) {
     logger.warn({ err }, "[Community] Failed to fetch community players");
-    return _communityPlayersCache || [];
+    return [];
   }
 }

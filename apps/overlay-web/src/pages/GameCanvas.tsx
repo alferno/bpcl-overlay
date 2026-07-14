@@ -9,6 +9,7 @@ import { LiveStatsHud } from "../components/LiveStatsHud";
 import { RoshanKillAlert } from "../components/RoshanKillAlert";
 import { BountyRuneCard } from "../components/BountyRuneCard";
 import { WisdomRuneCard } from "../components/WisdomRuneCard";
+import { SponsorFlipWidget } from "../components/SponsorFlipWidget";
 
 
 export default function GameCanvas() {
@@ -16,11 +17,14 @@ export default function GameCanvas() {
   /** Game route clean feed — optional subtle branding when visible */
   const visible = routeVisible("game", state);
   const showRankMedals = routeVisible("rankmedals", state);
+  const showSponsorWidget = routeVisible("sponsorWidget" as any, state);
+  const sponsorCfg = state.production?.sponsorWidget;
 
   return (
     <HudCanvas blend>
 
       {showRankMedals && <RankMedalsHUD />}
+      {showSponsorWidget && <SponsorFlipWidget {...sponsorCfg} />}
       <H2HMatchupGraphic />
       <LivePlayerCard />
       <PowerSpikeAlert />

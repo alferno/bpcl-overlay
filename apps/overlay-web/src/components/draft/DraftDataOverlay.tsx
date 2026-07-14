@@ -37,8 +37,8 @@ function DraftStatsView({
   const radiantKey = matchSetup?.radiantTeamKey;
   const direKey = matchSetup?.direTeamKey;
 
-  const radiantRaw = roster.filter((p) => p.teamKey === radiantKey);
-  const direRaw = roster.filter((p) => p.teamKey === direKey);
+  const radiantRaw = radiantKey ? roster.filter((p) => p.teamKey === radiantKey) : [];
+  const direRaw = direKey ? roster.filter((p) => p.teamKey === direKey) : [];
 
   const getOrderedPlayers = (raw: typeof roster, pickPlayers?: number[]) => {
     return Array.from({ length: 5 })

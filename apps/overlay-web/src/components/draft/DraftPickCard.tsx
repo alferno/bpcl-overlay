@@ -152,9 +152,10 @@ export function DraftPickCard({
                 animatedUrl={media.animated}
                 heroSlug={media.slug}
                 alt={slot.heroName ?? "hero"}
-                animate={animate && draftHeroAnimationEnabled()}
+                animate={false}
+                staticOnly={true}
                 variant="slot"
-                webmFirst={webmFirst}
+                webmFirst={false}
                 glowColor={colorAlpha(accent, 0.32)}
               />
               <div className="draft-hero-card-vignette pointer-events-none absolute inset-0 z-[3]" />

@@ -258,10 +258,16 @@ export default function VersusPage() {
                          
   const flipToHero = isStrategyTimeAndReady || isPostStrategy;
 
-  // Helper to map player to hero pick via steam32
-  const getHeroInfo = (steam32: number, side: "radiant" | "dire") => {
+  // Helper to map player to hero pick via steam32 or fallback to positional index
+  const getHeroInfo = (steam32: number, index: number, side: "radiant" | "dire") => {
     const draftPicks = side === "radiant" ? radiantPicks : direPicks;
-    return draftPicks.find(s => s.steam32 === steam32) || null;
+    // 1. Try to match by steam32 (if admin assigned them in matchSetup)
+    let match = draftPicks.find(s => s.steam32 === steam32);
+    // 2. Fallback: just use the index if there's enough picks
+    if (!match && draftPicks[index]) {
+      match = draftPicks[index];
+    }
+    return match || null;
   };
 
   return (
@@ -323,7 +329,7 @@ export default function VersusPage() {
                       index={i}
                       isDire={false}
                       flipToHero={flipToHero}
-                      heroInfo={getHeroInfo(p.steam32, "radiant")}
+                      heroInfo={getHeroInfo(p.steam32, i, "radiant")}
                     />
                   ))}
                 </div>
@@ -339,7 +345,7 @@ export default function VersusPage() {
                       index={i + 3}
                       isDire={false}
                       flipToHero={flipToHero}
-                      heroInfo={getHeroInfo(p.steam32, "radiant")}
+                      heroInfo={getHeroInfo(p.steam32, i + 3, "radiant")}
                     />
                   ))}
                 </div>
@@ -401,7 +407,7 @@ export default function VersusPage() {
                       index={i}
                       isDire={true}
                       flipToHero={flipToHero}
-                      heroInfo={getHeroInfo(p.steam32, "dire")}
+                      heroInfo={getHeroInfo(p.steam32, i, "dire")}
                     />
                   ))}
                 </div>
@@ -417,7 +423,7 @@ export default function VersusPage() {
                       index={i + 3}
                       isDire={true}
                       flipToHero={flipToHero}
-                      heroInfo={getHeroInfo(p.steam32, "dire")}
+                      heroInfo={getHeroInfo(p.steam32, i + 3, "dire")}
                     />
                   ))}
                 </div>

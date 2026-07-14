@@ -81,9 +81,13 @@ export function getHeroMeta(heroId: number): HeroMeta | undefined {
 
 export function resolveHeroPortraitSlugForHero(
   heroId: number,
-  heroName?: string,
+  heroNameOrClass?: string,
 ): string | undefined {
-  const resolved = resolveHeroSlugForDraft({ heroId, heroName });
+  const resolved = resolveHeroSlugForDraft({ 
+    heroId, 
+    heroName: heroNameOrClass,
+    heroClass: heroNameOrClass
+  });
   if (resolved.slug) return resolved.slug;
   const meta = heroById.get(heroId);
   if (!meta) return undefined;
@@ -93,10 +97,10 @@ export function resolveHeroPortraitSlugForHero(
 /** Canonical slug + local `/heroes/portraits/{slug}.png` for overlay stats. */
 export function heroPortraitFieldsForHero(
   heroId: number,
-  heroName?: string,
+  heroNameOrClass?: string,
 ): HeroPortraitFields {
   return heroPortraitFieldsFromSlug(
-    resolveHeroPortraitSlugForHero(heroId, heroName),
+    resolveHeroPortraitSlugForHero(heroId, heroNameOrClass),
   );
 }
 

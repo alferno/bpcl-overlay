@@ -61,7 +61,7 @@ export function LivePlayerCard() {
   const cardX = cardLayout?.x ?? 0;
   const cardY = cardLayout?.y ?? 0;
   const cardScale = cardLayout?.scale ?? 1;
-  const useInwardCut = cardLayout?.inwardCut !== false;
+  const useInwardCut = cardLayout?.inwardCut === true;
 
   return (
     <FadePanel
@@ -245,21 +245,13 @@ export function LivePlayerCard() {
           className="absolute left-[264px] top-[765px] z-20 pointer-events-none origin-bottom-left transition-all duration-300"
           style={{ transform: `translate(${cardX}px, ${cardY}px) scale(${cardScale})` }}
         >
-          {/* Player Label */}
-          {card?.playerLabel && (
-            <div className="absolute left-[15px] top-[0px] w-[280px] bg-transparent rounded px-3 py-1 z-30 flex items-center justify-center">
-              <span className="text-white font-bold text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase tracking-wider truncate w-full text-center">
-                {card.playerLabel}
-              </span>
-            </div>
-          )}
 
           {/* Player Card Main Body */}
           <div 
             className="absolute left-[0px] top-[41px] w-[310px] h-[274px] flex flex-col items-center justify-end z-20 transition-all duration-300"
             style={{ 
               clipPath: (() => {
-                if (!useInwardCut) return "polygon(0 0, 100% 0, 100% 43%, 100% 43%, 100% 83%, 100% 84.1%, 100% 87.3%, 100% 91.5%, 100% 95.8%, 100% 98.9%, 100% 100%, 0 100%)";
+                if (!useInwardCut) return undefined;
                 const clampedAbilityCount = Math.min(card?.abilityCount ?? 4, 6);
                 if (card?.heroId === 74) {
                   return "polygon(0 0, 100% 0, 100% 43%, 74% 43%, 74% 83%, 65.5% 84.1%, 61.5% 87.3%, 60% 91.5%, 61.5% 95.8%, 65.5% 98.9%, 74% 100%, 0 100%)";
@@ -276,7 +268,7 @@ export function LivePlayerCard() {
           >
             {card ? (
               card.bpcId ? (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-[14px] overflow-hidden">
                   <CachedIframe
                     bpcId={card.bpcId}
                     style={{
@@ -284,7 +276,8 @@ export function LivePlayerCard() {
                       height: "360px",
                       border: "none",
                       transform: "scale(0.7611)",
-                      transformOrigin: "center center"
+                      transformOrigin: "center center",
+                      borderRadius: "18px" // slightly larger radius inside the scale
                     }}
                   />
                 </div>

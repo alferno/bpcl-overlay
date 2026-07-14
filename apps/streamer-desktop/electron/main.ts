@@ -1,9 +1,10 @@
 import { app, BrowserWindow, ipcMain, dialog, clipboard, shell } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawn, type ChildProcess } from 'node:child_process'
+import { spawn, execSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import os from 'node:os'
+import fs from 'node:fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 process.env.APP_ROOT = path.join(__dirname, '..')
@@ -86,6 +87,9 @@ async function createWindow() {
     },
   })
 
+  // Clear cache to prevent streamers from being stuck on old versions
+  await win.webContents.session.clearCache()
+
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
@@ -136,6 +140,14 @@ app.whenReady().then(async () => {
     win?.webContents.send('log', 'Broadcast API started successfully on port 8080')
   } catch (err) {
     win?.webContents.send('log', 'Error starting API: ' + err)
+  }
+
+  // Auto-install Dota 2 GSI
+  try {
+    installDotaGSI()
+    win?.webContents.send('log', 'Checked/Installed Dota 2 GSI config.')
+  } catch (err) {
+    win?.webContents.send('log', 'Failed to install Dota 2 GSI: ' + err)
   }
 
   // Start Cloudflare Tunnel
@@ -201,3 +213,72 @@ ipcMain.handle('obs-connect', async (_, host, port, password) => {
     return { ok: false, error: String(err) }
   }
 })
+
+// ── Auto-Installer for Dota 2 Gamestate Integration ─────────
+function installDotaGSI() {
+  const CFG_CONTENT = `"dota2-gsi Configuration"
+{
+    "uri"               "http://localhost:8080/gsi"
+    "timeout"           "5.0"
+    "buffer"            "0.1"
+    "throttle"          "0.1"
+    "heartbeat"         "30.0"
+    "data"
+    {
+        "buildings"     "1"
+        "provider"      "1"
+        "map"           "1"
+        "player"        "1"
+        "hero"          "1"
+        "abilities"     "1"
+        "items"         "1"
+        "draft"         "1"
+        "wearables"     "1"
+    }
+}
+`;
+
+  try {
+    const regOutput = execSync('reg query HKCU\\Software\\Valve\\Steam /v SteamPath').toString();
+    const match = regOutput.match(/SteamPath\s+REG_SZ\s+(.+)/i);
+    if (!match) return;
+
+    const steamPath = match[1].trim();
+    const libraries: string[] = [steamPath];
+
+    const vdfPath = path.join(steamPath, 'steamapps', 'libraryfolders.vdf');
+    if (fs.existsSync(vdfPath)) {
+      const vdfContent = fs.readFileSync(vdfPath, 'utf8');
+      const pathRegex = /"path"\s+"([^"]+)"/g;
+      let m;
+      while ((m = pathRegex.exec(vdfContent)) !== null) {
+        let libPath = m[1].replace(/\\\\/g, '\\');
+        if (!libraries.includes(libPath)) {
+          libraries.push(libPath);
+        }
+      }
+    }
+
+    let dotaPath: string | null = null;
+    for (const lib of libraries) {
+      const p = path.join(lib, 'steamapps', 'common', 'dota 2 beta');
+      if (fs.existsSync(p)) {
+        dotaPath = p;
+        break;
+      }
+    }
+
+    if (!dotaPath) return;
+
+    const cfgDir = path.join(dotaPath, 'game', 'dota', 'cfg', 'gamestate_integration');
+    if (!fs.existsSync(cfgDir)) {
+      fs.mkdirSync(cfgDir, { recursive: true });
+    }
+    
+    const cfgPath = path.join(cfgDir, 'gamestate_integration_bpcl.cfg');
+    // Overwrite to guarantee URI is correct
+    fs.writeFileSync(cfgPath, CFG_CONTENT, 'utf8');
+  } catch (err) {
+    console.error('Failed to auto-install Dota 2 GSI:', err);
+  }
+}

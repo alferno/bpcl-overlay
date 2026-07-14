@@ -30,6 +30,7 @@ import {
   ensureHeroRegistry,
   heroPortraitFieldsForHero,
   findRosterPlayer,
+  heroDisplayName,
 } from "./services/hero-registry.js";
 import { getBountyStats } from "./gsi/routes.js";
 import { leagueTitleFromSlug } from "@bpc/shared-types";
@@ -642,7 +643,7 @@ export function attachRestRoutes(opts: {
     const standoutCard = {
       playerLabel: rosterPlayer?.displayName ?? winner.personaname ?? `Player ${winner.accountId ?? "?"}`,
       heroId:      winner.heroId,
-      heroName:    winner.heroName,
+      heroName:    winner.heroId ? heroDisplayName(winner.heroId) : winner.heroName,
       steam32:     winner.accountId,
       bpcId:       rosterPlayer?.bpcId,
       ...portraitFields,
@@ -746,41 +747,7 @@ export function attachRestRoutes(opts: {
    * to the overlay namespace so the BountyRuneCard component can display it.
    */
   app.post("/api/gsi/bounty-snapshot", requireBroadcastAuth, async (_req, res) => {
-    const snap = await state.getState();
-    const bounty = getBountyStats();
-
-    const draft = snap.draft;
-    const matchSetup = snap.leagueConfig?.matchSetup;
-    const seasonSlug = snap.leagueConfig?.seasonSlug;
-
-    const radiantName =
-      draft?.radiant?.name ??
-      matchSetup?.radiantTeamKey ??
-      "Radiant";
-    const direName =
-      draft?.dire?.name ??
-      matchSetup?.direTeamKey ??
-      "Dire";
-
-    const leagueTitle = leagueTitleFromSlug(seasonSlug);
-
-    const payload = {
-      leagueTitle,
-      radiant: {
-        name: radiantName,
-        count: bounty.radiant.count,
-        gold:  bounty.radiant.gold,
-      },
-      dire: {
-        name: direName,
-        count: bounty.dire.count,
-        gold:  bounty.dire.gold,
-      },
-    };
-
-    io.of(NAMESPACES.OVERLAY).emit("BOUNTY_STATS", payload);
-    logger.info(payload, "[bounty] BOUNTY_STATS emitted to overlay");
-
+    const payload = await emitBountyStats(io, state);
     res.json({ ok: true, ...payload });
   });
 
@@ -790,42 +757,55 @@ export function attachRestRoutes(opts: {
    * resolves team names, and emits WISDOM_STATS to the overlay namespace.
    */
   app.post("/api/gsi/wisdom-snapshot", requireBroadcastAuth, async (_req, res) => {
-    const snap = await state.getState();
-    const { getWisdomStats } = await import("./gsi/routes.js");
-    const wisdom = getWisdomStats();
-
-    const draft = snap.draft;
-    const matchSetup = snap.leagueConfig?.matchSetup;
-    const seasonSlug = snap.leagueConfig?.seasonSlug;
-
-    const radiantName =
-      draft?.radiant?.name ??
-      matchSetup?.radiantTeamKey ??
-      "Radiant";
-    const direName =
-      draft?.dire?.name ??
-      matchSetup?.direTeamKey ??
-      "Dire";
-
-    const leagueTitle = leagueTitleFromSlug(seasonSlug);
-
-    const payload = {
-      leagueTitle,
-      radiant: {
-        name: radiantName,
-        count: wisdom.radiant.count,
-        xp:    wisdom.radiant.xp,
-      },
-      dire: {
-        name: direName,
-        count: wisdom.dire.count,
-        xp:    wisdom.dire.xp,
-      },
-    };
-
-    io.of(NAMESPACES.OVERLAY).emit("WISDOM_STATS", payload);
-    logger.info(payload, "[wisdom] WISDOM_STATS emitted to overlay");
-
+    const payload = await emitWisdomStats(io, state);
     res.json({ ok: true, ...payload });
   });
+}
+
+export async function emitBountyStats(io: IOServer, state: StateManager) {
+  const snap = await state.getState();
+  const { getBountyStats } = await import("./gsi/routes.js");
+  const bounty = getBountyStats();
+
+  const draft = snap.draft;
+  const matchSetup = snap.leagueConfig?.matchSetup;
+  const seasonSlug = snap.leagueConfig?.seasonSlug;
+
+  const radiantName = draft?.radiant?.name ?? matchSetup?.radiantTeamKey ?? "Radiant";
+  const direName = draft?.dire?.name ?? matchSetup?.direTeamKey ?? "Dire";
+  const leagueTitle = leagueTitleFromSlug(seasonSlug);
+
+  const payload = {
+    leagueTitle,
+    radiant: { name: radiantName, count: bounty.radiant.count, gold: bounty.radiant.gold },
+    dire: { name: direName, count: bounty.dire.count, gold: bounty.dire.gold },
+  };
+
+  io.of(NAMESPACES.OVERLAY).emit("BOUNTY_STATS", payload);
+  logger.info(payload, "[bounty] BOUNTY_STATS emitted to overlay");
+  return payload;
+}
+
+export async function emitWisdomStats(io: IOServer, state: StateManager) {
+  const snap = await state.getState();
+  const { getWisdomStats } = await import("./gsi/routes.js");
+  const wisdom = getWisdomStats();
+
+  const draft = snap.draft;
+  const matchSetup = snap.leagueConfig?.matchSetup;
+  const seasonSlug = snap.leagueConfig?.seasonSlug;
+
+  const radiantName = draft?.radiant?.name ?? matchSetup?.radiantTeamKey ?? "Radiant";
+  const direName = draft?.dire?.name ?? matchSetup?.direTeamKey ?? "Dire";
+  const leagueTitle = leagueTitleFromSlug(seasonSlug);
+
+  const payload = {
+    leagueTitle,
+    radiant: { name: radiantName, count: wisdom.radiant.count, xp: wisdom.radiant.xp },
+    dire: { name: direName, count: wisdom.dire.count, xp: wisdom.dire.xp },
+  };
+
+  io.of(NAMESPACES.OVERLAY).emit("WISDOM_STATS", payload);
+  logger.info(payload, "[wisdom] WISDOM_STATS emitted to overlay");
+  return payload;
 }

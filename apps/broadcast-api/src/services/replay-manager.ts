@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
+import ffmpegStatic from "ffmpeg-static";
+import ffprobeStatic from "ffprobe-static";
 import { env } from "../env.js";
 import type { Replay, ReplayState } from "@bpc/shared-types";
 import { logger } from "../logger.js";
@@ -39,6 +41,31 @@ export class ReplayManager {
 
   getPreviewCacheDir(): string {
     return this.previewCacheDir;
+  }
+
+  async getHighlights(): Promise<{ file: string; filename: string; url: string; sizeBytes: number; createdAt: number }[]> {
+    try {
+      if (!fs.existsSync(this.highlightsDir)) {
+        return [];
+      }
+      const files = fs.readdirSync(this.highlightsDir).filter(f => f.endsWith('.mp4'));
+      const highlights = files.map(f => {
+        const p = path.join(this.highlightsDir, f);
+        const stat = fs.statSync(p);
+        return {
+          file: p,
+          filename: f,
+          url: `/api/highlights/media/${encodeURIComponent(f)}`,
+          sizeBytes: stat.size,
+          createdAt: stat.birthtimeMs,
+        };
+      });
+      highlights.sort((a, b) => b.createdAt - a.createdAt);
+      return highlights;
+    } catch (err) {
+      logger.error(err, "Failed to list highlights");
+      return [];
+    }
   }
 
   init(obs: OBSController) {
@@ -273,7 +300,7 @@ export class ReplayManager {
       const duration = entry ? entry.duration : 30;
       
       // Probe actual duration of the file
-      const probeCmd = `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}"`;
+      const probeCmd = `"${ffprobeStatic.path}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}"`;
       const probeOut = await execAsync(probeCmd);
       const actualDuration = parseFloat(probeOut.stdout.trim()) || 40;
       
@@ -289,7 +316,7 @@ export class ReplayManager {
         }
         playbackFile = path.join(this.playbackDir, "current_replay.mp4");
         
-        const ffmpegCmd = `ffmpeg -y -ss ${offset} -i "${file}" -t ${duration} -c copy "${playbackFile}"`;
+        const ffmpegCmd = `"${ffmpegStatic}" -y -ss ${offset} -i "${file}" -t ${duration} -c copy "${playbackFile}"`;
         logger.info({ cmd: ffmpegCmd }, "Running ffmpeg slice command");
         await execAsync(ffmpegCmd);
       }
@@ -391,7 +418,7 @@ export class ReplayManager {
       
       const outputFile = path.join(this.highlightsDir, slug ? `${slug}.mp4` : `Match_${matchId}_Highlights.mp4`);
       
-      const cmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" -c copy "${outputFile}"`;
+      const cmd = `"${ffmpegStatic}" -y -f concat -safe 0 -i "${concatFile}" -c copy "${outputFile}"`;
       logger.info({ cmd }, "Generating highlights");
       
       await execAsync(cmd);

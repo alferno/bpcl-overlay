@@ -117,6 +117,23 @@ export function RosterSyncPanel({
             >
               {busy ? "syncing…" : "sync roster"}
             </Btn>
+            <Btn
+              variant="ghost"
+              disabled={busy}
+              onClick={async () => {
+                await post("/api/cache/clear");
+                const data = await post("/api/roster/sync-bpcleague", { seasonSlug });
+                if (data && typeof data === "object") {
+                  void post("/api/league/stats/resolve").then((resData) => {
+                    if (resData && typeof resData === "object") {
+                      setResolveReport(resData as typeof resolveReport);
+                    }
+                  });
+                }
+              }}
+            >
+              Force Refresh API
+            </Btn>
           </div>
           <div className="border-t border-cyan-500/10 pt-3">
             <h5 className="text-[10px] uppercase font-bold text-slate-500">Auto-Enrichment</h5>

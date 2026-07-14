@@ -27,6 +27,9 @@ export const OVERLAY_ROUTES = [
   "rankmedals",
   "standoutplayer",
   "highlights",
+  "sponsorWidget",
+  "kdaCard",
+  "minimapIcons",
   "global_kill_switch",
 ] as const;
 
@@ -228,6 +231,34 @@ export const overlayLayoutSchema = z.object({
 
 export type OverlayLayout = z.infer<typeof overlayLayoutSchema>;
 
+export const sponsorFlipWidgetSchema = z.object({
+  sponsors: z.array(z.string()).optional(),
+  width: z.union([z.string(), z.number()]).optional(),
+  height: z.union([z.string(), z.number()]).optional(),
+  fontFamily: z.string().optional(),
+  fontSize: z.union([z.string(), z.number()]).optional(),
+  fontWeight: z.union([z.string(), z.number()]).optional(),
+  textColor: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  borderRadius: z.union([z.string(), z.number()]).optional(),
+  borderWidth: z.union([z.string(), z.number()]).optional(),
+  borderColor: z.string().optional(),
+  perspective: z.union([z.string(), z.number()]).optional(),
+  flipDuration: z.number().optional(),
+  holdDuration: z.number().optional(),
+  motionBlurIntensity: z.number().optional(),
+  x: z.union([z.string(), z.number()]).optional(),
+  y: z.union([z.string(), z.number()]).optional(),
+  anchor: z.enum(["top-left", "top-right", "bottom-left", "bottom-right", "center"]).optional(),
+  opacity: z.number().optional(),
+  scale: z.number().optional(),
+  zIndex: z.number().optional(),
+  padding: z.union([z.string(), z.number()]).optional(),
+  letterSpacing: z.union([z.string(), z.number()]).optional(),
+});
+
+export type SponsorFlipWidgetConfig = z.infer<typeof sponsorFlipWidgetSchema>;
+
 export const productionSettingsSchema = z.object({
   gsiManualOverride: z.boolean().default(false),
   autoShowStatsOnPick: z.boolean().default(false),
@@ -242,6 +273,7 @@ export const productionSettingsSchema = z.object({
     livePlayerCard: overlayLayoutSchema.optional(),
     kdaCard: overlayLayoutSchema.optional(),
   }).optional(),
+  sponsorWidget: sponsorFlipWidgetSchema.optional(),
 });
 
 export type ProductionSettings = z.infer<typeof productionSettingsSchema>;

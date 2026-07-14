@@ -2,6 +2,7 @@ import { logger } from "../logger.js";
 import { batchResolveSteam32 } from "./steam32-resolver.js";
 import type { RosterPlayer } from "@bpc/shared-types";
 import { fetchActiveSeasonSlug } from "./bpcleague-sync.js";
+import { fetchCachedJson } from "./bpcleague-cache.js";
 
 const BPCL_BASE = "https://api.bpcleague.in/api/public";
 
@@ -84,15 +85,7 @@ export interface LiveMatch {
 
 // ---- Client -------------------------------------------------------
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, {
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) {
-    throw new Error(`BPCLeague API error ${res.status} for ${url}`);
-  }
-  return res.json() as Promise<T>;
-}
+// fetchCachedJson handles HTTP requests and disk caching
 
 /**
  * Fetch and resolve all teams + players from the given season slug.
@@ -104,8 +97,8 @@ export async function fetchSyncedTeams(
   logger.info({ seasonSlug }, "[BPCLeague] Fetching season data");
 
   const [seasonData, communityData] = await Promise.all([
-    fetchJson<BpclSeasonResponse>(`${BPCL_BASE}/seasons/${seasonSlug}`),
-    fetchJson<{ players?: CommunityMember[] }>(`${BPCL_BASE}/community`).catch(
+    fetchCachedJson<BpclSeasonResponse>(`${BPCL_BASE}/seasons/${seasonSlug}`, 15 * 60 * 1000),
+    fetchCachedJson<{ players?: CommunityMember[] }>(`${BPCL_BASE}/community`, 30 * 60 * 1000).catch(
       () => ({ players: [] })
     ),
   ]);
@@ -195,8 +188,8 @@ export async function fetchLiveMatches(): Promise<LiveMatch[]> {
   const activeSlug = await fetchActiveSeasonSlug();
 
   const [tournamentData, seasonData] = await Promise.all([
-    fetchJson<BpclTournamentResponse>(`${BPCL_BASE}/tournament`),
-    fetchJson<BpclSeasonResponse>(`${BPCL_BASE}/seasons/${activeSlug}`).catch(() => null),
+    fetchCachedJson<BpclTournamentResponse>(`${BPCL_BASE}/tournament`, 2 * 60 * 1000),
+    fetchCachedJson<BpclSeasonResponse>(`${BPCL_BASE}/seasons/${activeSlug}`, 15 * 60 * 1000).catch(() => null),
   ]);
 
   const rawMatches: BpclMatch[] =
