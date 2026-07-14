@@ -1,7 +1,7 @@
 {
-    "version":  "1.1.5",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.5/BPCL-Streamer-v1.1.5-Update.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.5/BPCL-Streamer-v1.1.5-Update.zip",
-    "notes":  "Fix",
-    "publishedAt":  "2026-07-15T04:22:06.7098642+05:30"
+    "version":  "1.1.6",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.6/BPCL-Streamer-v1.1.6-Update.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.6/BPCL-Streamer-v1.1.6-Update.zip",
+    "notes":  "Fixed ESM __dirname crash and bundled ffmpeg correctly",
+    "publishedAt":  "2026-07-15T04:47:00.5532498+05:30"
 }
