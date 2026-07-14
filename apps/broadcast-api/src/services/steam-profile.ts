@@ -22,17 +22,48 @@ export async function fetchSteamAvatarUrl(
   const cached = avatarCache.get(steam32);
   if (cached) return cached;
 
-  const res = await client.playerProfile(steam32);
-  if (!res.ok || !res.data) return undefined;
+  let url: string | undefined = undefined;
 
-  const body = res.data as OpenDotaPlayerProfile;
-  const url =
-    body.profile?.avatarfull ??
-    body.avatarfull ??
-    body.profile?.avatarmedium ??
-    body.avatarmedium ??
-    body.profile?.avatar ??
-    body.avatar;
+  // Primary: Use official Steam API if we have the key (much more reliable than OpenDota)
+  const apiKey = process.env.STEAM_WEB_API_KEY;
+  if (apiKey) {
+    try {
+      const steam64 = BigInt(steam32) + BigInt("76561197960265728");
+      const https = await import("node:https");
+      url = await new Promise<string | undefined>((resolve) => {
+        https.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${steam64}`, (res) => {
+          let data = "";
+          res.on("data", chunk => data += chunk);
+          res.on("end", () => {
+            try {
+              const parsed = JSON.parse(data);
+              const avatar = parsed.response?.players?.[0]?.avatarfull;
+              resolve(avatar);
+            } catch {
+              resolve(undefined);
+            }
+          });
+        }).on("error", () => resolve(undefined));
+      });
+    } catch (err) {
+      logger.warn({ err, steam32 }, "Failed to fetch avatar from Steam API");
+    }
+  }
+
+  // Fallback: Use OpenDota if Steam API failed or key is missing
+  if (!url) {
+    const res = await client.playerProfile(steam32);
+    if (res.ok && res.data) {
+      const body = res.data as OpenDotaPlayerProfile;
+      url =
+        body.profile?.avatarfull ??
+        body.avatarfull ??
+        body.profile?.avatarmedium ??
+        body.avatarmedium ??
+        body.profile?.avatar ??
+        body.avatar;
+    }
+  }
 
   if (typeof url === "string" && url.startsWith("http")) {
     avatarCache.set(steam32, url);

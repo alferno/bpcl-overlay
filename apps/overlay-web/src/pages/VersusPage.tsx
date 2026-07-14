@@ -7,6 +7,7 @@ import { useOverlayState } from "../OverlaySocketLayer";
 import { useRouteVisible } from "../hooks/useRouteVisible";
 import { colorAlpha } from "../draft/team-colors";
 import { resolveSlotFlatPortraitUrl, resolveSlotSlug } from "../hero-portrait";
+import { CachedIframe } from "../components/CachedIframe";
 
 function formatHeroName(slug: string | undefined): string {
   if (!slug) return "";
@@ -107,19 +108,27 @@ function PlayerCard({
           style={{ backfaceVisibility: "hidden", boxShadow: `0 10px 40px -10px ${colorAlpha(color, 0.4)}` }}
         >
           {!imageError ? (
-            <img
-              src={cardUrl}
-              alt={player.displayName}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-              onError={(e) => {
-                if (cardUrl !== withBaseUrl("/cards/sample.png")) {
-                  // Fallback to sample if original fails
-                  e.currentTarget.src = withBaseUrl("/cards/sample.png")!;
-                } else {
-                  setImageError(true);
-                }
-              }}
-            />
+            player.bpcId ? (
+              <CachedIframe
+                bpcId={player.bpcId}
+                className="h-full w-full"
+                style={{ width: "100%", height: "100%", border: "none" }}
+              />
+            ) : (
+              <img
+                src={cardUrl}
+                alt={player.displayName}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                onError={(e) => {
+                  if (cardUrl !== withBaseUrl("/cards/sample.png")) {
+                    // Fallback to sample if original fails
+                    e.currentTarget.src = withBaseUrl("/cards/sample.png")!;
+                  } else {
+                    setImageError(true);
+                  }
+                }}
+              />
+            )
           ) : (
             <FallbackPlayerAvatar player={player} color={color} logoPath={logoPath} />
           )}

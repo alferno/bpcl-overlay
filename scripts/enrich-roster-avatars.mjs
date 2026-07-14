@@ -38,6 +38,21 @@ function avatarFromProfile(body) {
 }
 
 async function fetchAvatarUrl(steam32) {
+  const apiKey = process.env.STEAM_WEB_API_KEY;
+  if (apiKey) {
+    try {
+      const steam64 = BigInt(steam32) + BigInt("76561197960265728");
+      const res = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${steam64}`);
+      if (res.ok) {
+        const body = await res.json();
+        const avatar = body.response?.players?.[0]?.avatarfull;
+        if (avatar) return avatar;
+      }
+    } catch (err) {
+      // fallback to opendota
+    }
+  }
+
   const res = await fetch(
     `https://api.opendota.com/api/players/${steam32}`,
     { headers: { Accept: "application/json" } },

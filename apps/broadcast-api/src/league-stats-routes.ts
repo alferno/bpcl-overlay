@@ -224,6 +224,21 @@ export function attachLeagueAndStatsRoutes(opts: {
         steamApiKey: env.STEAM_WEB_API_KEY,
       });
 
+      // Preserve existing manual avatars from the CSV before enriching
+      const rosterCsvPath = env.ROSTER_CSV_PATH;
+      try {
+        const existingCsv = await readFile(rosterCsvPath, "utf8");
+        const existingRoster = parseRosterCsv(existingCsv);
+        for (const player of rawRoster) {
+          const existing = existingRoster.find(p => p.steam32 === player.steam32);
+          if (existing && existing.avatarUrl) {
+            player.avatarUrl = existing.avatarUrl;
+          }
+        }
+      } catch (err) {
+        // Ignore if file doesn't exist
+      }
+
       const roster = await enrichRosterAvatars(rawRoster, opendota);
       const teamColors = teamColorsFromRoster(roster);
 

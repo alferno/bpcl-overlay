@@ -16,6 +16,13 @@ if (-not (Get-Command "gh" -ErrorAction SilentlyContinue)) {
     Write-Error "GitHub CLI (gh) is not installed. Please install it to use this automated script."
 }
 
+# ── Check for Git changes ───────────────────────────────────────────────────
+$GitStatus = & git status --porcelain
+if ([string]::IsNullOrWhiteSpace($GitStatus)) {
+    Write-Host "`n✅ No changes detected in the repository. Everything is up to date!" -ForegroundColor Green
+    exit 0
+}
+
 # ── Resolve repo root ───────────────────────────────────────────────────────
 $RepoRoot = Split-Path $PSScriptRoot -Parent
 $StreamerDir = Join-Path $RepoRoot 'apps\streamer-desktop'
@@ -72,27 +79,55 @@ try {
 Write-Host "      Build complete." -ForegroundColor Green
 
 # ── 4. Create zip archive ───────────────────────────────────────────────────
-Write-Host "`n[3/5] Creating zip archive…" -ForegroundColor Yellow
+Write-Host "`n[3/5] Creating zip archives (Full and Delta)…" -ForegroundColor Yellow
 $ReleaseInput = Join-Path $StreamerDir 'release'
-$ZipName    = "BPCL-Streamer-v$Version.zip"
+$ZipFull = "BPCL-Streamer-v$Version-Full.zip"
+$ZipUpdate = "BPCL-Streamer-v$Version-Update.zip"
 $ZipOutDir  = Join-Path $RepoRoot 'releases'
-$ZipOutPath = Join-Path $ZipOutDir $ZipName
+$ZipFullOutPath = Join-Path $ZipOutDir $ZipFull
+$ZipUpdateOutPath = Join-Path $ZipOutDir $ZipUpdate
 
 if (-not (Test-Path $ZipOutDir)) { New-Item -ItemType Directory -Path $ZipOutDir | Out-Null }
-if (Test-Path $ZipOutPath) { Remove-Item $ZipOutPath -Force }
+if (Test-Path $ZipFullOutPath) { Remove-Item $ZipFullOutPath -Force }
+if (Test-Path $ZipUpdateOutPath) { Remove-Item $ZipUpdateOutPath -Force }
 
-Compress-Archive -Path "$ReleaseInput\*" -DestinationPath $ZipOutPath -CompressionLevel Optimal
-Write-Host "      Created: $ZipOutPath" -ForegroundColor Green
+# Create Full Zip
+Compress-Archive -Path "$ReleaseInput\*" -DestinationPath $ZipFullOutPath -CompressionLevel Optimal
+Write-Host "      Created Full Zip: $ZipFullOutPath" -ForegroundColor Green
+
+# Create Delta Zip (only resources, preserving folder structure)
+$TempDelta = Join-Path $Env:TEMP "BPCL-Delta-$Version"
+$TempDeltaApp = Join-Path $TempDelta "BPCL Streamer Desktop-win32-x64"
+New-Item -ItemType Directory -Path $TempDeltaApp -Force | Out-Null
+Copy-Item -Path "$ReleaseInput\BPCL Streamer Desktop-win32-x64\resources" -Destination $TempDeltaApp -Recurse
+Compress-Archive -Path "$TempDelta\*" -DestinationPath $ZipUpdateOutPath -CompressionLevel Optimal
+Remove-Item $TempDelta -Recurse -Force
+Write-Host "      Created Delta Zip: $ZipUpdateOutPath" -ForegroundColor Green
+
+# Build and Zip Launcher
+Write-Host "`n[3.5/5] Building Launcher (v1.1.0)…" -ForegroundColor Yellow
+$LauncherDir = Join-Path $RepoRoot 'apps\launcher'
+Push-Location $LauncherDir
+& npm run build
+Pop-Location
+$LauncherReleaseInput = Join-Path $LauncherDir 'release\*'
+$ZipLauncher = "BPCL-Launcher-v1.1.0.zip"
+$ZipLauncherOutPath = Join-Path $ZipOutDir $ZipLauncher
+if (Test-Path $ZipLauncherOutPath) { Remove-Item $ZipLauncherOutPath -Force }
+Compress-Archive -Path $LauncherReleaseInput -DestinationPath $ZipLauncherOutPath -CompressionLevel Optimal
+Write-Host "      Created Launcher Zip: $ZipLauncherOutPath" -ForegroundColor Green
 
 # ── 5. Write version.json ───────────────────────────────────────────────────
 Write-Host "`n[4/5] Updating releases/version.json…" -ForegroundColor Yellow
 $GithubOrg  = 'alferno'
 $GithubRepo = 'bpcl-overlay'
-$DownloadUrl = "https://github.com/$GithubOrg/$GithubRepo/releases/download/v$Version/$ZipName"
+$FullDownloadUrl = "https://github.com/$GithubOrg/$GithubRepo/releases/download/v$Version/$ZipFull"
+$UpdateDownloadUrl = "https://github.com/$GithubOrg/$GithubRepo/releases/download/v$Version/$ZipUpdate"
 
 $VersionJson = [ordered]@{
     version     = $Version
-    url         = $DownloadUrl
+    url         = $FullDownloadUrl
+    updateUrl   = $UpdateDownloadUrl
     notes       = $ReleaseNotes
     publishedAt = (Get-Date -Format 'o')
 } | ConvertTo-Json -Depth 3
@@ -115,7 +150,7 @@ try {
 
     # Create GitHub Release with gh cli
     Write-Host "      Creating GitHub release v$Version..." -ForegroundColor Cyan
-    & gh release create "v$Version" "$ZipOutPath" -t "v$Version" -n "$ReleaseNotes" --repo "$GithubOrg/$GithubRepo"
+    & gh release create "v$Version" "$ZipFullOutPath" "$ZipUpdateOutPath" "$ZipLauncherOutPath" -t "v$Version" -n "$ReleaseNotes" --repo "$GithubOrg/$GithubRepo"
     if ($LASTEXITCODE -ne 0) { throw "GitHub CLI failed to create release" }
 } finally {
     Pop-Location

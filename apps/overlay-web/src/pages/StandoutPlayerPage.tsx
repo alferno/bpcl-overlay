@@ -4,6 +4,7 @@ import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { useRouteVisible } from "../hooks/useRouteVisible";
 import { withBaseUrl } from "../asset-paths";
+import { CachedIframe } from "../components/CachedIframe";
 import {
   resolveHeroPortraitSlug,
   heroPortraitHintsFromFields,
@@ -374,7 +375,7 @@ export default function StandoutPlayerPage() {
                     </span>
                   </div>
 
-                  {/* Player Card Image */}
+                  {/* Player Card Image / HTML Render */}
                   <div
                     className="relative w-full overflow-hidden rounded-xl backdrop-blur-md flex items-center justify-center"
                     style={{
@@ -385,23 +386,36 @@ export default function StandoutPlayerPage() {
                       boxShadow: `0 12px 40px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.6)`,
                     }}
                   >
-                    <img
-                      src={
-                        !cardError && card.bpcId
-                          ? `https://bpcleague.in/overlay/card/${card.bpcId}`
-                          : !cardError && card.steam32
-                          ? withBaseUrl(`/cards/${card.steam32}.png`)
-                          : portraitUrl || withBaseUrl(`/cards/sample.png`)
-                      }
-                      alt="Player/Hero"
-                      onError={() => setCardError(true)}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        objectPosition: "center top",
-                      }}
-                    />
+                    {!cardError && card.bpcId ? (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <CachedIframe 
+                          bpcId={card.bpcId}
+                          style={{
+                            width: "240px",
+                            height: "360px",
+                            border: "none",
+                            transform: "scale(1.3055)",
+                            transformOrigin: "center center"
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <img
+                        src={
+                          !cardError && card.steam32
+                            ? withBaseUrl(`/cards/${card.steam32}.png`)
+                            : portraitUrl || withBaseUrl(`/cards/sample.png`)
+                        }
+                        alt="Player/Hero"
+                        onError={() => setCardError(true)}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          objectPosition: "center top",
+                        }}
+                      />
+                    )}
                   </div>
 
                   {/* KDA */}

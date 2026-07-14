@@ -47,11 +47,13 @@ export function OverlayTestPanel({
       // Always pad to 5 players per team using negative IDs as dummy fallback just like VersusPage
       const radiantPlayers = Array.from({ length: 5 }).map((_, i) => radiantRaw[i] ?? {
         steam32: -(i + 1),
+        bpcId: "BPC-001",
         displayName: "TBD",
       });
 
       const direPlayers = Array.from({ length: 5 }).map((_, i) => direRaw[i] ?? {
         steam32: -(i + 10),
+        bpcId: "BPC-001",
         displayName: "TBD",
       });
 
@@ -129,10 +131,26 @@ export function OverlayTestPanel({
   const handleMockLiveCard = async () => {
     setBusy(true);
     try {
+      if (!matchSetup) {
+        alert("Please set up a match in the Match & OBS tab first.");
+        return;
+      }
+
+      const activePlayers = roster.filter(
+        (p) => p.teamKey === matchSetup.radiantTeamKey || p.teamKey === matchSetup.direTeamKey
+      );
+
+      if (activePlayers.length === 0) {
+        alert("No players found in the roster for the active match teams.");
+        return;
+      }
+
+      const randomPlayer = activePlayers[Math.floor(Math.random() * activePlayers.length)];
       const heroId = getRandomHeroes(1)[0];
       const mockCard: HeroStatsCard = {
-        steam32: 123456789,
-        playerLabel: "MOCK.PLAYER",
+        steam32: randomPlayer!.steam32,
+        bpcId: randomPlayer!.bpcId || "BPC-001",
+        playerLabel: randomPlayer!.displayName,
         heroId: heroId!,
         heroName: "Mock Hero",
         fetchedAt: new Date().toISOString(),

@@ -161,12 +161,18 @@ ipcMain.handle('check-update', async () => {
   const remote = await fetchJson(VERSION_JSON_URL)
   const remoteVersion = remote.version
   const downloadUrl = remote.url
+  const updateUrl = remote.updateUrl
   const notes = remote.notes || ''
+
+  // If we already have the exe installed, we can do a delta update
+  const canDeltaUpdate = !!findExe(INSTALL_DIR)
+  const defaultUrl = (canDeltaUpdate && updateUrl) ? updateUrl : downloadUrl
 
   return {
     localVersion,
     remoteVersion,
-    downloadUrl,
+    downloadUrl: defaultUrl,
+    fullDownloadUrl: downloadUrl,
     notes,
     needsUpdate: remoteVersion !== localVersion
   }

@@ -128,8 +128,10 @@ export function MatchSetupPanel({
     () => [...EMPTY_PICK_PLAYERS],
   );
   const [busy, setBusy] = useState(false);
+  const [selectedBpcMatchId, setSelectedBpcMatchId] = useState<string>("");
   const [bpcMatches, setBpcMatches] = useState<any[]>([]);
-  const [selectedBpcMatchId, setSelectedBpcMatchId] = useState("");
+  const [matchSeason, setMatchSeason] = useState<string>("");
+  const [availableSeasons, setAvailableSeasons] = useState<{slug: string, name: string}[]>([]);
   const [playerMemes, setPlayerMemes] = useState<Record<string, string>>({});
   const pickPlayersDirtyRef = useRef(false);
   const matchSetupDirtyRef = useRef(false);
@@ -150,11 +152,33 @@ export function MatchSetupPanel({
   }, [origin, token, roster.length, state?.updatedAt]);
 
   useEffect(() => {
+    if (!matchSeason && state?.leagueConfig?.seasonSlug) {
+      setMatchSeason(state.leagueConfig.seasonSlug);
+    }
+  }, [state?.leagueConfig?.seasonSlug, matchSeason]);
+
+  useEffect(() => {
+    if (!token.trim()) return;
+    void apiFetch(origin, token, "/api/league/bpc-seasons")
+      .then((r) => r.json())
+      .then((list) => {
+        if (Array.isArray(list)) {
+          setAvailableSeasons(list);
+          if (!matchSeason && !state?.leagueConfig?.seasonSlug) {
+            const active = list.find((s) => s.isActive);
+            setMatchSeason(active?.slug || list[0]?.slug || "season-2");
+          }
+        }
+      })
+      .catch(() => {});
+  }, [origin, token]);
+
+  useEffect(() => {
     if (!token.trim() || roster.length === 0) {
       setBpcMatches([]);
       return;
     }
-    const currentSeason = state?.leagueConfig?.seasonSlug || "season-1";
+    const currentSeason = matchSeason || state?.leagueConfig?.seasonSlug || "season-2";
     // Fetch matches from bpcleague.in API
     void apiFetch(origin, token, `/api/league/bpc-matches?seasonSlug=${currentSeason}`)
       .then((r) => r.json())
@@ -164,7 +188,7 @@ export function MatchSetupPanel({
         }
       })
       .catch(() => setBpcMatches([]));
-  }, [origin, token, roster.length, state?.leagueConfig?.seasonSlug]);
+  }, [origin, token, roster.length, matchSeason, state?.leagueConfig?.seasonSlug]);
 
   // Sync teams/scores from server. Do not depend on pickPlayers arrays — live
   // STATE_FULL snapshots clone them every tick and would reset unsaved edits.
@@ -302,13 +326,37 @@ export function MatchSetupPanel({
       ) : (
         <>
           {/* Auto-Import from bpcleague.in */}
-          {bpcMatches.length > 0 && (
-            <div className="mt-4 border-b border-white/5 pb-5">
+          <div className="mt-4 border-b border-white/5 pb-5">
+            <div className="flex items-center justify-between">
               <label className="text-xs uppercase text-slate-500 font-bold text-violet-300">
                 ⚡ Auto-Import Matchup (bpcleague.in)
               </label>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase text-slate-500">Season</span>
+                <select
+                  className="rounded border border-white/10 bg-slate-900 px-2 py-1 text-xs text-white"
+                  value={matchSeason}
+                  onChange={(e) => setMatchSeason(e.target.value)}
+                >
+                  <option value="" disabled>-- Auto-Detect --</option>
+                  {availableSeasons.length > 0 ? (
+                    availableSeasons.map((s) => (
+                      <option key={s.slug} value={s.slug}>
+                        {s.name}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="season-1">Season 1</option>
+                      <option value="season-2">Season 2</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+            {bpcMatches.length > 0 ? (
               <select
-                className={`${selectClass} mt-1 border-violet-500/30 bg-violet-950/20`}
+                className={`${selectClass} mt-2 border-violet-500/30 bg-violet-950/20`}
                 value={selectedBpcMatchId}
                 onChange={(e) => {
                   const matchId = e.target.value;
@@ -318,6 +366,7 @@ export function MatchSetupPanel({
                     matchSetupDirtyRef.current = true;
                     
                     const keyify = (name: string) => name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+
                     const key1 = keyify(m.team1);
                     const key2 = keyify(m.team2);
 
@@ -346,8 +395,10 @@ export function MatchSetupPanel({
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            ) : (
+              <p className="mt-2 text-xs text-slate-500">No matchups found for {matchSeason || "this season"}.</p>
+            )}
+          </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div>

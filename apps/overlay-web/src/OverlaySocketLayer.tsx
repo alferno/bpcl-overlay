@@ -34,6 +34,8 @@ function resolveOrigin(): string {
   );
 }
 
+import { PlayerCardPreloader } from "./components/PlayerCardPreloader";
+
 export default function OverlaySocketLayer({ children }: { children: ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [state, setState] = useState<OverlayEnvelope>(createDefaultEnvelope());
@@ -75,6 +77,9 @@ export default function OverlaySocketLayer({ children }: { children: ReactNode }
   }, [socket, state]);
 
   return (
-    <OverlayContext.Provider value={value}>{children}</OverlayContext.Provider>
+    <OverlayContext.Provider value={value}>
+      {children}
+      <PlayerCardPreloader />
+    </OverlayContext.Provider>
   );
 }

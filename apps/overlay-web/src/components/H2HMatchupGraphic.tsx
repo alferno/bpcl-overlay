@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { withBaseUrl } from "../asset-paths";
+import { CachedIframe } from "./CachedIframe";
 
 export function H2HMatchupGraphic() {
   const { socket } = useOverlayState();
@@ -17,7 +18,7 @@ export function H2HMatchupGraphic() {
       
       setTimeout(() => {
         setFlipped(true);
-      }, 1500);
+      }, 5000);
 
       setTimeout(() => setData(null), 15000); // hide after 15s
     };
@@ -57,16 +58,23 @@ export function H2HMatchupGraphic() {
               >
                 {/* Front side (Player Card image) */}
                 <div 
-                  className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                  className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center"
                   style={{ backfaceVisibility: "hidden" }}
                 >
-                  <img 
-                    src={withBaseUrl(`/cards/${data.player1.steam32}.png`)} 
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="400" height="600" fill="%231e293b"/></svg>';
-                    }}
-                    className="w-full h-full object-contain"
-                  />
+                  {data.player1.bpcId ? (
+                    <CachedIframe
+                      bpcId={data.player1.bpcId}
+                      style={{ transform: "scale(1.2)", transformOrigin: "center center" }}
+                    />
+                  ) : (
+                    <img 
+                      src={withBaseUrl(`/cards/${data.player1.steam32}.png`)} 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="400" height="600" fill="%231e293b"/></svg>';
+                      }}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                 </div>
 
                 {/* Back side (Stats) */}
@@ -130,16 +138,23 @@ export function H2HMatchupGraphic() {
               >
                 {/* Front side (Player Card image) */}
                 <div 
-                  className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                  className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center"
                   style={{ backfaceVisibility: "hidden" }}
                 >
-                  <img 
-                    src={withBaseUrl(`/cards/${data.player2.steam32}.png`)} 
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="400" height="600" fill="%231e293b"/></svg>';
-                    }}
-                    className="w-full h-full object-contain"
-                  />
+                  {data.player2.bpcId ? (
+                    <CachedIframe
+                      bpcId={data.player2.bpcId}
+                      style={{ transform: "scale(1.2)", transformOrigin: "center center" }}
+                    />
+                  ) : (
+                    <img 
+                      src={withBaseUrl(`/cards/${data.player2.steam32}.png`)} 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="400" height="600" fill="%231e293b"/></svg>';
+                      }}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                 </div>
 
                 {/* Back side (Stats) */}

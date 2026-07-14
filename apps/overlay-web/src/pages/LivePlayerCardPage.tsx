@@ -5,6 +5,7 @@ import { HeroStatsCardPanel } from "../components/HeroStatsCardPanel";
 import { StatsPanelShell } from "../components/StatsPanelShell";
 import { useRouteVisible } from "../hooks/useRouteVisible";
 import { withBaseUrl } from "../asset-paths";
+import { CachedIframe } from "../components/CachedIframe";
 
 export function LivePlayerCard() {
   const { state } = useOverlayState();
@@ -275,27 +276,34 @@ export function LivePlayerCard() {
           >
             {card ? (
               card.bpcId ? (
-                <img
-                  src={`https://bpcleague.in/overlay/card/${card.bpcId}`}
-                  alt=""
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.currentTarget.src = withBaseUrl(`/cards/sample.png`)!;
-                  }}
-                />
-              ) : card.steam32 && extIndex < extensions.length ? (
-                <img
-                  src={withBaseUrl(`/cards/${card.steam32}${extensions[extIndex]}`)}
-                  alt=""
-                  className="w-full h-full object-contain"
-                  onError={() => setExtIndex(e => e + 1)}
-                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <CachedIframe
+                    bpcId={card.bpcId}
+                    style={{
+                      width: "240px",
+                      height: "360px",
+                      border: "none",
+                      transform: "scale(0.7611)",
+                      transformOrigin: "center center"
+                    }}
+                  />
+                </div>
               ) : (
-                <img
-                  src={withBaseUrl(`/cards/sample.png`)}
-                  alt="Fallback"
-                  className="w-full h-full object-contain"
-                />
+                <div className="absolute inset-0 flex items-center justify-center transform scale-75 origin-bottom">
+                  <StatsPanelShell card={card as any}>
+                    <HeroStatsCardPanel
+                      card={{
+                        ...card,
+                        playerLabel: card.playerLabel || "Unknown",
+                        playerAvatarUrl: card.playerAvatarUrl || (card.steam32 ? withBaseUrl(`/cards/${card.steam32}.png`) : undefined),
+                        statSlides: [
+                          { label: "K / D / A", value: `${card.liveKills ?? 0} / ${card.liveDeaths ?? 0} / ${card.liveAssists ?? 0}` },
+                          { label: "CS", value: `${card.liveLastHits ?? 0} / ${card.liveDenies ?? 0}` }
+                        ]
+                      } as any}
+                    />
+                  </StatsPanelShell>
+                </div>
               )
             ) : null}
           </div>

@@ -71,6 +71,8 @@ type RawPlayer = {
   roles?: string[];
   mmr?: number;
   isCaptain?: boolean;
+  bpc_id?: string;
+  bpcId?: string;
 };
 
 type RawTeam = {
@@ -180,13 +182,8 @@ export async function fetchRosterFromBpcLeague(opts: {
       rawTeams = payload.teams || [];
     } else {
       const payload = await fetchUrlJson(`https://api.bpcleague.in/api/public/seasons/${slug}`);
-      if (payload.snapshot && payload.snapshot.teams) {
-        rawTeams = payload.snapshot.teams;
-      } else if (payload.tournament && payload.tournament.teams) {
+      if (payload.tournament && payload.tournament.teams) {
         rawTeams = payload.tournament.teams;
-      } else if (payload.participations) {
-        // Fallback or structure checks
-        rawTeams = payload.participations.map((p: any) => p.team).filter(Boolean);
       }
     }
   } catch (err) {
@@ -227,7 +224,7 @@ export async function fetchRosterFromBpcLeague(opts: {
     const roles = player.roles || [];
     const mmr = player.mmr;
 
-    const bpcId = player.id;
+    const bpcId = player.bpc_id || player.bpcId || player.id;
 
     if (steam32 != null && steam32 > 0) {
       roster.push({ displayName, steam32, teamName, teamKey, teamColor, roles, mmr, bpcId });
@@ -267,11 +264,7 @@ export async function fetchMatchesFromBpcLeague(seasonSlug?: string): Promise<Bp
     }
 
     let rawMatches: any[] = [];
-    if (payload.snapshot && payload.snapshot.matches) {
-      rawMatches = payload.snapshot.matches;
-    } else if (payload.tournament && payload.snapshot?.matches) {
-      rawMatches = payload.snapshot.matches;
-    } else if (payload.tournament && payload.tournament.matches) {
+    if (payload.tournament && payload.tournament.matches) {
       rawMatches = payload.tournament.matches;
     } else if (payload.matches) {
       rawMatches = payload.matches;
