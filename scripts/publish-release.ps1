@@ -151,7 +151,7 @@ try {
 
     # Create GitHub Release with gh cli
     Write-Host "      Creating GitHub release v$Version..." -ForegroundColor Cyan
-    & gh release create "v$Version" "$ZipFullOutPath" "$ZipUpdateOutPath" "$ZipLauncherOutPath" -t "v$Version" -n "$ReleaseNotes" --repo "$GithubOrg/$GithubRepo"
+    & gh release create "v$Version" "$ZipUpdateOutPath" "$ZipLauncherOutPath" -t "v$Version" -n "$ReleaseNotes" --repo "$GithubOrg/$GithubRepo"
     if ($LASTEXITCODE -ne 0) { throw "GitHub CLI failed to create release" }
 } finally {
     Pop-Location
