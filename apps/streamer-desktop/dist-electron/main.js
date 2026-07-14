@@ -60,7 +60,7 @@ l.whenReady().then(async () => {
   var o;
   g();
   try {
-    const s = await import("./index-CVgsZKqJ.js"), n = await import("./logger-BnSEN-vi.js").then((d) => d.b);
+    const s = await import("./index-D1Yj6Y_n.js"), n = await import("./logger-BnSEN-vi.js").then((d) => d.b);
     n.logEmitter && n.logEmitter.on("log", (d) => {
       e == null || e.webContents.send("log", d);
     }), A = s.bootstrapBroadcastServer;

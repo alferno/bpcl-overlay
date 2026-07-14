@@ -17,7 +17,25 @@ export function HighlightsPanel({
   const [mainHeading, setMainHeading] = useState(currentHighlights.mainHeading ?? "CURRENT SERIES");
   const [upNext, setUpNext] = useState<string[]>(currentHighlights.upNext ?? []);
 
+  // New Score / Team overrides
+  const [team1, setTeam1] = useState(currentHighlights.team1 ?? "");
+  const [team2, setTeam2] = useState(currentHighlights.team2 ?? "");
+  const [score1, setScore1] = useState(currentHighlights.score1 ?? 0);
+  const [score2, setScore2] = useState(currentHighlights.score2 ?? 0);
+  const [seriesFormat, setSeriesFormat] = useState(currentHighlights.seriesFormat ?? "");
+
   const [newItem, setNewItem] = useState("");
+
+  const handleFetchFromMatchSetup = () => {
+    const ms = config?.matchSetup;
+    if (ms) {
+      setTeam1(ms.radiantTeamKey || "");
+      setTeam2(ms.direTeamKey || "");
+      setScore1(ms.scoreA ?? 0);
+      setScore2(ms.scoreB ?? 0);
+      setSeriesFormat(ms.seriesBestOf === 1 ? "BO1" : ms.seriesBestOf ? `BO${ms.seriesBestOf}` : "BO3");
+    }
+  };
 
   const handleSave = () => {
     onPatch({
@@ -27,6 +45,11 @@ export function HighlightsPanel({
           sponsorText,
           mainHeading,
           upNext,
+          team1,
+          team2,
+          score1,
+          score2,
+          seriesFormat
         },
       },
     });
@@ -82,7 +105,43 @@ export function HighlightsPanel({
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 border-t border-slate-700 pt-4">
+          <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+            <label className="text-sm font-semibold text-slate-300">Match Overrides</label>
+            <button
+              onClick={handleFetchFromMatchSetup}
+              type="button"
+              className="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-white"
+            >
+              Fetch from Match Setup
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-400">Team 1 Name</label>
+              <input type="text" value={team1} onChange={e => setTeam1(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-white" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-400">Team 2 Name</label>
+              <input type="text" value={team2} onChange={e => setTeam2(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-white" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-400">Team 1 Score</label>
+              <input type="number" value={score1} onChange={e => setScore1(parseInt(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-white" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-400">Team 2 Score</label>
+              <input type="number" value={score2} onChange={e => setScore2(parseInt(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-white" />
+            </div>
+            <div className="space-y-1 col-span-2">
+              <label className="text-xs font-medium text-slate-400">Series Format (e.g. BO3)</label>
+              <input type="text" value={seriesFormat} onChange={e => setSeriesFormat(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 border-t border-slate-700 pt-4">
           <label className="text-sm font-semibold text-slate-300 block border-b border-slate-700 pb-2">Up Next Schedule</label>
           
           <ul className="space-y-2">

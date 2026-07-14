@@ -148,6 +148,11 @@ export const leagueConfigSchema = z.object({
     sponsorText: z.string().optional(),
     mainHeading: z.string().optional(),
     upNext: z.array(z.string()).optional(),
+    team1: z.string().optional(),
+    team2: z.string().optional(),
+    score1: z.number().optional(),
+    score2: z.number().optional(),
+    seriesFormat: z.string().optional(),
   }).optional(),
 });
 

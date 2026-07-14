@@ -9,22 +9,20 @@ export default function HighlightsPage() {
   const matchSetup = state.leagueConfig?.matchSetup;
   const highlights = state.leagueConfig?.highlights || {};
 
-  if (!matchSetup) {
-    return null;
-  }
-
-  const { radiantTeamKey, direTeamKey, scoreA, scoreB, seriesBestOf } = matchSetup;
-  
   const sponsorText = highlights.sponsorText || "Powered by: Nuvorn Technologies";
   const mainHeading = highlights.mainHeading || "CURRENT SERIES";
   const upNext = highlights.upNext || [];
 
-  // Determine series string
-  const seriesString = seriesBestOf === 1 ? "BO1" : `BO${seriesBestOf}`;
+  // Fetch overrides from highlights, fallback to matchSetup, fallback to empty defaults
+  const team1Raw = highlights.team1 || matchSetup?.radiantTeamKey || "TEAM 1";
+  const team2Raw = highlights.team2 || matchSetup?.direTeamKey || "TEAM 2";
+  const score1 = highlights.score1 ?? matchSetup?.scoreA ?? 0;
+  const score2 = highlights.score2 ?? matchSetup?.scoreB ?? 0;
+  const bestOf = highlights.seriesFormat || (matchSetup?.seriesBestOf === 1 ? "BO1" : matchSetup?.seriesBestOf ? `BO${matchSetup.seriesBestOf}` : "BO3");
 
   // Formatted names
-  const team1 = radiantTeamKey.replace(/-/g, " ").toUpperCase();
-  const team2 = direTeamKey.replace(/-/g, " ").toUpperCase();
+  const team1 = team1Raw.replace(/-/g, " ").toUpperCase();
+  const team2 = team2Raw.replace(/-/g, " ").toUpperCase();
 
   return (
     <HudCanvas blend={false}>
@@ -55,7 +53,7 @@ export default function HighlightsPage() {
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Series Score</span>
                 <div className="bg-cyan-800 text-cyan-300 font-black px-3 py-1 text-sm tracking-widest uppercase border border-cyan-500/50">
-                  {seriesString} {scoreA}-{scoreB}
+                  {bestOf} {score1}-{score2}
                 </div>
               </div>
             </div>
