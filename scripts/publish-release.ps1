@@ -79,21 +79,21 @@ try {
 Write-Host "      Build complete." -ForegroundColor Green
 
 # ── 4. Create zip archive ───────────────────────────────────────────────────
-Write-Host "`n[3/5] Creating zip archives (Full and Delta)…" -ForegroundColor Yellow
+Write-Host "`n[3/5] Creating zip archives (Delta only)…" -ForegroundColor Yellow
 $ReleaseInput = Join-Path $StreamerDir 'release'
-$ZipFull = "BPCL-Streamer-v$Version-Full.zip"
 $ZipUpdate = "BPCL-Streamer-v$Version-Update.zip"
 $ZipOutDir  = Join-Path $RepoRoot 'releases'
-$ZipFullOutPath = Join-Path $ZipOutDir $ZipFull
 $ZipUpdateOutPath = Join-Path $ZipOutDir $ZipUpdate
 
 if (-not (Test-Path $ZipOutDir)) { New-Item -ItemType Directory -Path $ZipOutDir | Out-Null }
-if (Test-Path $ZipFullOutPath) { Remove-Item $ZipFullOutPath -Force }
 if (Test-Path $ZipUpdateOutPath) { Remove-Item $ZipUpdateOutPath -Force }
 
-# Create Full Zip
-Compress-Archive -Path "$ReleaseInput\*" -DestinationPath $ZipFullOutPath -CompressionLevel Optimal
-Write-Host "      Created Full Zip: $ZipFullOutPath" -ForegroundColor Green
+# Create Full Zip (DISABLED to speed up releases)
+# $ZipFull = "BPCL-Streamer-v$Version-Full.zip"
+# $ZipFullOutPath = Join-Path $ZipOutDir $ZipFull
+# if (Test-Path $ZipFullOutPath) { Remove-Item $ZipFullOutPath -Force }
+# Compress-Archive -Path "$ReleaseInput\*" -DestinationPath $ZipFullOutPath -CompressionLevel Optimal
+# Write-Host "      Created Full Zip: $ZipFullOutPath" -ForegroundColor Green
 
 # Create Delta Zip (only resources, preserving folder structure)
 $TempDelta = Join-Path $Env:TEMP "BPCL-Delta-$Version"
@@ -121,12 +121,13 @@ Write-Host "      Created Launcher Zip: $ZipLauncherOutPath" -ForegroundColor Gr
 Write-Host "`n[4/5] Updating releases/version.json…" -ForegroundColor Yellow
 $GithubOrg  = 'alferno'
 $GithubRepo = 'bpcl-overlay'
-$FullDownloadUrl = "https://github.com/$GithubOrg/$GithubRepo/releases/download/v$Version/$ZipFull"
+# Since we skip Full zip generation, we point both URLs to the Delta update.
+# A brand new user will fail the delta install, which is expected since the admin manually provides the base zip.
 $UpdateDownloadUrl = "https://github.com/$GithubOrg/$GithubRepo/releases/download/v$Version/$ZipUpdate"
 
 $VersionJson = [ordered]@{
     version     = $Version
-    url         = $FullDownloadUrl
+    url         = $UpdateDownloadUrl
     updateUrl   = $UpdateDownloadUrl
     notes       = $ReleaseNotes
     publishedAt = (Get-Date -Format 'o')
