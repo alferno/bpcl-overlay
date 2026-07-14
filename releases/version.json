@@ -1,7 +1,7 @@
 {
-    "version":  "1.0.14",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.14/BPCL-Streamer-v1.0.14-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.14/BPCL-Streamer-v1.0.14-Update.zip",
-    "notes":  "Fix bpc_id sync extraction and enforce mock test ID",
-    "publishedAt":  "2026-07-14T02:17:32.2910871+05:30"
+    "version":  "1.0.15",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.15/BPCL-Streamer-v1.0.15-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.15/BPCL-Streamer-v1.0.15-Update.zip",
+    "notes":  "Automated overlay and API update",
+    "publishedAt":  "2026-07-14T13:35:48.7291925+05:30"
 }
