@@ -1,7 +1,7 @@
 {
-    "version":  "1.0.20",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.20/BPCL-Streamer-v1.0.20-Update.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.20/BPCL-Streamer-v1.0.20-Update.zip",
-    "notes":  "Testing fast delta updates (retry)",
-    "publishedAt":  "2026-07-14T17:10:28.1158957+05:30"
+    "version":  "1.0.21",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.21/BPCL-Streamer-v1.0.21-Update.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.0.21/BPCL-Streamer-v1.0.21-Update.zip",
+    "notes":  "Added dynamic Highlights UI and Admin Panel",
+    "publishedAt":  "2026-07-14T17:53:24.8124723+05:30"
 }
