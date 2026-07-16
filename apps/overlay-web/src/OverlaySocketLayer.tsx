@@ -41,9 +41,24 @@ export default function OverlaySocketLayer({ children }: { children: ReactNode }
   const [state, setState] = useState<OverlayEnvelope>(createDefaultEnvelope());
 
   useEffect(() => {
+    const origin = resolveOrigin();
     const token = import.meta.env.VITE_SOCKET_TOKEN ?? "";
 
-    const s = io(`${resolveOrigin()}${NAMESPACES.OVERLAY}`, {
+    // Fetch the latest state via REST — used on connect and reconnect
+    // to catch up on any broadcasts missed while OBS had the source suspended.
+    const fetchState = async () => {
+      try {
+        const r = await fetch(`${origin}/api/overlay-state`);
+        if (r.ok) {
+          const snap: OverlayEnvelope = await r.json();
+          setState(snap);
+        }
+      } catch {
+        // silently ignore — socket will eventually deliver state
+      }
+    };
+
+    const s = io(`${origin}${NAMESPACES.OVERLAY}`, {
       transports: ["websocket"],
       auth: token ? { token } : undefined,
       query: token ? { token } : undefined,
@@ -51,6 +66,12 @@ export default function OverlaySocketLayer({ children }: { children: ReactNode }
 
     s.on(SOCKET_EVENTS.STATE_FULL, (snap: OverlayEnvelope) => {
       setState(snap);
+    });
+
+    // On every connect / reconnect, also do an HTTP fetch so we never
+    // miss a state change that fired while OBS had this source suspended.
+    s.on("connect", () => {
+      void fetchState();
     });
 
     s.on("connect_error", () => {
@@ -63,6 +84,7 @@ export default function OverlaySocketLayer({ children }: { children: ReactNode }
       setSocket(null);
     };
   }, []);
+
 
   const value = useMemo(() => {
     let effectiveState = state;

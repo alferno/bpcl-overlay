@@ -1,0 +1,731 @@
+/* ── Universal card shell ───────────────────────────────────────────── */
+
+.card {
+  --card-width: 17rem;
+  --card-aspect: 400 / 600;
+  width: var(--card-width);
+  aspect-ratio: var(--card-aspect);
+  max-width: 100%;
+  line-height: 0;
+  transition: opacity 0.25s ease;
+  container-type: inline-size;
+}
+
+.card__tilt {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.card__frame-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  container-type: inline-size;
+}
+
+.card--holo .card__frame-wrap {
+  overflow: visible;
+}
+
+.card--framed .card__frame-wrap,
+.card--gold .card__frame-wrap {
+  overflow: hidden;
+}
+
+.card__frame {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+  display: block;
+}
+
+.card--holo .card__frame {
+  clip-path: polygon(4% 0, 96% 0, 100% 4%, 100% 96%, 96% 100%, 4% 100%, 0 96%, 0 4%);
+  filter: saturate(1.08) brightness(1.02) contrast(1.04)
+    drop-shadow(0 0.35rem 0.65rem rgba(8, 6, 22, 0.5))
+    drop-shadow(0 1.1rem 1.6rem rgba(0, 0, 0, 0.4));
+}
+
+.card__art {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.card--holo .card__art {
+  z-index: 8;
+}
+
+.card--holo .card__name-plate--holo,
+.card--holo .card__stats--holo {
+  z-index: 9;
+}
+
+/* ── Portrait ──────────────────────────────────────────────────────── */
+
+.card__portrait-slot {
+  position: absolute;
+  z-index: 1;
+  background: #000;
+  overflow: hidden;
+  display: grid;
+}
+
+.card__portrait-slot--circle {
+  border-radius: 50%;
+}
+
+.card__portrait-slot--rect {
+  border-radius: var(--portrait-radius);
+  box-shadow:
+    inset 0 0.45rem 1.1rem rgba(0, 0, 0, 0.72),
+    inset 0 -0.28rem 0.72rem rgba(0, 0, 0, 0.48),
+    inset 0.22rem 0 0.72rem rgba(0, 0, 0, 0.34),
+    inset -0.22rem 0 0.72rem rgba(0, 0, 0, 0.34);
+}
+
+.card__portrait-slot--clip {
+  inset: 0;
+  clip-path: polygon(
+    6.17% 8.98%,
+    10.96% 5.46%,
+    30.76% 5.46%,
+    34.9% 8.56%,
+    65.1% 8.56%,
+    69.24% 5.46%,
+    89.04% 5.46%,
+    93.65% 8.91%,
+    93.65% 70.79%,
+    87.84% 74.24%,
+    81.31% 74.24%,
+    78.27% 75.83%,
+    21.73% 75.83%,
+    18.69% 74.24%,
+    12.15% 74.24%,
+    6.17% 70.79%
+  );
+  box-shadow:
+    inset 0 0.45rem 1.15rem rgba(0, 0, 0, 0.78),
+    inset 0 -0.32rem 0.78rem rgba(0, 0, 0, 0.55);
+}
+
+.card__portrait-shine {
+  grid-area: 1 / 1;
+  z-index: 6;
+  pointer-events: none;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 58%, rgba(0, 0, 0, 0.28) 100%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.07), transparent 30% 70%, rgba(0, 0, 0, 0.12));
+  box-shadow: inset 0 0 3cqi rgba(0, 0, 0, 0.42);
+  position: absolute;
+  inset: 0;
+}
+
+.card__portrait-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(88% 80% at 50% 40%, transparent 48%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(rgba(255, 214, 120, 0.14) 0%, transparent 16% 68%, rgba(0, 0, 0, 0.52) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.36) 0%, transparent 12% 88%, rgba(0, 0, 0, 0.36) 100%);
+}
+
+.card--holo .card__portrait-vignette {
+  background:
+    radial-gradient(88% 80% at 50% 40%, transparent 50%, rgba(0, 0, 0, 0.38) 100%),
+    linear-gradient(rgba(160, 230, 255, 0.22) 0%, transparent 14% 66%, rgba(0, 0, 0, 0.5) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.32) 0%, transparent 11% 89%, rgba(0, 0, 0, 0.32) 100%);
+}
+
+.card__portrait-rim {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 228, 150, 0.12), inset 0 2px rgba(255, 236, 170, 0.08);
+}
+
+.card--holo .card__portrait-rim {
+  box-shadow:
+    inset 0 0 0 1px rgba(180, 220, 255, 0.18),
+    inset 0 2px rgba(160, 210, 255, 0.1);
+}
+
+.card__portrait-depth {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 18%;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(transparent 0%, rgba(48, 32, 84, 0.22) 42%, rgba(54, 38, 92, 0.48) 100%);
+}
+
+/* ── Plaque / badge / name ──────────────────────────────────────────── */
+
+.card__plaque {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5cqi;
+  text-align: center;
+  overflow: hidden;
+}
+
+.card__plaque-title {
+  margin: 0;
+  font-family: var(--font-plaque);
+  font-size: 6.5cqi;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: 0.03em;
+  color: var(--color-plaque);
+  text-shadow:
+    0 1px rgba(255, 255, 255, 0.82),
+    0 -1px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.75);
+}
+
+.card__plaque-sub {
+  margin: 0;
+  padding-left: 0.16em;
+  font-family: var(--font-plaque);
+  font-size: 1.75cqi;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-plaque-sub);
+  white-space: nowrap;
+  text-shadow: 0 1px rgba(255, 255, 255, 0.45), 0 -1px rgba(0, 0, 0, 0.5);
+}
+
+.card__badge {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-badge);
+  font-size: 2.25cqi;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-badge);
+  text-shadow: 0 1px rgba(255, 255, 255, 0.5), 0 -1px rgba(0, 0, 0, 0.52);
+}
+
+.card__name-plate {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.card__name {
+  font-family: var(--font-name);
+  color: var(--color-name);
+  text-shadow: var(--color-name-shadow);
+}
+
+.card__name--gold {
+  line-height: 0.9;
+}
+
+/* Holographic gradient text — high-saturation broadcast look */
+.card__name--holo {
+  background-image: linear-gradient(
+    92deg,
+    #ff3ec8 0%,
+    #ff7a4a 14%,
+    #ffe14a 28%,
+    #2dffb0 42%,
+    #2ad4ff 56%,
+    #b46bff 70%,
+    #ff3ec8 84%,
+    #ffe14a 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: none;
+  text-shadow: none;
+  animation: holo-text-shine 5.4s ease-in-out infinite;
+  font-weight: 800;
+}
+
+.card__stat-label--holo {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(240, 248, 255, 0.95);
+  -webkit-text-fill-color: rgba(240, 248, 255, 0.95);
+  background: none;
+  text-shadow:
+    0 0 0.4rem rgba(140, 230, 255, 0.7),
+    0 1px 2px rgba(0, 0, 0, 0.85);
+  filter: none;
+  animation: none;
+}
+
+.card__stat-value--holo {
+  font-weight: 800;
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: holo-text-shine 5.8s ease-in-out infinite;
+}
+
+.card__stat--holo-0 .card__stat-value--holo {
+  background-image: linear-gradient(180deg, #ffe14a 0%, #ff8a3d 45%, #ff4fbf 100%);
+  filter: drop-shadow(0 0 0.28rem rgba(255, 180, 60, 0.4));
+}
+
+.card__stat--holo-1 .card__stat-value--holo {
+  background-image: linear-gradient(180deg, #9af8ff 0%, #2ad4ff 50%, #2dffb0 100%);
+  filter: drop-shadow(0 0 0.28rem rgba(60, 230, 255, 0.4));
+}
+
+.card__stat--holo-2 .card__stat-value--holo {
+  background-image: linear-gradient(180deg, #d4ff6e 0%, #2dffb0 50%, #2ad4ff 100%);
+  filter: drop-shadow(0 0 0.28rem rgba(100, 255, 160, 0.4));
+}
+
+.card__stat--holo-3 .card__stat-value--holo {
+  background-image: linear-gradient(180deg, #ff9adf 0%, #c45cff 45%, #6ec8ff 100%);
+  filter: drop-shadow(0 0 0.28rem rgba(200, 100, 255, 0.4));
+}
+
+@keyframes holo-text-shine {
+  0%,
+  22% {
+    background-position: 130%;
+  }
+  55%,
+  100% {
+    background-position: -30%;
+  }
+}
+
+/* ── Stats ─────────────────────────────────────────────────────────── */
+
+.card__stats {
+  position: absolute;
+  z-index: 4;
+  margin: 0;
+  padding: 14% 6% 5%;
+  box-sizing: border-box;
+  display: grid;
+  align-items: center;
+}
+
+.card__stats--holo {
+  padding: 1.5% 3% 3%;
+  gap: 0.5cqi;
+}
+
+.card__stats--holo .card__stat {
+  gap: 0.7cqi;
+}
+
+.card__stats--holo .card__stat dt,
+.card__stats--holo .card__stat dd {
+  text-shadow: none;
+}
+
+.card__stats--absolute {
+  inset: 0;
+  width: auto;
+  height: auto;
+  left: 0;
+  top: 0;
+  transform: none;
+  display: block;
+  padding: 0;
+}
+
+.card__stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5cqi;
+  min-width: 0;
+  height: 100%;
+  text-align: center;
+}
+
+.card__stat dt {
+  margin: 0;
+  font-family: var(--font-label);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  color: var(--color-label);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.88);
+}
+
+.card__stat dd {
+  margin: 0;
+  font-family: var(--font-value);
+  font-weight: 700;
+  line-height: 1.02;
+  color: var(--color-value);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.88);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.card__stat--absolute dd {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: var(--color-value);
+  text-shadow: 0 1px rgba(255, 217, 76, 0.42), 0 3px 6px rgba(88, 42, 0, 0.12);
+  font-family: var(--font-value);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Effects ───────────────────────────────────────────────────────── */
+
+.card__shimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.card--holo .card__shimmer,
+.card--holo .card__foil {
+  clip-path: polygon(4% 0, 96% 0, 100% 4%, 100% 96%, 96% 100%, 4% 100%, 0 96%, 0 4%);
+}
+
+.card__foil {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.card__foil-shine {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.36;
+  background: linear-gradient(
+      104deg,
+      transparent 0% 42%,
+      rgba(255, 255, 255, 0.14) 48%,
+      rgba(255, 255, 255, 0.38) 50%,
+      rgba(255, 255, 255, 0.14) 52%,
+      transparent 58% 100%
+    )
+    130% / 240% 100%;
+  animation: foil-shine-sweep 6.2s ease-in-out infinite;
+}
+
+@keyframes foil-shine-sweep {
+  0%,
+  100% {
+    opacity: 0.28;
+    background-position: 125%;
+  }
+  50% {
+    opacity: 0.42;
+    background-position: -25%;
+  }
+}
+
+.card__frame-edge-soften {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  clip-path: polygon(4% 0, 96% 0, 100% 4%, 100% 96%, 96% 100%, 4% 100%, 0 96%, 0 4%);
+  overflow: hidden;
+}
+
+.card__frame-edge-soften::before,
+.card__frame-edge-soften::after {
+  content: '';
+  position: absolute;
+  top: 3.5%;
+  bottom: 3.5%;
+  width: 9%;
+}
+
+.card__frame-edge-soften::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(12, 8, 26, 0.34) 0%, rgba(12, 8, 26, 0.12) 42%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0% 28%, transparent 100%);
+}
+
+.card__frame-edge-soften::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(12, 8, 26, 0.34) 0%, rgba(12, 8, 26, 0.12) 42%, transparent 100%);
+  mask-image: linear-gradient(270deg, #000 0% 28%, transparent 100%);
+}
+
+.card--holo .card__tilt {
+  isolation: isolate;
+  overflow: visible;
+}
+
+.card--holo {
+  overflow: visible;
+}
+
+.card--framed:not(.card--holo) .card__tilt,
+.card--gold .card__tilt {
+  filter: var(--card-glow);
+}
+
+.card--basic .card__tilt {
+  filter: drop-shadow(0 0 1.1rem rgba(255, 255, 255, 0.14));
+}
+
+.card--gold .card__tilt {
+  filter: drop-shadow(0 0 1.35rem rgba(255, 174, 0, 0.34));
+}
+
+/* ── Default panel layout ───────────────────────────────────────────── */
+
+.card--panel {
+  --card-grey-1: #e9e8e5;
+  --card-grey-2: #dfdeda;
+  --card-grey-3: #d5d4d0;
+  --edge-1: #c8c8c8;
+  --edge-2: #d2d2d2;
+  --edge-3: #b5b5b5;
+  --engrave-dark: #232323;
+  --engrave-sub: #4a4a4a;
+  --engrave-highlight: rgba(255, 255, 255, 0.72);
+  --engrave-shadow: rgba(0, 0, 0, 0.16);
+}
+
+.card__panel-shell {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 7.65%;
+  border: 1px solid var(--edge-1);
+  padding: 5.29%;
+  box-sizing: border-box;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 14%, transparent 28%),
+    linear-gradient(180deg, var(--card-grey-1) 0%, var(--card-grey-2) 42%, var(--card-grey-3) 100%);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.24),
+    inset 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 -1px rgba(0, 0, 0, 0.04);
+  container-type: inline-size;
+}
+
+.card__panel-shell::before {
+  content: '';
+  position: absolute;
+  inset: 3.53%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 5.88%;
+  border: 1px solid var(--edge-2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), inset 0 0 18px rgba(255, 255, 255, 0.18);
+}
+
+.card__panel-shell::after {
+  content: '';
+  position: absolute;
+  inset: 5.88%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 4.71%;
+  border: 1px solid rgba(208, 208, 208, 0.96);
+}
+
+.card__corner {
+  position: absolute;
+  z-index: 1;
+  width: 9.41%;
+  height: 9.41%;
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.card__corner--tl {
+  top: 5.29%;
+  left: 5.29%;
+  border-top: 1px solid var(--edge-3);
+  border-left: 1px solid var(--edge-3);
+  border-top-left-radius: 2.65cqi;
+}
+
+.card__corner--tr {
+  top: 5.29%;
+  right: 5.29%;
+  border-top: 1px solid var(--edge-3);
+  border-right: 1px solid var(--edge-3);
+  border-top-right-radius: 2.65cqi;
+}
+
+.card__corner--bl {
+  bottom: 5.29%;
+  left: 5.29%;
+  border-bottom: 1px solid var(--edge-3);
+  border-left: 1px solid var(--edge-3);
+  border-bottom-left-radius: 2.65cqi;
+}
+
+.card__corner--br {
+  bottom: 5.29%;
+  right: 5.29%;
+  border-bottom: 1px solid var(--edge-3);
+  border-right: 1px solid var(--edge-3);
+  border-bottom-right-radius: 2.65cqi;
+}
+
+.card__panel-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 10.59cqi 2.35cqi 11.76cqi;
+  line-height: normal;
+}
+
+.card__panel-avatar {
+  width: 63.25%;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  border-radius: 6.47%;
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.card__panel-avatar .avatar-media {
+  position: relative;
+  inset: auto;
+  object-fit: contain;
+}
+
+.card__panel-name {
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  text-align: center;
+  margin-top: 5.88cqi;
+  padding: 0 10.59cqi;
+}
+
+.card__divider {
+  width: 100%;
+  max-width: 72%;
+  height: 1px;
+  margin: 0 auto 2.35cqi;
+  background: #d9d9d9;
+}
+
+.card__panel-footer {
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  text-align: center;
+  margin-top: auto;
+  padding: 0 10.59cqi;
+}
+
+.card__panel-brand {
+  width: 100%;
+  padding: 0 1.18cqi;
+}
+
+.engraved {
+  text-shadow: 0 1px 0 var(--engrave-highlight), 0 -1px 0 var(--engrave-shadow);
+  user-select: none;
+}
+
+.card__panel-brand-title {
+  margin: 0;
+  font-family: var(--font-plaque);
+  font-size: 17.88cqi;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--engrave-dark);
+}
+
+.card__panel-brand-subwrap {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 2.35cqi;
+  padding: 0 0.59cqi;
+}
+
+.card__panel-brand-sub {
+  margin: 0;
+  font-family: 'Times New Roman', Georgia, serif;
+  font-size: 2.94cqi;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--engrave-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__panel-tagline {
+  margin: 2.94cqi 0 0;
+  font-size: 3.24cqi;
+  line-height: 1.2;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6f6f6f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card__foil-shine,
+  .card__name--holo,
+  .card__stat-value--holo {
+    animation: none;
+  }
+}

@@ -15,13 +15,10 @@
     "dev:admin": "npm run dev --workspace=admin-web",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "heroes:copy-webms": "node scripts/copy-hero-webms.mjs",
-    "heroes:download-cdn-webms": "node scripts/download-hero-cdn-webms.mjs",
+    "heroes:download-cdn-renders": "node scripts/download-hero-cdn-renders.mjs",
     "heroes:download-cdn-portraits": "node scripts/download-hero-cdn-portraits.mjs",
     "heroes:generate-index": "npm run build --workspace=@bpc/shared-types && node scripts/generate-hero-index.mjs",
-    "roster:enrich-avatars": "npm run build --workspace=broadcast-api && node scripts/enrich-roster-avatars.mjs",
-    "heroes:reencode-webms": "node scripts/reencode-hero-webms.mjs",
-    "heroes:verify-webms": "node scripts/verify-hero-webms.mjs"
+    "roster:enrich-avatars": "npm run build --workspace=broadcast-api && node scripts/enrich-roster-avatars.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

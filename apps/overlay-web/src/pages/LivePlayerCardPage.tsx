@@ -2,16 +2,21 @@ import { useState, useEffect } from "react";
 import { FadePanel, HudCanvas } from "../HudPrimitives";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { HeroStatsCardPanel } from "../components/HeroStatsCardPanel";
+import { FallbackPlayerCard } from "../components/FallbackPlayerCard";
 import { StatsPanelShell } from "../components/StatsPanelShell";
 import { useRouteVisible } from "../hooks/useRouteVisible";
 import { withBaseUrl } from "../asset-paths";
 import { CachedIframe } from "../components/CachedIframe";
+import { getActivePlayers } from "../utils/active-players";
+import { NativeBpclCard } from "../components/NativeBpclCard";
 
 export function LivePlayerCard() {
   const { state } = useOverlayState();
   const livePlayerVisible = useRouteVisible("liveplayercard", state);
   const minimapVisible = useRouteVisible("minimapIcons", state);
   const card = state.livePlayerCard;
+  
+  const { allActivePlayers: activePlayers } = getActivePlayers(state as any);
   
   const extensions = [".png", ".jpg", ".gif"];
   const [extIndex, setExtIndex] = useState(0);
@@ -66,7 +71,7 @@ export function LivePlayerCard() {
   return (
     <FadePanel
       show={(livePlayerVisible || minimapVisible) && !!card}
-      panelKey={`liveplayer-${card?.steam32 ?? card?.heroId ?? "empty"}`}
+      panelKey="liveplayer-hud"
     >
       {/* 4 Minimap Buttons Above Map */}
       {minimapVisible && (
@@ -267,37 +272,33 @@ export function LivePlayerCard() {
             }}
           >
             {card ? (
-              card.bpcId ? (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-[14px] overflow-hidden">
-                  <CachedIframe
-                    bpcId={card.bpcId}
-                    style={{
-                      width: "240px",
-                      height: "360px",
-                      border: "none",
-                      transform: "scale(0.7611)",
-                      transformOrigin: "center center",
-                      borderRadius: "18px" // slightly larger radius inside the scale
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center transform scale-75 origin-bottom">
-                  <StatsPanelShell card={card as any}>
-                    <HeroStatsCardPanel
-                      card={{
-                        ...card,
-                        playerLabel: card.playerLabel || "Unknown",
-                        playerAvatarUrl: card.playerAvatarUrl || (card.steam32 ? withBaseUrl(`/cards/${card.steam32}.png`) : undefined),
-                        statSlides: [
-                          { label: "K / D / A", value: `${card.liveKills ?? 0} / ${card.liveDeaths ?? 0} / ${card.liveAssists ?? 0}` },
-                          { label: "CS", value: `${card.liveLastHits ?? 0} / ${card.liveDenies ?? 0}` }
-                        ]
-                      } as any}
-                    />
-                  </StatsPanelShell>
-                </div>
-              )
+              <NativeBpclCard
+                steam32={card.steam32}
+                playerName={card.playerLabel}
+                className="absolute inset-0 flex items-center justify-center transform scale-[0.7611] origin-center z-10 w-[240px] h-[360px] top-[40px] left-[35px]"
+                fallback={
+                  card.bpcId ? (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-[14px] overflow-hidden">
+                      <CachedIframe
+                        bpcId={card.bpcId}
+                        style={{
+                          position: "absolute",
+                          width: "240px",
+                          height: "360px",
+                          border: "none",
+                          transform: "scale(0.7611)",
+                          transformOrigin: "center center",
+                          pointerEvents: "none",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center transform scale-[0.7611] origin-center z-10 w-[240px] h-[360px] top-[40px] left-[35px]">
+                      <FallbackPlayerCard playerName={card.playerLabel || "UNKNOWN"} color={card.teamColor || "#10b981"} />
+                    </div>
+                  )
+                }
+              />
             ) : null}
           </div>
         </div>

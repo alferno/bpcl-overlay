@@ -6,7 +6,6 @@ import {
   ensureOverlayHeroIndex,
   getHeroIdToSlugMap,
 } from "../hero-portrait";
-import { warmHeroWebm } from "../hero-video-pool";
 
 /** Hero cinematic overlay visible duration (fade starts at end) */
 export const DRAFT_INTRO_VISIBLE_MS = 4000;
@@ -99,10 +98,7 @@ export function useDraftPickReveal(
 
     introBusyRef.current = true;
     setIntroPick(next);
-    void ensureOverlayHeroIndex().then(() => {
-      const slug = getHeroIdToSlugMap().get(next.heroId);
-      if (slug) void warmHeroWebm(slug);
-    });
+    void ensureOverlayHeroIndex();
 
     if (introTimerRef.current) clearTimeout(introTimerRef.current);
     introTimerRef.current = setTimeout(() => {

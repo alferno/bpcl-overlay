@@ -171,7 +171,6 @@ function parseSideSlots(
       heroName: displayNameForHero(heroId, heroClass),
       heroPortraitSlug: media.slug,
       heroPortraitUrl: media.staticUrl,
-      heroPortraitAnimatedUrl: media.animatedUrl,
     });
   };
 
@@ -691,7 +690,7 @@ export function parseGsiToDraft(
     const synthRadiant = collectGsiPlayerHeroByOrder(payload, "radiant");
     const synthDire = collectGsiPlayerHeroByOrder(payload, "dire");
 
-    for (const [pickOrder, { heroId }] of synthRadiant) {
+    for (const [pickOrder, { heroId, steam32 }] of synthRadiant) {
       if (heroId > 0) {
         const media = mediaForHero(heroId, undefined, undefined, `synth-r-pick${pickOrder}`);
         radiantSlots.push({
@@ -701,11 +700,11 @@ export function parseGsiToDraft(
           heroName: displayNameForHero(heroId),
           heroPortraitSlug: media.slug,
           heroPortraitUrl: media.staticUrl,
-          heroPortraitAnimatedUrl: media.animatedUrl,
+          steam32,
         });
       }
     }
-    for (const [pickOrder, { heroId }] of synthDire) {
+    for (const [pickOrder, { heroId, steam32 }] of synthDire) {
       if (heroId > 0) {
         const media = mediaForHero(heroId, undefined, undefined, `synth-d-pick${pickOrder}`);
         direSlots.push({
@@ -715,7 +714,7 @@ export function parseGsiToDraft(
           heroName: displayNameForHero(heroId),
           heroPortraitSlug: media.slug,
           heroPortraitUrl: media.staticUrl,
-          heroPortraitAnimatedUrl: media.animatedUrl,
+          steam32,
         });
       }
     }
@@ -723,11 +722,9 @@ export function parseGsiToDraft(
     direSlots.sort((a, b) => a.order - b.order);
   }
 
-  const rosterComplete = draftRosterComplete(radiantSlots, direSlots);
-  if (rosterComplete) {
-    radiantSlots = applyPlayerHeroLocks(radiantSlots, "radiant", payload);
-    direSlots = applyPlayerHeroLocks(direSlots, "dire", payload);
-  }
+  // Always apply player hero locks to map steam32s to their chosen heroes as they select them
+  radiantSlots = applyPlayerHeroLocks(radiantSlots, "radiant", payload);
+  direSlots = applyPlayerHeroLocks(direSlots, "dire", payload);
 
   const activeTeam = draft ? activeTeamFromGsi(draftRec) : null;
   const timer = gsiNumber(

@@ -23,6 +23,21 @@ try {
     path.resolve(__dirname, 'release/BPCL Streamer Desktop-win32-x64/resources/cloudflared-windows-amd64.exe')
   );
   
+  // Copy ffmpeg binaries for replay manager outside the asar
+  const resourcesBinPath = path.resolve(__dirname, 'release/BPCL Streamer Desktop-win32-x64/resources/bin');
+  fs.mkdirSync(resourcesBinPath, { recursive: true });
+  fs.copyFileSync(
+    path.resolve(__dirname, '../../node_modules/ffmpeg-static/ffmpeg.exe'),
+    path.join(resourcesBinPath, 'ffmpeg.exe')
+  );
+  
+  const ffprobeDestDir = path.join(resourcesBinPath, 'win32/x64');
+  fs.mkdirSync(ffprobeDestDir, { recursive: true });
+  fs.copyFileSync(
+    path.resolve(__dirname, '../../node_modules/ffprobe-static/bin/win32/x64/ffprobe.exe'),
+    path.join(ffprobeDestDir, 'ffprobe.exe')
+  );
+  
   console.log("✅ Successfully copied admin-web, overlay-web, and cloudflared into the packaged resources!");
 } catch (err) {
   console.error("Failed to copy resources:", err);

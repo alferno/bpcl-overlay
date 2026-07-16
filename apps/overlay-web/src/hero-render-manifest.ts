@@ -1,7 +1,7 @@
 import {
   buildCanonicalHeroFileMap,
   normalizeHeroSlug,
-  resolveHeroAnimatedUrl,
+  resolveHeroRenderPosterUrl,
 } from "@bpc/shared-types";
 
 let localRenderSlugs = new Set<string>();
@@ -37,13 +37,13 @@ export function getLocalHeroRenderSlugs(): ReadonlySet<string> {
   return localRenderSlugs;
 }
 
-/** Local WebM only; maps canonical slug → actual filename (life_stealer.webm, etc.). */
-export function resolveOverlayHeroAnimatedUrl(slug: string): string | undefined {
+/** Local PNG poster matching WebM; maps canonical slug → actual filename (life_stealer.png, etc.). */
+export function resolveOverlayHeroRenderPosterUrl(slug: string): string | undefined {
   const clean = normalizeHeroSlug(slug);
   if (!clean) return undefined;
   const manifest = localRenderSlugs;
   if (manifest.size > 0 && !manifest.has(clean)) return undefined;
-  const rawUrl = resolveHeroAnimatedUrl(clean, manifest, canonicalToFileSlug);
+  const rawUrl = resolveHeroRenderPosterUrl(clean, manifest, canonicalToFileSlug);
   if (!rawUrl) return undefined;
   return rawUrl.startsWith("/")
     ? `${import.meta.env.BASE_URL}${rawUrl.slice(1)}`

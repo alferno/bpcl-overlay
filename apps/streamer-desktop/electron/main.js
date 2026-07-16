@@ -2,9 +2,10 @@ import { app, BrowserWindow, ipcMain, dialog, clipboard } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import os from 'node:os';
 import fs from 'node:fs';
+import { bpclBase } from './env-setup.js';
+import { bootstrapBroadcastServer } from 'broadcast-api/src/index.js';
+import { logEmitter } from 'broadcast-api/src/logger.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, '..');
 process.on('uncaughtException', (error) => {
@@ -16,50 +17,6 @@ process.on('unhandledRejection', (reason) => {
     const message = reason instanceof Error ? reason.stack || reason.message : String(reason);
     dialog.showErrorBox('Main Process Unhandled Rejection', message);
 });
-// ── Inject API env defaults BEFORE broadcast-api/env.ts is imported ──────────
-// These are safe defaults. The user can override them via the UI later.
-// BROADCAST_SECRET is auto-generated per-install if not set.
-if (!process.env.BROADCAST_SECRET) {
-    // Generate a stable secret seeded from machine data so it survives restarts
-    process.env.BROADCAST_SECRET = createHash('sha256')
-        .update(os.hostname() + os.userInfo().username)
-        .digest('hex')
-        .slice(0, 32);
-}
-if (!process.env.LEAGUE_ID)
-    process.env.LEAGUE_ID = '19721';
-if (!process.env.NODE_ENV)
-    process.env.NODE_ENV = 'production';
-if (!process.env.PORT)
-    process.env.PORT = '8080';
-if (!process.env.STATE_BACKEND)
-    process.env.STATE_BACKEND = 'memory';
-if (!process.env.CORS_ORIGINS)
-    process.env.CORS_ORIGINS = '*';
-if (!process.env.STEAM_WEB_API_KEY)
-    process.env.STEAM_WEB_API_KEY = 'E5DE5CF0D74F982E7FCB0AC3DE13393F';
-if (!process.env.LEAGUE_AUTO_AGGREGATE)
-    process.env.LEAGUE_AUTO_AGGREGATE = 'false';
-// ── Broadcast data base — stored in Documents\BPCLBroadcast for portability ─
-// This lets any caster open the folder, share it via OneDrive, and see the
-// same roster CSVs and match logs regardless of where the exe lives.
-const docsDir = app.getPath('documents');
-const bpclBase = path.join(docsDir, 'BPCLBroadcast');
-if (!process.env.REPLAY_DB_FILE)
-    process.env.REPLAY_DB_FILE = path.join(bpclBase, 'System', 'replay_db.csv');
-if (!process.env.REPLAY_MATCH_FILE)
-    process.env.REPLAY_MATCH_FILE = path.join(bpclBase, 'System', 'active_match.txt');
-if (!process.env.REPLAY_LAST_COMPLETED_FILE)
-    process.env.REPLAY_LAST_COMPLETED_FILE = path.join(bpclBase, 'System', 'last_completed_match.txt');
-if (!process.env.REPLAY_PLAYBACK_DIR)
-    process.env.REPLAY_PLAYBACK_DIR = path.join(bpclBase, 'Playback');
-if (!process.env.REPLAY_FOLDER)
-    process.env.REPLAY_FOLDER = path.join(bpclBase, 'Replays');
-if (!process.env.ROSTER_CSV_PATH)
-    process.env.ROSTER_CSV_PATH = path.join(bpclBase, 'System', 'Rosters', 'players_roster_prepared.csv');
-if (!process.env.LEAGUE_STATS_DIR)
-    process.env.LEAGUE_STATS_DIR = path.join(bpclBase, 'System', 'Stats');
-let bootstrapBroadcastServer;
 // Prevent the API from exiting the process on error
 process.env.BPC_NO_EXIT = "1";
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
@@ -109,29 +66,24 @@ app.on('window-all-closed', () => {
     }
 });
 let apiInstances = null;
+let apiStartupError = null;
 app.whenReady().then(async () => {
     createWindow();
-    // Dynamically import the API — env vars above must be set first
-    try {
-        const mod = await import('broadcast-api/src/index.js');
-        const loggerMod = await import('broadcast-api/src/logger.js');
-        if (loggerMod.logEmitter) {
-            loggerMod.logEmitter.on('log', (msg) => {
-                win?.webContents.send('log', msg);
-            });
-        }
-        bootstrapBroadcastServer = mod.bootstrapBroadcastServer;
-    }
-    catch (err) {
-        win?.webContents.send('log', 'Failed to load API module: ' + err);
+    if (logEmitter) {
+        logEmitter.on('log', (msg) => {
+            win?.webContents.send('log', msg);
+        });
     }
     // Start the Broadcast API locally
     try {
         apiInstances = await bootstrapBroadcastServer();
         win?.webContents.send('log', 'Broadcast API started successfully on port 8080');
+        win?.webContents.send('api-status', { ok: true });
     }
     catch (err) {
+        apiStartupError = String(err);
         win?.webContents.send('log', 'Error starting API: ' + err);
+        win?.webContents.send('api-status', { ok: false, error: apiStartupError });
     }
     // Auto-install Dota 2 GSI
     try {
@@ -172,6 +124,13 @@ app.whenReady().then(async () => {
 ipcMain.handle('get-tunnel-url', () => tunnelUrl);
 ipcMain.handle('get-broadcast-secret', () => process.env.BROADCAST_SECRET);
 ipcMain.handle('get-broadcast-data-dir', () => bpclBase);
+ipcMain.handle('get-api-status', () => {
+    if (apiInstances)
+        return { ok: true };
+    if (apiStartupError)
+        return { ok: false, error: apiStartupError };
+    return { ok: false, error: 'Starting...' };
+});
 /** Opens the BPCLBroadcast folder in Windows Explorer */
 ipcMain.handle('open-data-folder', async () => {
     try {
@@ -260,6 +219,7 @@ function installDotaGSI() {
         const cfgPath = path.join(cfgDir, 'gamestate_integration_bpcl.cfg');
         // Overwrite to guarantee URI is correct
         fs.writeFileSync(cfgPath, CFG_CONTENT, 'utf8');
+        console.log(`[BPCL Streamer] Auto-installed Dota 2 GSI configuration to: ${cfgPath}`);
     }
     catch (err) {
         console.error('Failed to auto-install Dota 2 GSI:', err);

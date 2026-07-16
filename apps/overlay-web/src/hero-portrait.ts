@@ -11,7 +11,7 @@ import {
 
 import {
   loadHeroRenderManifest,
-  resolveOverlayHeroAnimatedUrl,
+  resolveOverlayHeroRenderPosterUrl,
 } from "./hero-render-manifest";
 import {
   getLocalHeroPortraitSlugs,
@@ -21,10 +21,8 @@ import {
 
 export type HeroMedia = {
   slug?: string;
-  /** Flat icon PNG — instant poster while WebM loads (~60 KB) */
   static?: string;
   staticFallback?: string;
-  animated?: string;
 };
 
 let heroSlugIndex: HeroSlugIndex | null = null;
@@ -239,18 +237,15 @@ export function resolvePickStatsPortrait(
   });
 }
 
-/** Pick cards: local WebM + flat PNG poster/fallback. */
+/** Pick cards: static render poster */
 export function resolveSlotMedia(slot: DraftSlot): HeroMedia {
   const slug = resolveSlotSlug(slot);
 
-  const animated = slug ? resolveOverlayHeroAnimatedUrl(slug) : undefined;
+  if (!slug) return {};
 
-  if (!slug && !animated) return {};
-
-  const flat = slug ? resolveOverlayHeroPortraitUrl(slug) : undefined;
+  const flat = slug ? resolveOverlayHeroRenderPosterUrl(slug) : undefined;
   return {
     slug,
-    animated,
     static: flat,
     staticFallback: flat,
   };
@@ -263,15 +258,7 @@ export function resolveSlotFlatPortraitUrl(slot: DraftSlot): string | undefined 
   return resolveOverlayHeroPortraitUrl(slug);
 }
 
-export function resolveSlotAnimatedUrl(slot: DraftSlot): string | undefined {
-  return resolveSlotMedia(slot).animated;
-}
 
-export function draftHeroAnimationEnabled(): boolean {
-  const v = import.meta.env.VITE_DRAFT_HERO_ANIMATED;
-  if (v === "false" || v === "0") return false;
-  return true;
-}
 
 export function isPickSlotFilled(slot: DraftSlot | null | undefined): boolean {
   if (!slot) return false;

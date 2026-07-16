@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Scans apps/overlay-web/public/heroes/portraits/*.webm and writes manifest.json
+ * Scans apps/overlay-web/public/heroes/portraits/*.png and writes manifest.json
  * Usage: npm run portraits:manifest
  */
 import fs from "node:fs";
@@ -18,19 +18,13 @@ if (!fs.existsSync(portraitDir)) {
   fs.mkdirSync(portraitDir, { recursive: true });
 }
 
-const webms = fs
-  .readdirSync(portraitDir)
-  .filter((f) => f.endsWith(".webm"))
-  .map((f) => f.replace(/\.webm$/i, ""))
-  .sort((a, b) => a.localeCompare(b));
-
 const pngs = fs
   .readdirSync(portraitDir)
   .filter((f) => f.endsWith(".png"))
   .map((f) => f.replace(/\.png$/i, ""))
   .sort((a, b) => a.localeCompare(b));
 
-const allSlugs = [...new Set([...webms, ...pngs])].sort((a, b) =>
+const allSlugs = [...new Set([...pngs])].sort((a, b) =>
   a.localeCompare(b),
 );
 
@@ -38,11 +32,10 @@ const manifest = {
   generatedAt: new Date().toISOString(),
   slugs: allSlugs,
   posters: pngs,
-  webms,
 };
 
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
 console.log(
-  `Wrote ${manifestPath} — ${webms.length} webm, ${pngs.length} png poster(s)`,
+  `Wrote ${manifestPath} — ${pngs.length} png poster(s)`,
 );

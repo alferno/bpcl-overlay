@@ -2,8 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
-import ffmpegStatic from "ffmpeg-static";
-import ffprobeStatic from "ffprobe-static";
+import { createRequire } from "node:module";
+
+let ffmpegStatic = process.env.FFMPEG_PATH;
+if (!ffmpegStatic) {
+  const require = createRequire(import.meta.url);
+  ffmpegStatic = require("ffmpeg-static");
+}
+
+let ffprobeStaticPath = process.env.FFPROBE_PATH;
+if (!ffprobeStaticPath) {
+  const require = createRequire(import.meta.url);
+  ffprobeStaticPath = require("ffprobe-static").path;
+}
 import { env } from "../env.js";
 import type { Replay, ReplayState } from "@bpc/shared-types";
 import { logger } from "../logger.js";
@@ -150,7 +161,7 @@ export class ReplayManager {
         overridden = true;
       }
       try {
-        const probeCmd = `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${newPath}"`;
+        const probeCmd = `"${ffprobeStaticPath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${newPath}"`;
         const probeOut = await execAsync(probeCmd);
         const actualDuration = parseFloat(probeOut.stdout.trim());
         if (!isNaN(actualDuration) && !overridden) {
@@ -300,7 +311,7 @@ export class ReplayManager {
       const duration = entry ? entry.duration : 30;
       
       // Probe actual duration of the file
-      const probeCmd = `"${ffprobeStatic.path}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}"`;
+      const probeCmd = `"${ffprobeStaticPath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}"`;
       const probeOut = await execAsync(probeCmd);
       const actualDuration = parseFloat(probeOut.stdout.trim()) || 40;
       

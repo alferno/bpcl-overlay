@@ -1,0 +1,15 @@
+.fit-text {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.fit-text__value {
+  max-width: 100%;
+  margin: 0;
+  white-space: nowrap;
+  line-height: 1;
+  text-align: center;
+}

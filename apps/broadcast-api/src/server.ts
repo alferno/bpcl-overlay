@@ -84,33 +84,51 @@ export async function createBroadcastServer(deps: {
   const overlayPath = path.join(__dirname, "../../overlay-web/dist");
   const adminPath = path.join(__dirname, "../../admin-web/dist");
   
-  app.use("/overlay", express.static(overlayPath));
-  app.use("/admin", express.static(adminPath));
+  const staticOptions = {
+    setHeaders: (res: any, filePath: string) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  };
+
+  const sendFileOptions = {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  };
+  
+  app.use("/overlay", express.static(overlayPath, staticOptions));
+  app.use("/admin", express.static(adminPath, staticOptions));
   
   // Fallback for React Router in admin
   app.get("/admin", (req, res) => {
     const file = path.join(adminPath, "index.html");
-    res.sendFile(file, (err) => {
+    res.sendFile(file, sendFileOptions, (err) => {
       if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
     });
   });
   app.get("/admin/*", (req, res, next) => {
     if (req.path.includes(".")) return next();
     const file = path.join(adminPath, "index.html");
-    res.sendFile(file, (err) => {
+    res.sendFile(file, sendFileOptions, (err) => {
       if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
     });
   });
   app.get("/overlay", (req, res) => {
     const file = path.join(overlayPath, "index.html");
-    res.sendFile(file, (err) => {
+    res.sendFile(file, sendFileOptions, (err) => {
       if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
     });
   });
   app.get("/overlay/*", (req, res, next) => {
     if (req.path.includes(".")) return next();
     const file = path.join(overlayPath, "index.html");
-    res.sendFile(file, (err) => {
+    res.sendFile(file, sendFileOptions, (err) => {
       if (err) res.status(500).send(`sendFile error for ${file}: ${err.message}`);
     });
   });

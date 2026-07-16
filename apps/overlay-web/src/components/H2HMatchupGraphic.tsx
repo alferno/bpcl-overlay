@@ -3,11 +3,27 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { withBaseUrl } from "../asset-paths";
 import { CachedIframe } from "./CachedIframe";
+import { FallbackPlayerCard } from "./FallbackPlayerCard";
+import { NativeBpclCard } from "./NativeBpclCard";
 
 export function H2HMatchupGraphic() {
   const { socket } = useOverlayState();
   const [data, setData] = useState<any>(null);
   const [flipped, setFlipped] = useState(false);
+  const [imgErr1, setImgErr1] = useState(false);
+  const [imgErr2, setImgErr2] = useState(false);
+  const [showFront, setShowFront] = useState(true);
+
+  useEffect(() => {
+    if (flipped) {
+      const t = setTimeout(() => {
+        setShowFront(false);
+      }, 400); // halfway through the 0.8s rotation animation
+      return () => clearTimeout(t);
+    } else {
+      setShowFront(true);
+    }
+  }, [flipped]);
 
   useEffect(() => {
     if (!socket) return;
@@ -15,6 +31,8 @@ export function H2HMatchupGraphic() {
     const handler = (payload: any) => {
       setData(payload);
       setFlipped(false);
+      setImgErr1(false);
+      setImgErr2(false);
       
       setTimeout(() => {
         setFlipped(true);
@@ -59,22 +77,29 @@ export function H2HMatchupGraphic() {
                 {/* Front side (Player Card image) */}
                 <div 
                   className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center"
-                  style={{ backfaceVisibility: "hidden" }}
+                  style={{ backfaceVisibility: "hidden", display: showFront ? "flex" : "none" }}
                 >
-                  {data.player1.bpcId ? (
-                    <CachedIframe
+                  <NativeBpclCard
+                    steam32={data.player1.steam32}
+                    playerName={data.player1.displayName}
+                    className="w-full h-full flex items-center justify-center"
+                    fallback={data.player1.bpcId ? (
+                      <CachedIframe
                       bpcId={data.player1.bpcId}
                       style={{ transform: "scale(1.2)", transformOrigin: "center center" }}
-                    />
-                  ) : (
+                      />
+                    ) : !imgErr1 ? (
                     <img 
                       src={withBaseUrl(`/cards/${data.player1.steam32}.png`)} 
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="400" height="600" fill="%231e293b"/></svg>';
-                      }}
+                      onError={() => setImgErr1(true)}
                       className="w-full h-full object-contain"
                     />
-                  )}
+                    ) : (
+                    <div className="absolute inset-0">
+                      <FallbackPlayerCard playerName={data.player1.displayName || "UNKNOWN"} color="#06b6d4" />
+                    </div>
+                    )}
+                  />
                 </div>
 
                 {/* Back side (Stats) */}
@@ -114,8 +139,8 @@ export function H2HMatchupGraphic() {
               className="absolute z-10 flex items-center justify-center"
             >
               <div className="relative">
-                <div className="absolute inset-0 blur-xl bg-gradient-to-br from-yellow-400 to-red-600 opacity-60 rounded-full scale-150 animate-pulse" />
-                <div className="text-[120px] font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-yellow-300 via-amber-500 to-red-600 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]">
+                <div className="absolute inset-0 blur-lg bg-gradient-to-br from-emerald-400 to-emerald-600 opacity-30 rounded-full scale-110" />
+                <div className="text-[80px] font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-600 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] relative z-10">
                   V/S
                 </div>
               </div>
@@ -139,22 +164,29 @@ export function H2HMatchupGraphic() {
                 {/* Front side (Player Card image) */}
                 <div 
                   className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center"
-                  style={{ backfaceVisibility: "hidden" }}
+                  style={{ backfaceVisibility: "hidden", display: showFront ? "flex" : "none" }}
                 >
-                  {data.player2.bpcId ? (
-                    <CachedIframe
+                  <NativeBpclCard
+                    steam32={data.player2.steam32}
+                    playerName={data.player2.displayName}
+                    className="w-full h-full flex items-center justify-center"
+                    fallback={data.player2.bpcId ? (
+                      <CachedIframe
                       bpcId={data.player2.bpcId}
                       style={{ transform: "scale(1.2)", transformOrigin: "center center" }}
-                    />
-                  ) : (
+                      />
+                    ) : !imgErr2 ? (
                     <img 
                       src={withBaseUrl(`/cards/${data.player2.steam32}.png`)} 
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="400" height="600" fill="%231e293b"/></svg>';
-                      }}
+                      onError={() => setImgErr2(true)}
                       className="w-full h-full object-contain"
                     />
-                  )}
+                    ) : (
+                    <div className="absolute inset-0">
+                      <FallbackPlayerCard playerName={data.player2.displayName || "UNKNOWN"} color="#10b981" />
+                    </div>
+                    )}
+                  />
                 </div>
 
                 {/* Back side (Stats) */}

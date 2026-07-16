@@ -16,6 +16,7 @@ import LivePlayerCardPage from "./pages/LivePlayerCardPage";
 import StandoutPlayerPage from "./pages/StandoutPlayerPage";
 import HighlightsPage from "./pages/HighlightsPage";
 import GameTestPage from "./pages/GameTestPage";
+import PlayerCardPage from "./pages/PlayerCardPage";
 
 export default function OverlayAppRoutes() {
   return (
@@ -37,6 +38,7 @@ export default function OverlayAppRoutes() {
         <Route path="/standoutplayer" element={<StandoutPlayerPage />} />
         <Route path="/highlights" element={<HighlightsPage />} />
         <Route path="/test-game" element={<GameTestPage />} />
+        <Route path="/playercard" element={<PlayerCardPage />} />
         <Route path="*" element={<GameCanvas />} />
       </Routes>
     </Router>

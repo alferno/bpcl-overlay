@@ -1,5 +1,5 @@
 {
-  "timestamp": 1784050943098,
+  "timestamp": 1784137615967,
   "data": {
     "season": {
       "id": "5f814f1e-f1e9-412f-974a-6514a270b57a",
@@ -553,26 +553,6 @@
               "bpcId": "BPC-066"
             },
             {
-              "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
-              "sourcePlayerId": null,
-              "registrationId": "5e0457fc-507f-4434-89a6-3e08b15253b8",
-              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
-              "name": "Vaishil",
-              "displayName": "Raiden",
-              "role": "Offlane",
-              "roles": [
-                "Offlane"
-              ],
-              "mmr": 3300,
-              "steamName": "Raiden",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582",
-              "discordHandle": "vaishil_cr7",
-              "location": "Ahmedabad",
-              "isCaptain": false,
-              "slug": "raiden",
-              "bpcId": "BPC-074"
-            },
-            {
               "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
               "sourcePlayerId": null,
               "registrationId": "7b1a045c-174d-4582-a0b1-c7ad250e2a16",
@@ -593,6 +573,26 @@
               "isCaptain": false,
               "slug": "shiro",
               "bpcId": "BPC-071"
+            },
+            {
+              "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
+              "sourcePlayerId": null,
+              "registrationId": "5e0457fc-507f-4434-89a6-3e08b15253b8",
+              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
+              "name": "Vaishil",
+              "displayName": "Raiden",
+              "role": "Offlane",
+              "roles": [
+                "Offlane"
+              ],
+              "mmr": 3300,
+              "steamName": "Raiden",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582",
+              "discordHandle": "vaishil_cr7",
+              "location": "Ahmedabad",
+              "isCaptain": false,
+              "slug": "raiden",
+              "bpcId": "BPC-074"
             }
           ],
           "groupKey": "B",
@@ -607,30 +607,6 @@
           "captain": "Rocker",
           "logoUrl": "/images/teams/mortaloath.png",
           "players": [
-            {
-              "id": "a0af49c2-3961-4000-ab9a-39d61ed51db6",
-              "sourcePlayerId": "4b7647db-6d43-464d-a2df-948c0d66fb48",
-              "registrationId": "b3bb65f3-db28-4e7e-852f-6d9eba206c1c",
-              "playerAccountId": "c4883e15-6b85-48c2-809f-6a5bfb79636e",
-              "name": "Rocker",
-              "displayName": "Rocker",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Mid",
-                "Offlane",
-                "Soft support",
-                "Hard support"
-              ],
-              "mmr": 7200,
-              "steamName": "Rocker",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198272726365/",
-              "discordHandle": "RockeR",
-              "location": "Pune",
-              "isCaptain": true,
-              "slug": "rocker",
-              "bpcId": "BPC-046"
-            },
             {
               "id": "df207bb5-e043-4313-b6bd-d956ab0bf14e",
               "sourcePlayerId": "92b7b0ac-0311-415b-93ae-26c357993219",
@@ -713,6 +689,30 @@
               "isCaptain": false,
               "slug": "destroy",
               "bpcId": "BPC-019"
+            },
+            {
+              "id": "a0af49c2-3961-4000-ab9a-39d61ed51db6",
+              "sourcePlayerId": "4b7647db-6d43-464d-a2df-948c0d66fb48",
+              "registrationId": "b3bb65f3-db28-4e7e-852f-6d9eba206c1c",
+              "playerAccountId": "c4883e15-6b85-48c2-809f-6a5bfb79636e",
+              "name": "Rocker",
+              "displayName": "Rocker",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Mid",
+                "Offlane",
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 7200,
+              "steamName": "Rocker",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198272726365/",
+              "discordHandle": "RockeR",
+              "location": "Pune",
+              "isCaptain": true,
+              "slug": "rocker",
+              "bpcId": "BPC-046"
             }
           ],
           "groupKey": "B",
@@ -1204,29 +1204,6 @@
           "logoUrl": "/images/teams/obsidiancore.png",
           "players": [
             {
-              "id": "0cc6a550-e053-426c-bd2b-600361489e4c",
-              "sourcePlayerId": "5492b7ae-a90b-428b-b078-ecdc0574aebc",
-              "registrationId": "ebbba14d-37ad-4c37-9a9e-6f9daf7f462e",
-              "playerAccountId": "f3a408e4-d949-42f4-b5d4-6f38467fced0",
-              "name": "Dr_Nemesis_X",
-              "displayName": "Dr_Nemesis_X",
-              "role": "Offlane",
-              "roles": [
-                "Offlane",
-                "Soft support",
-                "Hard support",
-                "Carry"
-              ],
-              "mmr": 3441,
-              "steamName": "Dr_Nemesis_X",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198371188806/",
-              "discordHandle": "nemesisx0001",
-              "location": "panaji",
-              "isCaptain": false,
-              "slug": "dr-nemesis-x",
-              "bpcId": "BPC-042"
-            },
-            {
               "id": "9354b85c-4c6a-42ee-9358-c8e7313b5bb4",
               "sourcePlayerId": "40e66d63-407f-4341-b378-83b83b612399",
               "registrationId": "089f6a5d-161e-418c-b97d-6d9fec4e48c0",
@@ -1310,6 +1287,29 @@
               "isCaptain": true,
               "slug": "rat",
               "bpcId": "BPC-064"
+            },
+            {
+              "id": "0cc6a550-e053-426c-bd2b-600361489e4c",
+              "sourcePlayerId": "5492b7ae-a90b-428b-b078-ecdc0574aebc",
+              "registrationId": "ebbba14d-37ad-4c37-9a9e-6f9daf7f462e",
+              "playerAccountId": "f3a408e4-d949-42f4-b5d4-6f38467fced0",
+              "name": "Dr_Nemesis_X",
+              "displayName": "Dr_Nemesis_X",
+              "role": "Offlane",
+              "roles": [
+                "Offlane",
+                "Soft support",
+                "Hard support",
+                "Carry"
+              ],
+              "mmr": 3441,
+              "steamName": "Dr_Nemesis_X",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198371188806/",
+              "discordHandle": "nemesisx0001",
+              "location": "panaji",
+              "isCaptain": false,
+              "slug": "dr-nemesis-x",
+              "bpcId": "BPC-042"
             }
           ],
           "groupKey": "B",
@@ -3483,26 +3483,6 @@
               "bpcId": "BPC-066"
             },
             {
-              "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
-              "sourcePlayerId": null,
-              "registrationId": "5e0457fc-507f-4434-89a6-3e08b15253b8",
-              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
-              "name": "Vaishil",
-              "displayName": "Raiden",
-              "role": "Offlane",
-              "roles": [
-                "Offlane"
-              ],
-              "mmr": 3300,
-              "steamName": "Raiden",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582",
-              "discordHandle": "vaishil_cr7",
-              "location": "Ahmedabad",
-              "isCaptain": false,
-              "slug": "raiden",
-              "bpcId": "BPC-074"
-            },
-            {
               "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
               "sourcePlayerId": null,
               "registrationId": "7b1a045c-174d-4582-a0b1-c7ad250e2a16",
@@ -3523,6 +3503,26 @@
               "isCaptain": false,
               "slug": "shiro",
               "bpcId": "BPC-071"
+            },
+            {
+              "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
+              "sourcePlayerId": null,
+              "registrationId": "5e0457fc-507f-4434-89a6-3e08b15253b8",
+              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
+              "name": "Vaishil",
+              "displayName": "Raiden",
+              "role": "Offlane",
+              "roles": [
+                "Offlane"
+              ],
+              "mmr": 3300,
+              "steamName": "Raiden",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582",
+              "discordHandle": "vaishil_cr7",
+              "location": "Ahmedabad",
+              "isCaptain": false,
+              "slug": "raiden",
+              "bpcId": "BPC-074"
             }
           ],
           "groupKey": "B",
@@ -3537,30 +3537,6 @@
           "captain": "Rocker",
           "logoUrl": "/images/teams/mortaloath.png",
           "players": [
-            {
-              "id": "a0af49c2-3961-4000-ab9a-39d61ed51db6",
-              "sourcePlayerId": "4b7647db-6d43-464d-a2df-948c0d66fb48",
-              "registrationId": "b3bb65f3-db28-4e7e-852f-6d9eba206c1c",
-              "playerAccountId": "c4883e15-6b85-48c2-809f-6a5bfb79636e",
-              "name": "Rocker",
-              "displayName": "Rocker",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Mid",
-                "Offlane",
-                "Soft support",
-                "Hard support"
-              ],
-              "mmr": 7200,
-              "steamName": "Rocker",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198272726365/",
-              "discordHandle": "RockeR",
-              "location": "Pune",
-              "isCaptain": true,
-              "slug": "rocker",
-              "bpcId": "BPC-046"
-            },
             {
               "id": "df207bb5-e043-4313-b6bd-d956ab0bf14e",
               "sourcePlayerId": "92b7b0ac-0311-415b-93ae-26c357993219",
@@ -3643,6 +3619,30 @@
               "isCaptain": false,
               "slug": "destroy",
               "bpcId": "BPC-019"
+            },
+            {
+              "id": "a0af49c2-3961-4000-ab9a-39d61ed51db6",
+              "sourcePlayerId": "4b7647db-6d43-464d-a2df-948c0d66fb48",
+              "registrationId": "b3bb65f3-db28-4e7e-852f-6d9eba206c1c",
+              "playerAccountId": "c4883e15-6b85-48c2-809f-6a5bfb79636e",
+              "name": "Rocker",
+              "displayName": "Rocker",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Mid",
+                "Offlane",
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 7200,
+              "steamName": "Rocker",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198272726365/",
+              "discordHandle": "RockeR",
+              "location": "Pune",
+              "isCaptain": true,
+              "slug": "rocker",
+              "bpcId": "BPC-046"
             }
           ],
           "groupKey": "B",
@@ -4134,29 +4134,6 @@
           "logoUrl": "/images/teams/obsidiancore.png",
           "players": [
             {
-              "id": "0cc6a550-e053-426c-bd2b-600361489e4c",
-              "sourcePlayerId": "5492b7ae-a90b-428b-b078-ecdc0574aebc",
-              "registrationId": "ebbba14d-37ad-4c37-9a9e-6f9daf7f462e",
-              "playerAccountId": "f3a408e4-d949-42f4-b5d4-6f38467fced0",
-              "name": "Dr_Nemesis_X",
-              "displayName": "Dr_Nemesis_X",
-              "role": "Offlane",
-              "roles": [
-                "Offlane",
-                "Soft support",
-                "Hard support",
-                "Carry"
-              ],
-              "mmr": 3441,
-              "steamName": "Dr_Nemesis_X",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198371188806/",
-              "discordHandle": "nemesisx0001",
-              "location": "panaji",
-              "isCaptain": false,
-              "slug": "dr-nemesis-x",
-              "bpcId": "BPC-042"
-            },
-            {
               "id": "9354b85c-4c6a-42ee-9358-c8e7313b5bb4",
               "sourcePlayerId": "40e66d63-407f-4341-b378-83b83b612399",
               "registrationId": "089f6a5d-161e-418c-b97d-6d9fec4e48c0",
@@ -4240,6 +4217,29 @@
               "isCaptain": true,
               "slug": "rat",
               "bpcId": "BPC-064"
+            },
+            {
+              "id": "0cc6a550-e053-426c-bd2b-600361489e4c",
+              "sourcePlayerId": "5492b7ae-a90b-428b-b078-ecdc0574aebc",
+              "registrationId": "ebbba14d-37ad-4c37-9a9e-6f9daf7f462e",
+              "playerAccountId": "f3a408e4-d949-42f4-b5d4-6f38467fced0",
+              "name": "Dr_Nemesis_X",
+              "displayName": "Dr_Nemesis_X",
+              "role": "Offlane",
+              "roles": [
+                "Offlane",
+                "Soft support",
+                "Hard support",
+                "Carry"
+              ],
+              "mmr": 3441,
+              "steamName": "Dr_Nemesis_X",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198371188806/",
+              "discordHandle": "nemesisx0001",
+              "location": "panaji",
+              "isCaptain": false,
+              "slug": "dr-nemesis-x",
+              "bpcId": "BPC-042"
             }
           ],
           "groupKey": "B",

@@ -17,7 +17,6 @@ import {
 import { findPickSlotForLastPick } from "../../draft/slot-utils";
 import { colorAlpha, resolveDraftTeamColors } from "../../draft/team-colors";
 import { resolvePickPlayerContext } from "../../draft/resolve-pick-player";
-import { whenHeroWebmReady } from "../../hero-video-pool";
 
 function resolveSideLogo(
   draft: DraftState,
@@ -69,22 +68,9 @@ export function DraftHeroIntro({
 
   const pickSlot = findPickSlotForLastPick(draft, pick);
 
-  // Resolve animated WebM for full hero model
+  // Resolve full hero model image
   const slotMedia = pickSlot ? resolveSlotMedia(pickSlot) : undefined;
-  const [videoUrl, setVideoUrl] = useState<string | undefined>(slotMedia?.animated);
-  const [videoReady, setVideoReady] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    setVideoReady(false);
-    const slug = slotMedia?.slug;
-    if (!slug) return;
-    let cancelled = false;
-    void whenHeroWebmReady(slug).then((url) => {
-      if (!cancelled && url) setVideoUrl(url);
-    });
-    return () => { cancelled = true; };
-  }, [slotMedia?.slug, slotMedia?.animated]);
+  const imageUrl = slotMedia?.staticFallback ?? slotMedia?.static;
 
   const heroDisplayName = (pick.heroName ?? `HERO ${pick.heroId}`).toUpperCase();
 
@@ -110,29 +96,21 @@ export function DraftHeroIntro({
         }}
       />
 
-      {/* ─── Hero WebM model — positioned in upper-center ─── */}
+      {/* ─── Hero model — positioned in upper-center ─── */}
       <div className="absolute inset-x-0 top-0 bottom-[35%] flex items-end justify-center">
-        {videoUrl ? (
-          <motion.video
-            ref={videoRef}
-            key={videoUrl}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
+        {imageUrl ? (
+          <motion.img
+            key={imageUrl}
+            src={imageUrl}
+            alt={heroDisplayName}
             className="draft-hero-portrait h-full w-auto max-w-[55%] object-contain object-bottom"
             style={{
-              opacity: videoReady ? 1 : 0,
               ["--hero-glow" as string]: colorAlpha(accent, 0.4),
             }}
-            onCanPlayThrough={() => setVideoReady(true)}
-            initial={{ scale: 1.08, y: 24 }}
-            animate={{ scale: 1, y: 0 }}
+            initial={{ scale: 1.08, y: 24, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
-          >
-            <source src={videoUrl} type="video/webm" />
-          </motion.video>
+          />
         ) : null}
       </div>
 

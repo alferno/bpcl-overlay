@@ -16,12 +16,17 @@ export default function App() {
   const [dataDir, setDataDir] = useState<string | null>(null)
   const [openFolderStatus, setOpenFolderStatus] = useState<string | null>(null)
 
+  const [apiStatus, setApiStatus] = useState('Starting local API...')
+
   useEffect(() => {
     const unsubLog = window.ipcRenderer?.on('log', (_, msg) => {
       setLogs((prev) => [...prev, msg])
     })
     const unsubTunnel = window.ipcRenderer?.on('tunnel-url', (_, url) => {
       setTunnelUrl(url)
+    })
+    const unsubApi = window.ipcRenderer?.on('api-status', (_, status) => {
+      setApiStatus(status.ok ? 'Local API ready' : `Local API failed: ${status.error || 'unknown error'}`)
     })
 
     // Fetch initial URL, secret, and data directory path
@@ -35,11 +40,19 @@ export default function App() {
       window.ipcRenderer.invoke('get-broadcast-data-dir').then((dir) => {
         if (dir) setDataDir(dir)
       })
+      window.ipcRenderer.invoke('get-api-status')
+        .then((status) => {
+          setApiStatus(status.ok ? 'Local API ready' : `Local API failed: ${status.error || 'unknown error'}`)
+        })
+        .catch(() => {
+          // Handled via api-status event if it fails initially
+        })
     }
 
     return () => {
       unsubLog?.()
       unsubTunnel?.()
+      unsubApi?.()
     }
   }, [])
 

@@ -28,6 +28,8 @@ import { rankMvpCandidates } from "../services/mvp-scorer.js";
 let lastGsiAt = 0;
 let gsiDebounce: ReturnType<typeof setTimeout> | null = null;
 let globalLastTormentorKillClockTime: number | null = null;
+let globalVersusTimeout: ReturnType<typeof setTimeout> | null = null;
+let globalGameTimeout: ReturnType<typeof setTimeout> | null = null;
 let globalLastProcessedEventTime: number = 0;
 let globalPrevPayload: Record<string, any> | null = null;
 let globalLastMatchId: string | number | null = null;
@@ -42,6 +44,7 @@ let globalLastRoshanState: string | null = null;
 let globalLastRoshanKillerTeam: "radiant" | "dire" | null = null;
 
 let globalLastAutoReplaySaveAt = 0;
+let globalPreGameTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // ── Substitute Detection ───────────────────────────────────────────────────
 // We only run substitute detection once per unique set of 10 lobby players.
@@ -56,7 +59,12 @@ function extractGsiLobbyPlayers(payload: Record<string, unknown>): { radiant: (n
   const playerRoot = payload.player as Record<string, any> | undefined;
   if (!playerRoot) return null;
 
-  const extractTeam = (gsiKey: string): (number | null)[] => {
+  // Log once per match or per unique lobby to confirm structure
+  if (!globalLastLobbyKey) {
+    logger.info({ playerRoot }, "[GSI DEBUG] Confirming player payload structure");
+  }
+
+  const extractTeam = (gsiKey: "team2" | "team3"): (number | null)[] => {
     const teamData = playerRoot[gsiKey] as Record<string, any> | undefined;
     if (!teamData) return [null, null, null, null, null];
     return [0, 1, 2, 3, 4].map((i) => {
@@ -119,13 +127,26 @@ async function detectAndApplySubstitutes(
 
   // There's a mismatch — detect which players are subs (in lobby but not in existing setup)
   const rosterMap = new Map<number, RosterPlayer>(currentRoster.map((p) => [p.steam32, p]));
+  const { fetchCommunityPlayers } = await import("../services/bpcleague-sync.js");
+  const communityPlayers = await fetchCommunityPlayers();
+  const communityMap = new Map(communityPlayers.filter(p => p.steam32).map(p => [p.steam32!, p]));
 
   const resolvePlayer = (steam32: number): { displayName: string; avatarUrl?: string; bpcId?: string } => {
     // Check main roster first
     const rosterEntry = rosterMap.get(steam32);
     if (rosterEntry) return { displayName: rosterEntry.displayName, avatarUrl: rosterEntry.avatarUrl, bpcId: rosterEntry.bpcId };
-    // Player not in roster — they are a substitute. We can't match by steam32 in the community API
-    // (it doesn't expose steam32), so just mark as unknown sub. Roster sync will handle adding them.
+    
+    // Fallback to community players
+    const communityEntry = communityMap.get(steam32);
+    if (communityEntry) {
+      return { 
+        displayName: communityEntry.displayName, 
+        avatarUrl: communityEntry.avatarUrl, 
+        bpcId: communityEntry.bpcId 
+      };
+    }
+    
+    // Unknown player
     return { displayName: `Sub#${steam32}` };
   };
 
@@ -226,6 +247,13 @@ let globalWisdomDireCount = 0;
 let globalWisdomDireXp = 0;
 const globalPrevXp: Map<string, number> = new Map();
 
+export interface WisdomHistoryEntry {
+  time: number;
+  team: "radiant" | "dire";
+  xp: number;
+}
+export const globalWisdomHistory: WisdomHistoryEntry[] = [];
+
 let globalLastBountyCountForEmit = 0;
 let globalLastWisdomCountForEmit = 0;
 
@@ -233,13 +261,23 @@ export function getWisdomStats() {
   return {
     radiant: { count: globalWisdomRadiantCount, xp: globalWisdomRadiantXp },
     dire:    { count: globalWisdomDireCount,    xp: globalWisdomDireXp },
+    history: globalWisdomHistory,
   };
 }
+
+export interface BountyHistoryEntry {
+  time: number;
+  team: "radiant" | "dire";
+  count: number;
+  gold: number;
+}
+export const globalBountyHistory: BountyHistoryEntry[] = [];
 
 export function getBountyStats() {
   return {
     radiant: { count: globalBountyRadiantCount, gold: globalBountyRadiantGold },
     dire:    { count: globalBountyDireCount,    gold: globalBountyDireGold },
+    history: globalBountyHistory,
   };
 }
 
@@ -456,28 +494,65 @@ export function attachGsiRoutes(opts: {
       const newPhase = parsed.draftPatch?.phase ?? prevPhase;
       const prevGameState = current.draft?.gameState;
       const newGameState = parsed.draftPatch?.gameState ?? prevGameState;
-
       const overlayVisibilityPatch: Record<string, string> = {};
+
+      const clearAutomationTimers = (reason: string) => {
+        let cleared = false;
+        if (globalVersusTimeout) {
+          clearTimeout(globalVersusTimeout);
+          globalVersusTimeout = null;
+          cleared = true;
+        }
+        if (globalGameTimeout) {
+          clearTimeout(globalGameTimeout);
+          globalGameTimeout = null;
+          cleared = true;
+        }
+        if (cleared) {
+          logger.info(`[GSI Automation] ${reason}, cancelled pending transition timers`);
+        }
+      };
 
       // Transition 0: None ➔ Draft (when draft starts)
       if (newGameState === "DOTA_GAMERULES_STATE_HERO_SELECTION" && prevGameState !== "DOTA_GAMERULES_STATE_HERO_SELECTION") {
+        clearAutomationTimers("Draft started");
         overlayVisibilityPatch.draft = "visible";
         overlayVisibilityPatch.versus = "hidden";
         overlayVisibilityPatch.game = "hidden";
         logger.info("[GSI Automation] Draft started, switching to Draft overlay");
       }
 
-      // Transition 1: Draft ➔ Versus (when picks/bans finish and still in-game)
-      if (prevPhase !== "done" && newPhase === "done" && parsed.inDraft) {
-        overlayVisibilityPatch.draft = "hidden";
-        overlayVisibilityPatch.versus = "visible";
-        logger.info("[GSI Automation] Draft done, switching to Versus overlay");
+      // Clear timers if we go back to draft starting
+      if (newPhase !== "done") {
+        clearAutomationTimers("Draft resumed/state bounced");
       }
 
-      // Transition 2: Versus ➔ Game (20s after Strategy Time ends and Horn is pending)
-      if (prevGameState !== "DOTA_GAMERULES_STATE_PRE_GAME" && newGameState === "DOTA_GAMERULES_STATE_PRE_GAME") {
-        logger.info("[GSI Automation] Pre-game started, scheduling Game overlay transition in 20s");
-        setTimeout(async () => {
+      // Transition 1: Draft ➔ Versus (Delay 5s) and Versus ➔ Game (Delay 80s)
+      if (prevPhase !== "done" && newPhase === "done" && parsed.inDraft) {
+        clearAutomationTimers("Draft finished");
+        logger.info("[GSI Automation] Draft done, scheduling Versus in 5s and Game in 85s");
+        
+        // 5s to show Versus
+        globalVersusTimeout = setTimeout(async () => {
+          globalVersusTimeout = null;
+          try {
+            const snap = await state.getState();
+            await state.patchState({
+              overlayVisibility: {
+                ...(snap.overlayVisibility ?? {}),
+                draft: "hidden",
+                versus: "visible",
+              }
+            });
+            broadcast.broadcastFull(await state.getState());
+          } catch (e) {
+            logger.error({ err: e }, "Failed to switch to Versus");
+          }
+        }, 5000);
+
+        // 85s to show Game (5s wait + 40s flip + 40s hold = 85s total from draft end)
+        globalGameTimeout = setTimeout(async () => {
+          globalGameTimeout = null;
           try {
             const snap = await state.getState();
             await state.patchState({
@@ -488,11 +563,23 @@ export function attachGsiRoutes(opts: {
               }
             });
             broadcast.broadcastFull(await state.getState());
-            logger.info("[GSI Automation] Switched to Game overlay");
           } catch (e) {
-            logger.error({ err: e }, "[GSI Automation] Failed to transition to game overlay");
+            logger.error({ err: e }, "Failed to switch to Game");
           }
-        }, 20000);
+        }, 85000);
+      }
+
+      // Transition 2 (Fallback): If we enter PreGame and are still in Draft/Versus, immediately go to Game
+      const isEdgePreGame = prevGameState !== "DOTA_GAMERULES_STATE_PRE_GAME" && newGameState === "DOTA_GAMERULES_STATE_PRE_GAME";
+      if (
+        isEdgePreGame &&
+        (current.overlayVisibility?.draft === "visible" || current.overlayVisibility?.versus === "visible")
+      ) {
+        clearAutomationTimers("Pre-game edge triggered");
+        overlayVisibilityPatch.draft = "hidden";
+        overlayVisibilityPatch.versus = "hidden";
+        overlayVisibilityPatch.game = "visible";
+        logger.info("[GSI Automation] Pre-game started, forcing switch to Game overlay");
       }
 
       // Transition 3: Game ➔ Post-Game or Disconnect
@@ -500,9 +587,16 @@ export function attachGsiRoutes(opts: {
         newGameState === "DOTA_GAMERULES_STATE_POST_GAME" ||
         newGameState === "DOTA_GAMERULES_STATE_DISCONNECT"
       ) {
-        if (current.overlayVisibility?.game === "visible") {
+        if (
+          current.overlayVisibility?.game === "visible" ||
+          current.overlayVisibility?.draft === "visible" ||
+          current.overlayVisibility?.versus === "visible"
+        ) {
+          clearAutomationTimers("Game ended/disconnected");
+          overlayVisibilityPatch.draft = "hidden";
+          overlayVisibilityPatch.versus = "hidden";
           overlayVisibilityPatch.game = "hidden";
-          logger.info("[GSI Automation] Game ended/disconnected, hiding Game overlay");
+          logger.info("[GSI Automation] Game ended/disconnected, hiding all overlays");
         }
       }
 
@@ -543,6 +637,7 @@ export function attachGsiRoutes(opts: {
         globalBountyDireCount = 0;
         globalBountyDireGold = 0;
         globalBountyEventsProcessedTotal = 0;
+        globalBountyHistory.length = 0;
         globalPrevRunePickups.clear();
 
         // Reset wisdom tracking
@@ -550,6 +645,7 @@ export function attachGsiRoutes(opts: {
         globalWisdomRadiantXp = 0;
         globalWisdomDireCount = 0;
         globalWisdomDireXp = 0;
+        globalWisdomHistory.length = 0;
         globalPrevXp.clear();
       } else if (clockTime < prevClockTime || clockTime < (globalLastTormentorKillClockTime || 0)) {
         globalLastTormentorKillClockTime = null;
@@ -616,6 +712,7 @@ export function attachGsiRoutes(opts: {
           if (radiantPickups > 0) {
             globalBountyRadiantCount += radiantPickups;
             globalBountyRadiantGold  += goldPerRune * radiantPickups;
+            globalBountyHistory.push({ time: clockTime, team: "radiant", count: radiantPickups, gold: goldPerRune * radiantPickups });
             logger.info(
               { radiantPickups, goldPerRune, totalGold: goldPerRune * radiantPickups },
               "[bounty] Radiant bounty pickups (events array, 7.41d consumption-time)",
@@ -624,6 +721,7 @@ export function attachGsiRoutes(opts: {
           if (direPickups > 0) {
             globalBountyDireCount += direPickups;
             globalBountyDireGold  += goldPerRune * direPickups;
+            globalBountyHistory.push({ time: clockTime, team: "dire", count: direPickups, gold: goldPerRune * direPickups });
             logger.info(
               { direPickups, goldPerRune, totalGold: goldPerRune * direPickups },
               "[bounty] Dire bounty pickups (events array, 7.41d consumption-time)",
@@ -655,9 +753,11 @@ export function attachGsiRoutes(opts: {
               if (side === "radiant") {
                 globalBountyRadiantCount += delta;
                 globalBountyRadiantGold  += goldPerRune * delta;
+                globalBountyHistory.push({ time: clockTime, team: "radiant", count: delta, gold: goldPerRune * delta });
               } else {
                 globalBountyDireCount += delta;
                 globalBountyDireGold  += goldPerRune * delta;
+                globalBountyHistory.push({ time: clockTime, team: "dire", count: delta, gold: goldPerRune * delta });
               }
               logger.debug(
                 { team: side, delta, goldPerRune, cacheKey },
@@ -704,12 +804,15 @@ export function attachGsiRoutes(opts: {
           if (heroesGotSpike >= 2) {
             const runesPicked = Math.floor(heroesGotSpike / 2);
             if (runesPicked > 0) {
+              const xpGained = expectedTeamXp * runesPicked;
               if (side === "radiant") {
                 globalWisdomRadiantCount += runesPicked;
-                globalWisdomRadiantXp += expectedTeamXp * runesPicked;
+                globalWisdomRadiantXp += xpGained;
+                globalWisdomHistory.push({ time: clockTime, team: "radiant", xp: xpGained });
               } else {
                 globalWisdomDireCount += runesPicked;
-                globalWisdomDireXp += expectedTeamXp * runesPicked;
+                globalWisdomDireXp += xpGained;
+                globalWisdomHistory.push({ time: clockTime, team: "dire", xp: xpGained });
               }
               logger.info(
                 { team: side, heroesGotSpike, runesPicked, expectedTeamXp },
@@ -986,6 +1089,7 @@ export function attachGsiRoutes(opts: {
               overlayVisibility: {
                 ...(patch.overlayVisibility as any || {}),
                 liveplayercard: "visible",
+                kdaCard: "visible",
               },
             };
           } else {
@@ -1000,17 +1104,22 @@ export function attachGsiRoutes(opts: {
           }
         }
       } else {
-        const visChanged = current.overlayVisibility?.liveplayercard === "visible";
+        const liveCardVisible = current.overlayVisibility?.liveplayercard === "visible";
+        const kdaCardVisible = current.overlayVisibility?.kdaCard === "visible";
         const hasCard = current.livePlayerCard !== null && current.livePlayerCard !== undefined;
-        if (visChanged || hasCard) {
+        if (liveCardVisible || kdaCardVisible || hasCard) {
           patch = {
             ...patch,
             livePlayerCard: null,
             overlayVisibility: {
               ...(patch.overlayVisibility as any || {}),
               liveplayercard: "hidden",
+              kdaCard: "hidden",
             },
           };
+          if (liveCardVisible || kdaCardVisible) {
+            logger.info("[GSI Automation] Hero focus lost — hiding LivePlayer + KDA cards");
+          }
         }
       }
 
@@ -1089,16 +1198,18 @@ export function attachGsiRoutes(opts: {
                 }
               }
 
-              const mvpUpdated = await state.patchState({
-                standoutPlayerCard: standoutCard,
-                overlayVisibility: { standoutplayer: "visible" },
-              });
-              await broadcast.broadcastFull(mvpUpdated);
+              setTimeout(async () => {
+                const mvpUpdated = await state.patchState({
+                  standoutPlayerCard: standoutCard,
+                  overlayVisibility: { standoutplayer: "visible" },
+                });
+                await broadcast.broadcastFull(mvpUpdated);
 
-              logger.info(
-                { mvpScore: winner.mvpScore, heroId: winner.heroId, accountId: winner.accountId },
-                "[post-game] Standout Player auto-selected and pushed to overlay",
-              );
+                logger.info(
+                  { mvpScore: winner.mvpScore, heroId: winner.heroId, accountId: winner.accountId },
+                  "[post-game] Standout Player auto-selected and pushed to overlay after 5s delay",
+                );
+              }, 5000);
             }
           }
         } catch (err) {
@@ -1216,10 +1327,14 @@ export function attachGsiHeartbeat(
       if (Date.now() - lastGsiAt > 8000 && lastGsiAt > 0) {
         const snap = await state.getState();
         if (snap.production?.gsiConnected) {
+          // Mark GSI as disconnected but do NOT force-hide overlays.
+          // LivePlayer + KDA cards auto-hide via hero focus logic.
+          // Draft/Versus/Game overlays stay visible until the actual game state changes.
           const next = await state.patchState({
             production: { gsiConnected: false },
           });
           await broadcast.broadcastFull(next);
+          logger.info("[GSI Heartbeat] GSI offline for 8s: marked disconnected (overlays preserved)");
         }
       }
     })();

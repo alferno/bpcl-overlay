@@ -8,6 +8,9 @@ import { useRouteVisible } from "../hooks/useRouteVisible";
 import { colorAlpha } from "../draft/team-colors";
 import { resolveSlotFlatPortraitUrl, resolveSlotSlug } from "../hero-portrait";
 import { CachedIframe } from "../components/CachedIframe";
+import { FallbackPlayerCard } from "../components/FallbackPlayerCard";
+import { getActivePlayers } from "../utils/active-players";
+import { NativeBpclCard } from "../components/NativeBpclCard";
 
 function formatHeroName(slug: string | undefined): string {
   if (!slug) return "";
@@ -15,51 +18,6 @@ function formatHeroName(slug: string | undefined): string {
     .split("_")
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
-}
-function FallbackPlayerAvatar({
-  player,
-  color,
-  logoPath,
-}: {
-  player: RosterPlayer;
-  color: string;
-  logoPath: string;
-}) {
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-slate-900">
-      {/* Background logo */}
-      <img
-        src={logoPath}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-overlay blur-sm"
-        onError={(e) => (e.currentTarget.style.display = "none")}
-      />
-      {/* Player steam avatar if available */}
-      {player.avatarUrl ? (
-        <img
-          src={player.avatarUrl}
-          alt=""
-          className="relative z-10 mb-4 h-28 w-28 rounded-full border-4 shadow-xl"
-          style={{ borderColor: color, boxShadow: `0 0 20px ${colorAlpha(color, 0.4)}` }}
-        />
-      ) : (
-        <div
-          className="relative z-10 mb-4 flex h-28 w-28 items-center justify-center rounded-full border-4 bg-slate-800 shadow-xl"
-          style={{ borderColor: color, boxShadow: `0 0 20px ${colorAlpha(color, 0.4)}` }}
-        >
-          <span className="text-3xl font-black text-white">?</span>
-        </div>
-      )}
-      <div className="relative z-10 text-center">
-        <span
-          className="block font-display text-2xl font-black uppercase tracking-wider text-white"
-          style={{ textShadow: `0 2px 10px ${color}` }}
-        >
-          {player.displayName}
-        </span>
-      </div>
-    </div>
-  );
 }
 
 function PlayerCard({
@@ -85,36 +43,56 @@ function PlayerCard({
     ? `https://bpcleague.in/overlay/card/${player.bpcId}` 
     : withBaseUrl(`/cards/${player.steam32}.png`)!;
   const [imageError, setImageError] = useState(false);
+  const [showFront, setShowFront] = useState(true);
 
   useEffect(() => setImageError(false), [player.steam32]);
+
+  useEffect(() => {
+    if (flipToHero && heroInfo) {
+      const t = setTimeout(() => {
+        setShowFront(false);
+      }, 400); // halfway through the 0.8s rotation animation
+      return () => clearTimeout(t);
+    } else {
+      setShowFront(true);
+    }
+  }, [flipToHero, heroInfo]);
 
   return (
     <motion.div
       className="group relative h-[360px] w-[240px]"
       style={{ perspective: 1000 }}
-      initial={{ opacity: 0, y: 50, x: isDire ? 50 : -50 }}
-      animate={{ opacity: 1, y: 0, x: 0 }}
-      transition={{ duration: 0.6, delay: 0.6 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, delay: 0.3 }}
     >
       <motion.div
         className="relative h-full w-full rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all hover:scale-[1.05] hover:z-50 hover:-translate-y-2"
-        style={{ transformStyle: "preserve-3d", borderBottom: `4px solid ${color}` }}
+        style={{ transformStyle: "preserve-3d" }}
         animate={{ rotateY: flipToHero && heroInfo ? 180 : 0 }}
         transition={{ duration: 0.8, type: "spring", bounce: 0.3, delay: index * 0.15 }}
       >
         {/* FRONT FACE (Player Card) */}
         <div
           className="absolute inset-0 overflow-hidden rounded-xl bg-slate-900"
-          style={{ backfaceVisibility: "hidden", boxShadow: `0 10px 40px -10px ${colorAlpha(color, 0.4)}` }}
+          style={{ 
+            backfaceVisibility: "hidden", 
+            boxShadow: `0 10px 40px -10px ${colorAlpha(color, 0.4)}`,
+            display: showFront ? "block" : "none"
+          }}
         >
-          {!imageError ? (
-            player.bpcId ? (
+          <NativeBpclCard
+            steam32={player.steam32}
+            playerName={player.displayName}
+            className="h-full w-full flex items-center justify-center"
+            fallback={!imageError ? (
+              player.bpcId ? (
               <CachedIframe
                 bpcId={player.bpcId}
                 className="h-full w-full"
                 style={{ width: "100%", height: "100%", border: "none" }}
               />
-            ) : (
+              ) : (
               <img
                 src={cardUrl}
                 alt={player.displayName}
@@ -128,10 +106,11 @@ function PlayerCard({
                   }
                 }}
               />
-            )
-          ) : (
-            <FallbackPlayerAvatar player={player} color={color} logoPath={logoPath} />
-          )}
+              )
+            ) : (
+              <FallbackPlayerCard playerName={player.displayName} color={color} />
+            )}
+          />
           {/* Shine effect */}
           <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
@@ -199,6 +178,23 @@ export default function VersusPage() {
   const radiantKey = matchSetup?.radiantTeamKey || "";
   const direKey = matchSetup?.direTeamKey || "";
 
+  // IMPORTANT: All hooks must be declared before any early returns (Rules of Hooks)
+  const [flipped, setFlipped] = useState(false);
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (visible && !flipped) {
+      // Flip exactly 40 seconds after the screen becomes visible
+      timeout = setTimeout(() => {
+        setFlipped(true);
+      }, 40000);
+    }
+    if (!visible) {
+      setFlipped(false); // Reset when hidden
+    }
+    return () => clearTimeout(timeout);
+  }, [visible, flipped]);
+
   if (!radiantKey || !direKey) {
     return (
       <HudCanvas blend>
@@ -224,21 +220,7 @@ export default function VersusPage() {
   const radiantColor = state?.leagueConfig?.teamColors?.[radiantKey] || "#10b981";
   const direColor = state?.leagueConfig?.teamColors?.[direKey] || "#ef4444";
 
-  const radiantRaw = roster.filter((p) => p.teamKey === radiantKey);
-  const direRaw = roster.filter((p) => p.teamKey === direKey);
-
-  // Always pad to 5 players
-  const radiantPlayers = Array.from({ length: 5 }).map((_, i) => radiantRaw[i] ?? {
-    steam32: -(i + 1),
-    displayName: "TBD",
-    teamKey: radiantKey,
-  });
-
-  const direPlayers = Array.from({ length: 5 }).map((_, i) => direRaw[i] ?? {
-    steam32: -(i + 10),
-    displayName: "TBD",
-    teamKey: direKey,
-  });
+  const { radiantPlayers, direPlayers } = getActivePlayers(state as any);
 
   const radiantLogoPath = `${import.meta.env.BASE_URL}teams/${radiantKey}.png`;
   const direLogoPath = `${import.meta.env.BASE_URL}teams/${direKey}.png`;
@@ -246,28 +228,12 @@ export default function VersusPage() {
   // Determine if strategy time has started
   const radiantPicks = state?.draft?.radiant?.slots?.filter((s) => s.type === "pick" && s.heroId) || [];
   const direPicks = state?.draft?.dire?.slots?.filter((s) => s.type === "pick" && s.heroId) || [];
-  const gameState = state?.draft?.gameState;
-  const startSeconds = state?.draft?.startSecondsRemaining ?? 30;
-  
-  // Strategy time starts at 30 seconds and counts down.
-  // We want to wait 10 seconds into strategy time before flipping the cards.
-  const isStrategyTimeAndReady = gameState === "DOTA_GAMERULES_STATE_STRATEGY_TIME" && startSeconds <= 20;
-  
-  const isPostStrategy = gameState === "DOTA_GAMERULES_STATE_PRE_GAME" || 
-                         gameState === "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS";
-                         
-  const flipToHero = isStrategyTimeAndReady || isPostStrategy;
 
-  // Helper to map player to hero pick via steam32 or fallback to positional index
+
+  // Helper to map player to hero pick via steam32
   const getHeroInfo = (steam32: number, index: number, side: "radiant" | "dire") => {
     const draftPicks = side === "radiant" ? radiantPicks : direPicks;
-    // 1. Try to match by steam32 (if admin assigned them in matchSetup)
-    let match = draftPicks.find(s => s.steam32 === steam32);
-    // 2. Fallback: just use the index if there's enough picks
-    if (!match && draftPicks[index]) {
-      match = draftPicks[index];
-    }
-    return match || null;
+    return draftPicks.find(s => s.steam32 === steam32) || null;
   };
 
   return (
@@ -279,9 +245,9 @@ export default function VersusPage() {
           <motion.div
             className="absolute inset-y-0 left-0 z-10 w-[60%]"
             style={{ clipPath: "polygon(0 0, 99.02% 0, 67.64% 100%, 0 100%)" }}
-            initial={{ x: "-100%" }}
-            animate={{ x: visible ? 0 : "-100%" }}
-            transition={{ duration: 0.8, ease: EASE_OUT_EXPO }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: visible ? 1 : 0 }}
+            transition={{ duration: 0.5 }}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-slate-950 to-slate-900" />
             <div
@@ -298,9 +264,9 @@ export default function VersusPage() {
             {/* Radiant Content */}
             <div className="absolute inset-0 flex flex-col justify-center pl-16 pr-[15%] items-start">
               <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.7, delay: 0.4, ease: EASE_OUT_EXPO }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
                 className="mb-8 flex items-center gap-6"
               >
                 <img
@@ -328,7 +294,7 @@ export default function VersusPage() {
                       pos={i + 1}
                       index={i}
                       isDire={false}
-                      flipToHero={flipToHero}
+                      flipToHero={flipped}
                       heroInfo={getHeroInfo(p.steam32, i, "radiant")}
                     />
                   ))}
@@ -344,7 +310,7 @@ export default function VersusPage() {
                       pos={i + 4}
                       index={i + 3}
                       isDire={false}
-                      flipToHero={flipToHero}
+                      flipToHero={flipped}
                       heroInfo={getHeroInfo(p.steam32, i + 3, "radiant")}
                     />
                   ))}
@@ -357,9 +323,9 @@ export default function VersusPage() {
           <motion.div
             className="absolute inset-y-0 right-0 z-10 w-[60%]"
             style={{ clipPath: "polygon(32.36% 0, 100% 0, 100% 100%, 0.98% 100%)" }}
-            initial={{ x: "100%" }}
-            animate={{ x: visible ? 0 : "100%" }}
-            transition={{ duration: 0.8, ease: EASE_OUT_EXPO }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: visible ? 1 : 0 }}
+            transition={{ duration: 0.5 }}
           >
             <div className="absolute inset-0 bg-gradient-to-bl from-slate-950 to-slate-900" />
             <div
@@ -376,9 +342,9 @@ export default function VersusPage() {
             {/* Dire Content */}
             <div className="absolute inset-0 flex flex-col justify-center pl-[15%] pr-16 items-end">
               <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.7, delay: 0.4, ease: EASE_OUT_EXPO }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
                 className="mb-8 flex flex-row-reverse items-center gap-6 text-right"
               >
                 <img
@@ -406,7 +372,7 @@ export default function VersusPage() {
                       pos={i + 1}
                       index={i}
                       isDire={true}
-                      flipToHero={flipToHero}
+                      flipToHero={flipped}
                       heroInfo={getHeroInfo(p.steam32, i, "dire")}
                     />
                   ))}
@@ -422,7 +388,7 @@ export default function VersusPage() {
                       pos={i + 4}
                       index={i + 3}
                       isDire={true}
-                      flipToHero={flipToHero}
+                      flipToHero={flipped}
                       heroInfo={getHeroInfo(p.steam32, i + 3, "dire")}
                     />
                   ))}

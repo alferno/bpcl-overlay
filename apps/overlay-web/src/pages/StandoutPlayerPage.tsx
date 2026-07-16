@@ -13,6 +13,10 @@ import type { StandoutPlayerCard } from "@bpc/shared-types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+import { EASE } from "../animations";
+import { FallbackPlayerCard } from "../components/FallbackPlayerCard";
+import { NativeBpclCard } from "../components/NativeBpclCard";
+
 import { HERO_ABILITIES } from "../ability-constants";
 
 const EMERALD = "#10b981";
@@ -27,7 +31,7 @@ const ABILITY_ICON_BASE =
 const ITEM_ICON_BASE =
   "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items";
 
-import { ITEM_ID_NAME } from "../item-constants";
+import { ITEM_ID_NAME } from "@bpc/shared-types";
 
 function itemIconUrl(itemId: number): string | null {
   if (!itemId || itemId === 0) return null;
@@ -222,6 +226,16 @@ export default function StandoutPlayerPage() {
   const visible = useRouteVisible("standoutplayer", state);
   const card = state.standoutPlayerCard;
 
+  const [delayedVisible, setDelayedVisible] = useState(false);
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(() => setDelayedVisible(true), 10000);
+      return () => clearTimeout(timer);
+    } else {
+      setDelayedVisible(false);
+    }
+  }, [visible]);
+
   const [cardError, setCardError] = useState(false);
   useEffect(() => {
     setCardError(false);
@@ -238,6 +252,11 @@ export default function StandoutPlayerPage() {
   let portraitUrl =
     card?.heroPortraitUrl ??
     (heroSlug ? `/heroes/portraits/${heroSlug}.png` : undefined);
+
+  // Preload all BPC IDs from the roster so changing hero focus is instant
+  const rosterBpcIds = Array.from(
+    new Set((state?.leagueConfig?.roster || []).map((p: any) => p.bpcId).filter(Boolean))
+  ) as string[];
   if (portraitUrl && !portraitUrl.startsWith("http")) {
     portraitUrl = withBaseUrl(portraitUrl);
   }
@@ -252,7 +271,7 @@ export default function StandoutPlayerPage() {
   return (
     <HudCanvas>
       <FadePanel
-        show={visible}
+        show={delayedVisible}
         panelKey={`standout-${card?.steam32 ?? card?.heroId ?? "empty"}`}
       >
         {/* -- Background ------------------------------------------------- */}
@@ -386,8 +405,12 @@ export default function StandoutPlayerPage() {
                       boxShadow: `0 12px 40px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.6)`,
                     }}
                   >
-                    {!cardError && card.bpcId ? (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <NativeBpclCard
+                      steam32={card.steam32}
+                      playerName={card.playerLabel || card.heroName}
+                      className="absolute inset-0 flex items-center justify-center"
+                      fallback={!cardError && card.bpcId ? (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <CachedIframe 
                           bpcId={card.bpcId}
                           style={{
@@ -398,14 +421,14 @@ export default function StandoutPlayerPage() {
                             transformOrigin: "center center"
                           }}
                         />
+                        </div>
+                      ) : cardError || (!card.steam32 && !card.bpcId) ? (
+                      <div className="absolute inset-0">
+                        <FallbackPlayerCard playerName={card.playerLabel || card.heroName || "UNKNOWN"} color="#10b981" />
                       </div>
                     ) : (
                       <img
-                        src={
-                          !cardError && card.steam32
-                            ? withBaseUrl(`/cards/${card.steam32}.png`)
-                            : portraitUrl || withBaseUrl(`/cards/sample.png`)
-                        }
+                        src={withBaseUrl(`/cards/${card.steam32}.png`)}
                         alt="Player/Hero"
                         onError={() => setCardError(true)}
                         style={{
@@ -415,7 +438,8 @@ export default function StandoutPlayerPage() {
                           objectPosition: "center top",
                         }}
                       />
-                    )}
+                      )}
+                    />
                   </div>
 
                   {/* KDA */}

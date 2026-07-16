@@ -47,10 +47,21 @@ function asNum(v: unknown, fallback = 0): number {
   return fallback;
 }
 
+import { ITEM_NAME_TO_ID } from "@bpc/shared-types";
+
 function itemId(slot: unknown): number {
   const r = asRecord(slot);
   if (!r) return 0;
-  return asNum(r.id ?? r.item_id ?? r.itemid, 0);
+  // If it's a numeric ID (OpenDota payload), use it.
+  const numericId = asNum(r.id ?? r.item_id ?? r.itemid, 0);
+  if (numericId !== 0) return numericId;
+  
+  // If it's a GSI payload, we get a string name (e.g. 'item_blink')
+  const name = typeof r.name === "string" ? r.name : "";
+  if (name) {
+    return ITEM_NAME_TO_ID[name] || 0;
+  }
+  return 0;
 }
 
 // ─── Per-player extraction ────────────────────────────────────────────────────

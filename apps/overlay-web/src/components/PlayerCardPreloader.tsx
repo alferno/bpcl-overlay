@@ -1,5 +1,6 @@
 import { useOverlayState } from "../OverlaySocketLayer";
 import { useEffect, useMemo } from "react";
+import { getActivePlayers } from "../utils/active-players";
 
 export function PlayerCardPreloader() {
   const { state } = useOverlayState();
@@ -7,16 +8,8 @@ export function PlayerCardPreloader() {
   const roster = state?.leagueConfig?.roster ?? [];
 
   const playersToPreload = useMemo(() => {
-    if (!matchSetup) return [];
-    
-    const radiantKey = matchSetup.radiantTeamKey || "";
-    const direKey = matchSetup.direTeamKey || "";
-    
-    const radiantPlayers = roster.filter((p) => p.teamKey === radiantKey).slice(0, 5);
-    const direPlayers = roster.filter((p) => p.teamKey === direKey).slice(0, 5);
-    
-    return [...radiantPlayers, ...direPlayers].filter(p => !!p.bpcId);
-  }, [matchSetup, roster]);
+    return getActivePlayers(state).allActivePlayers.filter(p => !!p.bpcId);
+  }, [state]);
 
   useEffect(() => {
     const preloaderContainer = document.getElementById("bpc-preloader-container");
@@ -39,7 +32,7 @@ export function PlayerCardPreloader() {
   }, [playersToPreload]);
 
   return (
-    <div id="bpc-preloader-container" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden", pointerEvents: "none", opacity: 0 }} />
+    <div id="bpc-preloader-container" style={{ position: "absolute", left: 0, top: 0, zIndex: 9999, pointerEvents: "none" }} />
   );
 }
 

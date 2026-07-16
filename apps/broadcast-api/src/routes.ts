@@ -34,6 +34,7 @@ import {
 } from "./services/hero-registry.js";
 import { getBountyStats } from "./gsi/routes.js";
 import { leagueTitleFromSlug } from "@bpc/shared-types";
+import { fetchCachedJson } from "./services/bpcleague-cache.js";
 
 
 export type BroadcastFns = {
@@ -50,6 +51,19 @@ export function attachRestRoutes(opts: {
   replayManager: ReplayManager;
 }): void {
   const { app, state, io, broadcast, obs, opendota, replayManager } = opts;
+
+  app.get("/api/community", async (_req, res) => {
+    try {
+      const community = await fetchCachedJson<unknown>(
+        "https://api.bpcleague.in/api/public/community",
+        5 * 60 * 1000,
+      );
+      res.json(community);
+    } catch (err) {
+      logger.warn({ err }, "[BPCLeague] Community proxy request failed");
+      res.status(502).json({ error: "Community data is temporarily unavailable" });
+    }
+  });
 
   // Serve original replays directly to avoid remuxing
   app.use(
@@ -81,7 +95,27 @@ export function attachRestRoutes(opts: {
     }
   });
 
+
+  // BPCLeague full pass-through proxy.
+  // Problem: bpcleague.in sets X-Frame-Options + no CORS headers on assets, so
+  //   loading cards in OBS iframes gives 403 (frame blocked) and CORS errors on JS/CSS.
+  // Solution: proxy both the HTML and every asset through localhost so the browser
+  //   sees everything as same-origin and CORS never applies.
+
+
+
+
+
+  // Public read-only state endpoint for overlay browser sources.
+  // No auth required — overlays are always on localhost and state is not sensitive.
+  // Used as a catchup fallback when the socket reconnects after OBS suspends the source.
+  app.get("/api/overlay-state", async (_req, res) => {
+    const s = await state.getState();
+    res.json(s);
+  });
+
   app.get("/api/state", requireBroadcastAuth, async (_req, res) => {
+
     const s = await state.getState();
     res.json(s);
   });
@@ -741,6 +775,28 @@ export function attachRestRoutes(opts: {
   });
 
   /**
+   * GET /api/gsi/bounty-snapshot
+   * Returns current bounty rune stats without emitting to the overlay.
+   */
+  app.get("/api/gsi/bounty-snapshot", requireBroadcastAuth, async (_req, res) => {
+    const { getBountyStats } = await import("./gsi/routes.js");
+    const snap = await state.getState();
+    const bounty = getBountyStats();
+    const draft = snap.draft;
+    const matchSetup = snap.leagueConfig?.matchSetup;
+    
+    const radiantName = draft?.radiant?.name ?? matchSetup?.radiantTeamKey ?? "Radiant";
+    const direName = draft?.dire?.name ?? matchSetup?.direTeamKey ?? "Dire";
+    
+    res.json({
+      ok: true,
+      radiant: { name: radiantName, count: bounty.radiant.count, gold: bounty.radiant.gold },
+      dire: { name: direName, count: bounty.dire.count, gold: bounty.dire.gold },
+      history: bounty.history
+    });
+  });
+
+  /**
    * POST /api/gsi/bounty-snapshot
    * Reads current accumulated bounty rune stats (tracked live from GSI events),
    * resolves team names from draft/matchSetup state, and emits BOUNTY_STATS
@@ -749,6 +805,28 @@ export function attachRestRoutes(opts: {
   app.post("/api/gsi/bounty-snapshot", requireBroadcastAuth, async (_req, res) => {
     const payload = await emitBountyStats(io, state);
     res.json({ ok: true, ...payload });
+  });
+
+  /**
+   * GET /api/gsi/wisdom-snapshot
+   * Returns current wisdom rune stats without emitting to the overlay.
+   */
+  app.get("/api/gsi/wisdom-snapshot", requireBroadcastAuth, async (_req, res) => {
+    const { getWisdomStats } = await import("./gsi/routes.js");
+    const snap = await state.getState();
+    const wisdom = getWisdomStats();
+    const draft = snap.draft;
+    const matchSetup = snap.leagueConfig?.matchSetup;
+    
+    const radiantName = draft?.radiant?.name ?? matchSetup?.radiantTeamKey ?? "Radiant";
+    const direName = draft?.dire?.name ?? matchSetup?.direTeamKey ?? "Dire";
+    
+    res.json({
+      ok: true,
+      radiant: { name: radiantName, count: wisdom.radiant.count, xp: wisdom.radiant.xp },
+      dire: { name: direName, count: wisdom.dire.count, xp: wisdom.dire.xp },
+      history: wisdom.history
+    });
   });
 
   /**
@@ -779,6 +857,7 @@ export async function emitBountyStats(io: IOServer, state: StateManager) {
     leagueTitle,
     radiant: { name: radiantName, count: bounty.radiant.count, gold: bounty.radiant.gold },
     dire: { name: direName, count: bounty.dire.count, gold: bounty.dire.gold },
+    history: bounty.history,
   };
 
   io.of(NAMESPACES.OVERLAY).emit("BOUNTY_STATS", payload);
@@ -803,6 +882,7 @@ export async function emitWisdomStats(io: IOServer, state: StateManager) {
     leagueTitle,
     radiant: { name: radiantName, count: wisdom.radiant.count, xp: wisdom.radiant.xp },
     dire: { name: direName, count: wisdom.dire.count, xp: wisdom.dire.xp },
+    history: wisdom.history,
   };
 
   io.of(NAMESPACES.OVERLAY).emit("WISDOM_STATS", payload);

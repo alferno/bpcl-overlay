@@ -10,6 +10,8 @@ import { StatsOverlayRegion } from "../components/StatsOverlayRegion";
 import { PLAYER_STATS_SHELL_CLASS } from "../overlay-layout";
 import { useRouteVisible } from "../hooks/useRouteVisible";
 import { withBaseUrl } from "../asset-paths";
+import { FallbackPlayerCard } from "../components/FallbackPlayerCard";
+import { colorAlpha } from "../draft/team-colors";
 
 export default function PlayerStatsPage() {
   const { state } = useOverlayState();
@@ -29,6 +31,8 @@ export default function PlayerStatsPage() {
       )
     : undefined;
 
+  const color = card?.teamColor || "#ffffff";
+
   return (
     <HudCanvas blend>
       <FadePanel show={visible} panelKey={`playerstats-${card?.steam32 ?? card?.heroId ?? "empty"}`}>
@@ -37,11 +41,18 @@ export default function PlayerStatsPage() {
             card.steam32 && !imageError ? (
               <img
                 src={withBaseUrl(`/cards/${card.steam32}.png`)}
-                alt=""
-                className="max-h-[800px] object-contain shadow-2xl"
+                alt="Player"
+                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                 onError={() => setImageError(true)}
               />
             ) : (
+              <FallbackPlayerCard playerName={card.playerLabel || "UNKNOWN"} color={color} />
+            )
+          ) : (
+            <span className="text-2xl text-neutral-700">Awaiting producer card</span>
+          )}
+          {card ? (
+            <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 hover:opacity-100">
               <div
                 className={`flex max-w-[640px] items-center gap-6 ${PLAYER_STATS_SHELL_CLASS}`}
               >
@@ -80,10 +91,8 @@ export default function PlayerStatsPage() {
                   ) : null}
                 </div>
               </div>
-            )
-          ) : (
-            <span className="text-2xl text-neutral-700">Awaiting producer card</span>
-          )}
+            </div>
+          ) : null}
         </StatsOverlayRegion>
       </FadePanel>
     </HudCanvas>

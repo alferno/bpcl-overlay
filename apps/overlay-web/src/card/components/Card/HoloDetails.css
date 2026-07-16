@@ -1,0 +1,254 @@
+.holo-details {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  clip-path: polygon(4% 0, 96% 0, 100% 4%, 100% 96%, 96% 100%, 4% 100%, 0 96%, 0 4%);
+  overflow: hidden;
+}
+
+.holo-details__edge-line {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    125deg,
+    #ff4fbf 0%,
+    #a979ff 18%,
+    #42cfff 38%,
+    #49f0bb 58%,
+    #ffe36e 78%,
+    #ff739d 100%
+  );
+  background-size: 220% 220%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  mix-blend-mode: screen;
+  animation: holo-edge-drift 10s ease-in-out infinite;
+}
+
+.holo-details__edge-line--outer {
+  padding: 0.55%;
+  opacity: 0.55;
+  filter: blur(0.35px) saturate(1.05) brightness(1.05);
+}
+
+.holo-details__edge-line--inner {
+  inset: 1.35%;
+  padding: 0.4%;
+  opacity: 0.38;
+  filter: blur(0.5px) saturate(1.08);
+  animation-delay: -4s;
+  background: linear-gradient(
+    210deg,
+    #42cfff 0%,
+    #49f0bb 25%,
+    #ffe36e 50%,
+    #ff4fbf 75%,
+    #a979ff 100%
+  );
+  background-size: 200% 200%;
+}
+
+@keyframes holo-edge-drift {
+  0%,
+  100% {
+    background-position: 0% 40%;
+    opacity: 0.42;
+  }
+  50% {
+    background-position: 100% 60%;
+    opacity: 0.62;
+  }
+}
+
+.holo-details__edge-line--inner {
+  animation-name: holo-edge-drift-inner;
+}
+
+@keyframes holo-edge-drift-inner {
+  0%,
+  100% {
+    background-position: 100% 30%;
+    opacity: 0.28;
+  }
+  50% {
+    background-position: 0% 70%;
+    opacity: 0.48;
+  }
+}
+
+.holo-details__art-rim {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    6.17% 8.98%,
+    10.96% 5.46%,
+    30.76% 5.46%,
+    34.9% 8.56%,
+    65.1% 8.56%,
+    69.24% 5.46%,
+    89.04% 5.46%,
+    93.65% 8.91%,
+    93.65% 70.79%,
+    87.84% 74.24%,
+    81.31% 74.24%,
+    78.27% 75.83%,
+    21.73% 75.83%,
+    18.69% 74.24%,
+    12.15% 74.24%,
+    6.17% 70.79%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(180, 220, 255, 0.22),
+    inset 0 0 12px rgba(100, 200, 255, 0.12);
+}
+
+.holo-details__portrait-sheen {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    6.17% 8.98%,
+    10.96% 5.46%,
+    30.76% 5.46%,
+    34.9% 8.56%,
+    65.1% 8.56%,
+    69.24% 5.46%,
+    89.04% 5.46%,
+    93.65% 8.91%,
+    93.65% 70.79%,
+    87.84% 74.24%,
+    81.31% 74.24%,
+    78.27% 75.83%,
+    21.73% 75.83%,
+    18.69% 74.24%,
+    12.15% 74.24%,
+    6.17% 70.79%
+  );
+  background: linear-gradient(
+    118deg,
+    transparent 0% 32%,
+    rgba(255, 255, 255, 0.05) 42%,
+    rgba(200, 230, 255, 0.14) 48%,
+    rgba(255, 200, 240, 0.1) 52%,
+    rgba(255, 255, 255, 0.05) 58%,
+    transparent 68% 100%
+  );
+  background-size: 220% 100%;
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  animation: holo-portrait-sheen 7.5s ease-in-out infinite;
+}
+
+@keyframes holo-portrait-sheen {
+  0%,
+  100% {
+    background-position: 125% 0;
+    opacity: 0.35;
+  }
+  50% {
+    background-position: -25% 0;
+    opacity: 0.6;
+  }
+}
+
+.holo-details__status {
+  position: absolute;
+  left: 50%;
+  bottom: 2.4%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1.1cqi;
+  align-items: center;
+  z-index: 2;
+}
+
+.holo-details__dot {
+  width: 1.2cqi;
+  height: 1.2cqi;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #c8d8e8 55%, #8aa0b8 100%);
+  box-shadow: 0 0 0.35cqi rgba(200, 230, 255, 0.55);
+  opacity: 0.75;
+  animation: holo-dot-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes holo-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.holo-details__foil-color {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: soft-light;
+  opacity: 0.28;
+  background: linear-gradient(
+      105deg,
+      transparent 0% 40%,
+      rgba(255, 100, 200, 0.18) 46%,
+      rgba(100, 220, 255, 0.28) 50%,
+      rgba(100, 255, 180, 0.18) 54%,
+      transparent 62% 100%
+    )
+    140% / 260% 100%;
+  animation: holo-foil-sweep 7s ease-in-out infinite;
+}
+
+.holo-details__foil-white {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: overlay;
+  opacity: 0.32;
+  background: linear-gradient(
+      108deg,
+      transparent 0% 44%,
+      rgba(255, 255, 255, 0.12) 48%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0.12) 52%,
+      transparent 56% 100%
+    )
+    130% / 240% 100%;
+  animation: holo-foil-sweep 7.5s ease-in-out -1.5s infinite;
+}
+
+@keyframes holo-foil-sweep {
+  0%,
+  100% {
+    background-position: 130%;
+    opacity: 0.22;
+  }
+  50% {
+    background-position: -30%;
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-details__edge-line,
+  .holo-details__portrait-sheen,
+  .holo-details__dot,
+  .holo-details__foil-color,
+  .holo-details__foil-white {
+    animation: none;
+  }
+
+  .holo-details__edge-line--outer {
+    opacity: 0.5;
+  }
+
+  .holo-details__edge-line--inner {
+    opacity: 0.35;
+  }
+}

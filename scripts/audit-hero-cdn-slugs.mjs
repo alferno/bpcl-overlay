@@ -213,20 +213,20 @@ async function main() {
     const onDisk = new Set(
       fs
         .readdirSync(rendersDir)
-        .filter((f) => f.endsWith(".webm"))
-        .map((f) => f.replace(/\.webm$/i, "")),
+        .filter((f) => f.endsWith(".png") && f !== "manifest.json")
+        .map((f) => f.replace(/\.png$/i, "")),
     );
     if (onDisk.size > 0) {
       const localMissing = results.filter((r) => !onDisk.has(r.slug));
       console.log(
-        `\nLocal WebM pack (${onDisk.size} files in public/heroes/renders):`,
+        `\nLocal render poster pack (${onDisk.size} files in public/heroes/renders):`,
       );
       if (localMissing.length === 0) {
-        console.log("  All OpenDota slugs have a local .webm.\n");
+        console.log("  All OpenDota slugs have a local .png poster.\n");
       } else {
-        console.log(`  Missing local .webm (${localMissing.length}):`);
+        console.log(`  Missing local .png (${localMissing.length}):`);
         for (const r of localMissing.slice(0, 15)) {
-          console.log(`    [${r.id}] ${r.localized} → ${r.slug}.webm`);
+          console.log(`    [${r.id}] ${r.localized} → ${r.slug}.png`);
         }
         if (localMissing.length > 15) {
           console.log(`    ... and ${localMissing.length - 15} more`);

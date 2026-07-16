@@ -1,5 +1,8 @@
-import { contextBridge as n, ipcRenderer as o } from "electron";
-n.exposeInMainWorld("ipcRenderer", {
-  on: (e, r) => (o.on(e, r), () => o.removeListener(e, r)),
-  invoke: (e, ...r) => o.invoke(e, ...r)
+import { contextBridge, ipcRenderer } from "electron";
+contextBridge.exposeInMainWorld("ipcRenderer", {
+  on: (channel, listener) => {
+    ipcRenderer.on(channel, listener);
+    return () => ipcRenderer.removeListener(channel, listener);
+  },
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args)
 });

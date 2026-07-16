@@ -9,6 +9,7 @@ export * from "./hero-assets.js";
 export * from "./hero-slug.js";
 export * from "./match-players.js";
 export * from "./game-start-countdown.js";
+export * from "./item-constants.js";
 
 export const OVERLAY_ROUTES = [
   "draft",

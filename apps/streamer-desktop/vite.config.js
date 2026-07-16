@@ -11,6 +11,7 @@ export default defineConfig({
                 entry: 'electron/main.ts',
                 vite: {
                     build: {
+                        minify: false,
                         rollupOptions: {
                             external: ['bufferutil', 'utf-8-validate']
                         }
@@ -24,11 +25,7 @@ export default defineConfig({
                 },
                 vite: {
                     build: {
-                        rollupOptions: {
-                            output: {
-                                format: 'cjs'
-                            }
-                        }
+                        minify: false
                     }
                 }
             },

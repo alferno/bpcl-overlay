@@ -50,17 +50,6 @@ export function heroPortraitUrlFromHeroClass(heroClass: string): string {
   return heroPortraitUrlFromSlug(heroClass);
 }
 
-/** Animated hero render (WebM) on Steam CDN — draft pick cards. */
-export function heroAnimatedRenderUrlFromSlug(slug: string): string {
-  const clean = normalizeHeroSlug(slug);
-  if (!clean) return "";
-  return `https://cdn.cloudflare.steamstatic.com/apps/dota2/videos/dota_react/heroes/renders/${clean}.webm`;
-}
-
-export function heroAnimatedRenderUrlFromInternalName(internalName: string): string {
-  return heroAnimatedRenderUrlFromSlug(heroSlugFromInternalName(internalName));
-}
-
 export type HeroPortraitFields = {
   /** Canonical filename slug under public/heroes/portraits */
   heroPortraitSlug?: string;
@@ -171,19 +160,21 @@ export function resolveHeroPortraitUrl(
   return heroLocalPortraitUrlFromSlug(clean, onDisk);
 }
 
-/** Local path for copied Dota panorama WebM (overlay-web/public). */
-export function heroLocalAnimatedUrlFromSlug(
+
+
+/** Local path for copied Dota panorama render poster PNG (overlay-web/public). */
+export function heroLocalRenderPosterUrlFromSlug(
   slug: string,
   fileSlug?: string,
 ): string {
   const clean = normalizeHeroSlug(slug);
   if (!clean) return "";
   const onDisk = fileSlug ?? clean;
-  return `/heroes/renders/${onDisk}.webm`;
+  return `/heroes/renders/${onDisk}.png`;
 }
 
-/** Overlay / broadcast: always use bundled public/heroes/renders (no CDN). */
-export function resolveHeroAnimatedUrl(
+/** Overlay / broadcast: always use bundled public/heroes/renders poster PNG (no CDN). */
+export function resolveHeroRenderPosterUrl(
   slug: string,
   localSlugs?: ReadonlySet<string>,
   fileByCanonical?: ReadonlyMap<string, string>,
@@ -192,18 +183,16 @@ export function resolveHeroAnimatedUrl(
   if (!clean) return "";
   if (localSlugs && localSlugs.size > 0 && !localSlugs.has(clean)) return "";
   const onDisk = fileByCanonical?.get(clean) ?? clean;
-  return heroLocalAnimatedUrlFromSlug(clean, onDisk);
+  return heroLocalRenderPosterUrlFromSlug(clean, onDisk);
 }
 
 export type HeroPortraitMedia = {
   /** Flat dota_react icon PNG — bans, stats, API `heroPortraitUrl` */
   staticUrl?: string;
   staticFallbackUrl?: string;
-  /** Steam CDN render WebM — draft picks */
-  animatedUrl?: string;
 };
 
-/** Local PNG + WebM paths for GSI draft slots and API state. */
+/** Local PNG paths for GSI draft slots and API state. */
 export function heroPortraitMediaFromSlug(
   slug: string,
   _opts?: { localSlugs?: ReadonlySet<string> },
@@ -212,11 +201,9 @@ export function heroPortraitMediaFromSlug(
   if (!clean) return {};
 
   const flat = heroLocalPortraitUrlFromSlug(clean);
-  const animated = heroLocalAnimatedUrlFromSlug(clean);
   return {
     staticUrl: flat,
     staticFallbackUrl: flat,
-    animatedUrl: animated,
   };
 }
 

@@ -25,7 +25,7 @@ import {
   formatCardLabelText,
   wrapCardLabelLines,
 } from "../../draft/wrap-card-label";
-import { resolveSlotMedia, draftHeroAnimationEnabled } from "../../hero-portrait";
+import { resolveSlotMedia } from "../../hero-portrait";
 import { colorAlpha } from "../../draft/team-colors";
 
 
@@ -34,7 +34,6 @@ export function DraftPickCard({
   teamLogoUrl,
   teamColor,
   isActive,
-  animate = true,
   heroSelectionMode = false,
   leagueConfig,
   production,
@@ -45,7 +44,6 @@ export function DraftPickCard({
   teamLogoUrl?: string;
   teamColor?: string;
   isActive?: boolean;
-  animate?: boolean;
   heroSelectionMode?: boolean;
   leagueConfig?: LeagueConfig;
   production?: ProductionSettings | null;
@@ -54,10 +52,9 @@ export function DraftPickCard({
 }) {
   const media = slot ? resolveSlotMedia(slot) : {};
   const hasPick = Boolean(
-    slot?.heroId || media.static || media.animated,
+    slot?.heroId || media.static,
   );
   const showHeroVisual = hasPick;
-  const webmFirst = showHeroVisual;
   const accent = teamColor ?? "#ffffff";
   const [sweep, setSweep] = useState(false);
 
@@ -134,7 +131,7 @@ export function DraftPickCard({
             boxShadow: active ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
           }}
         >
-          {slot && (media.static || media.animated) ? (
+          {slot && media.static ? (
             <>
               <div className="pointer-events-none absolute inset-0 bg-black" />
               <DraftHistoryTags currentSlot={slot} currentTeamSide={teamSide} previousDrafts={previousDrafts} />
@@ -149,13 +146,9 @@ export function DraftPickCard({
               <DraftHeroMedia
                 staticUrl={media.static}
                 staticFallback={media.staticFallback}
-                animatedUrl={media.animated}
                 heroSlug={media.slug}
                 alt={slot.heroName ?? "hero"}
-                animate={false}
-                staticOnly={true}
                 variant="slot"
-                webmFirst={false}
                 glowColor={colorAlpha(accent, 0.32)}
               />
               <div className="draft-hero-card-vignette pointer-events-none absolute inset-0 z-[3]" />

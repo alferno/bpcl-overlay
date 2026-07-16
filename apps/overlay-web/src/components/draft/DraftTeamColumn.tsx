@@ -9,7 +9,6 @@ import {
   neonPanelShadow,
 } from "../../draft/neon-effects";
 import {
-  draftHeroAnimationEnabled,
   isPickSlotFilled,
 } from "../../hero-portrait";
 import { prepareTeamBoard } from "../../draft/slot-utils";
@@ -52,7 +51,6 @@ export function DraftTeamColumn({
   const firstEmptyBan = bans.findIndex(
     (s) => !s?.heroId && !s?.heroPortraitUrl && !s?.heroName,
   );
-  const heroAnimate = draftHeroAnimationEnabled();
 
   return (
     <div
@@ -86,7 +84,6 @@ export function DraftTeamColumn({
                     !slot?.heroPortraitUrl &&
                     i === firstEmptyPick
                   }
-                  animate={heroAnimate && isPickSlotFilled(slot)}
                   heroSelectionMode={heroSelectionMode}
                   leagueConfig={leagueConfig}
                   production={production}

@@ -1,5 +1,5 @@
 {
-  "timestamp": 1784050943065,
+  "timestamp": 1784137615901,
   "data": {
     "season": {
       "id": "9927b1aa-4579-4b14-8b4a-71a7472d3e2a",
@@ -495,46 +495,6 @@
               "bpcId": "BPC-018"
             },
             {
-              "id": "49b5d8de-3fa0-47c8-ba0d-1170871bac02",
-              "sourcePlayerId": "c2291e3f-f7c6-409b-adf2-2ca109deb325",
-              "registrationId": "87436e4e-d7ec-44d3-b96f-c7340f4cf9be",
-              "playerAccountId": "17f40d8f-1dc0-4484-bc10-15a30f1925d1",
-              "name": "Marlboro",
-              "displayName": "Marlboro",
-              "role": "Carry",
-              "roles": [
-                "Carry"
-              ],
-              "mmr": 3371,
-              "steamName": "Marlboro Hard",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198118865177/",
-              "discordHandle": "Yug",
-              "location": "Panjab",
-              "isCaptain": false,
-              "slug": "marlboro",
-              "bpcId": "BPC-050"
-            },
-            {
-              "id": "bea765eb-437a-47b1-a6d2-87868d917dfc",
-              "sourcePlayerId": "af17e182-d8e6-4ca0-b4f3-ac1e71907c94",
-              "registrationId": "4cffd38a-845a-4949-b3ad-e1e81d65ddf8",
-              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
-              "name": "Raiden",
-              "displayName": "Raiden",
-              "role": "Offlane",
-              "roles": [
-                "Offlane"
-              ],
-              "mmr": 3300,
-              "steamName": "Ruler of Time ♡",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582/",
-              "discordHandle": "Raiden ♡",
-              "location": "Ahmedabad",
-              "isCaptain": false,
-              "slug": "raiden",
-              "bpcId": "BPC-074"
-            },
-            {
               "id": "5c6f2cc3-e426-4b88-bff2-fca60334b089",
               "sourcePlayerId": "028b864a-581e-4376-ba91-5ae618ff9754",
               "registrationId": "994afc50-6e6d-44b8-ac6b-9c14c3c51b1a",
@@ -555,6 +515,26 @@
               "bpcId": "BPC-099"
             },
             {
+              "id": "49b5d8de-3fa0-47c8-ba0d-1170871bac02",
+              "sourcePlayerId": "c2291e3f-f7c6-409b-adf2-2ca109deb325",
+              "registrationId": "87436e4e-d7ec-44d3-b96f-c7340f4cf9be",
+              "playerAccountId": "17f40d8f-1dc0-4484-bc10-15a30f1925d1",
+              "name": "Marlboro",
+              "displayName": "Marlboro",
+              "role": "Carry",
+              "roles": [
+                "Carry"
+              ],
+              "mmr": 3371,
+              "steamName": "Marlboro Hard",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198118865177/",
+              "discordHandle": "Yug",
+              "location": "Panjab",
+              "isCaptain": false,
+              "slug": "marlboro",
+              "bpcId": "BPC-050"
+            },
+            {
               "id": "cd218be2-9dcf-4d39-8778-a9f091cc1b7e",
               "sourcePlayerId": "d6507cf7-2cf6-459a-8030-047f275f556c",
               "registrationId": "c9124ce9-28fd-4456-a88b-af102da83542",
@@ -573,6 +553,26 @@
               "isCaptain": true,
               "slug": "tambamgod",
               "bpcId": "BPC-048"
+            },
+            {
+              "id": "bea765eb-437a-47b1-a6d2-87868d917dfc",
+              "sourcePlayerId": "af17e182-d8e6-4ca0-b4f3-ac1e71907c94",
+              "registrationId": "4cffd38a-845a-4949-b3ad-e1e81d65ddf8",
+              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
+              "name": "Raiden",
+              "displayName": "Raiden",
+              "role": "Offlane",
+              "roles": [
+                "Offlane"
+              ],
+              "mmr": 3300,
+              "steamName": "Ruler of Time ♡",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582/",
+              "discordHandle": "Raiden ♡",
+              "location": "Ahmedabad",
+              "isCaptain": false,
+              "slug": "raiden",
+              "bpcId": "BPC-074"
             }
           ]
         },
@@ -587,6 +587,27 @@
           "accentColor": "#49e9c9",
           "groupKey": "A",
           "players": [
+            {
+              "id": "6abec6df-a796-4bc6-a977-b4e47623d6bc",
+              "sourcePlayerId": "c1165626-ed46-4e83-92cd-c598a52f4016",
+              "registrationId": "0cfa66be-4fd0-4abb-a1e5-243ccb3ce4dc",
+              "playerAccountId": "b6b0ebf5-9614-42b0-8cc3-53a93a3d5ce0",
+              "name": "L!NU$. 4 ^ JpR",
+              "displayName": "L!NU$. 4 ^ JpR",
+              "role": "Soft support",
+              "roles": [
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 1800,
+              "steamName": "L!NU$. 4 ^ JpR",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198034030852/",
+              "discordHandle": "Linus",
+              "location": "Jaipur",
+              "isCaptain": false,
+              "slug": "l-nu-4-jpr",
+              "bpcId": "BPC-030"
+            },
             {
               "id": "ebe412f2-61d3-4cba-a711-8a96d2811c46",
               "sourcePlayerId": "c68b42cb-6147-45d2-a217-d4d5806019c4",
@@ -669,27 +690,6 @@
               "isCaptain": false,
               "slug": "godx",
               "bpcId": "BPC-052"
-            },
-            {
-              "id": "6abec6df-a796-4bc6-a977-b4e47623d6bc",
-              "sourcePlayerId": "c1165626-ed46-4e83-92cd-c598a52f4016",
-              "registrationId": "0cfa66be-4fd0-4abb-a1e5-243ccb3ce4dc",
-              "playerAccountId": "b6b0ebf5-9614-42b0-8cc3-53a93a3d5ce0",
-              "name": "L!NU$. 4 ^ JpR",
-              "displayName": "L!NU$. 4 ^ JpR",
-              "role": "Soft support",
-              "roles": [
-                "Soft support",
-                "Hard support"
-              ],
-              "mmr": 1800,
-              "steamName": "L!NU$. 4 ^ JpR",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198034030852/",
-              "discordHandle": "Linus",
-              "location": "Jaipur",
-              "isCaptain": false,
-              "slug": "l-nu-4-jpr",
-              "bpcId": "BPC-030"
             }
           ]
         },
@@ -705,67 +705,26 @@
           "groupKey": "B",
           "players": [
             {
-              "id": "9c82d13f-8208-4839-96f9-9d5f999a6604",
-              "sourcePlayerId": "37e10b0f-25b5-4d04-8f6d-f9724faf261b",
-              "registrationId": "a7fd86d9-baf6-4b77-9089-b50795e673a9",
-              "playerAccountId": "565fd0ff-a471-4d55-98ca-3ed52643c617",
-              "name": "IIT doggy",
-              "displayName": "IIT doggy",
-              "role": "Mid",
+              "id": "2d1d4dc8-f2e0-48c7-a099-50045da3a9fe",
+              "sourcePlayerId": "18623593-b1c0-4c0f-9a6b-35b127e06d22",
+              "registrationId": "1e723711-a6c2-4081-b23d-f444dc50bc4b",
+              "playerAccountId": "c9251b85-e0d4-49ab-94cf-4bc163eb5dec",
+              "name": "Porthos",
+              "displayName": "Porthos",
+              "role": "Soft support",
               "roles": [
-                "Mid"
-              ],
-              "mmr": 4000,
-              "steamName": "IIT doggy",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198407674293/",
-              "discordHandle": "mr_harry_07",
-              "location": "Pune",
-              "isCaptain": false,
-              "slug": "prathmesh-patil",
-              "bpcId": "BPC-134"
-            },
-            {
-              "id": "d8630149-572c-4402-be82-0a90e7c18ff2",
-              "sourcePlayerId": "7caf9863-3ef7-431b-9e9f-f6507152e4eb",
-              "registrationId": "313af878-6d63-486a-8693-2804f1d9a2bf",
-              "playerAccountId": "eedf9065-c948-469a-91a8-ec311be16358",
-              "name": "Sexy13",
-              "displayName": "Sexy13",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Mid"
-              ],
-              "mmr": null,
-              "steamName": "sexy",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198168754602/",
-              "discordHandle": "Sexy13",
-              "location": "",
-              "isCaptain": false,
-              "slug": "akash-shah",
-              "bpcId": "BPC-081"
-            },
-            {
-              "id": "c10f895a-1223-4010-ab3b-2dcac4aa5b72",
-              "sourcePlayerId": "44e1f8a0-5ef3-4130-892a-74b6d0bbf575",
-              "registrationId": "832a3310-0f8d-4ecd-9380-c7fc83d471e3",
-              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
-              "name": "SQueEZee",
-              "displayName": "SQueEZee",
-              "role": "Hard support",
-              "roles": [
+                "Soft support",
                 "Hard support",
-                "Carry",
                 "Offlane"
               ],
-              "mmr": 6600,
-              "steamName": "God mode On",
-              "steamProfile": "https://steamcommunity.com/id/squeezee-/",
-              "discordHandle": "SQueEZee",
-              "location": "Tbilisi, Georgia",
-              "isCaptain": true,
-              "slug": "squeezee",
-              "bpcId": "BPC-066"
+              "mmr": 1700,
+              "steamName": "Porthos",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198202259953/",
+              "discordHandle": "Porthos",
+              "location": "Qatar",
+              "isCaptain": false,
+              "slug": "porthos",
+              "bpcId": "BPC-086"
             },
             {
               "id": "e213a63b-2881-42c9-9f94-f3247c717f96",
@@ -789,26 +748,67 @@
               "bpcId": "BPC-102"
             },
             {
-              "id": "2d1d4dc8-f2e0-48c7-a099-50045da3a9fe",
-              "sourcePlayerId": "18623593-b1c0-4c0f-9a6b-35b127e06d22",
-              "registrationId": "1e723711-a6c2-4081-b23d-f444dc50bc4b",
-              "playerAccountId": "c9251b85-e0d4-49ab-94cf-4bc163eb5dec",
-              "name": "Porthos",
-              "displayName": "Porthos",
-              "role": "Soft support",
+              "id": "d8630149-572c-4402-be82-0a90e7c18ff2",
+              "sourcePlayerId": "7caf9863-3ef7-431b-9e9f-f6507152e4eb",
+              "registrationId": "313af878-6d63-486a-8693-2804f1d9a2bf",
+              "playerAccountId": "eedf9065-c948-469a-91a8-ec311be16358",
+              "name": "Sexy13",
+              "displayName": "Sexy13",
+              "role": "Carry",
               "roles": [
-                "Soft support",
+                "Carry",
+                "Mid"
+              ],
+              "mmr": null,
+              "steamName": "sexy",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198168754602/",
+              "discordHandle": "Sexy13",
+              "location": "",
+              "isCaptain": false,
+              "slug": "akash-shah",
+              "bpcId": "BPC-081"
+            },
+            {
+              "id": "9c82d13f-8208-4839-96f9-9d5f999a6604",
+              "sourcePlayerId": "37e10b0f-25b5-4d04-8f6d-f9724faf261b",
+              "registrationId": "a7fd86d9-baf6-4b77-9089-b50795e673a9",
+              "playerAccountId": "565fd0ff-a471-4d55-98ca-3ed52643c617",
+              "name": "IIT doggy",
+              "displayName": "IIT doggy",
+              "role": "Mid",
+              "roles": [
+                "Mid"
+              ],
+              "mmr": 4000,
+              "steamName": "IIT doggy",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198407674293/",
+              "discordHandle": "mr_harry_07",
+              "location": "Pune",
+              "isCaptain": false,
+              "slug": "prathmesh-patil",
+              "bpcId": "BPC-134"
+            },
+            {
+              "id": "c10f895a-1223-4010-ab3b-2dcac4aa5b72",
+              "sourcePlayerId": "44e1f8a0-5ef3-4130-892a-74b6d0bbf575",
+              "registrationId": "832a3310-0f8d-4ecd-9380-c7fc83d471e3",
+              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
+              "name": "SQueEZee",
+              "displayName": "SQueEZee",
+              "role": "Hard support",
+              "roles": [
                 "Hard support",
+                "Carry",
                 "Offlane"
               ],
-              "mmr": 1700,
-              "steamName": "Porthos",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198202259953/",
-              "discordHandle": "Porthos",
-              "location": "Qatar",
-              "isCaptain": false,
-              "slug": "porthos",
-              "bpcId": "BPC-086"
+              "mmr": 6600,
+              "steamName": "God mode On",
+              "steamProfile": "https://steamcommunity.com/id/squeezee-/",
+              "discordHandle": "SQueEZee",
+              "location": "Tbilisi, Georgia",
+              "isCaptain": true,
+              "slug": "squeezee",
+              "bpcId": "BPC-066"
             }
           ]
         },
@@ -824,24 +824,45 @@
           "groupKey": "A",
           "players": [
             {
-              "id": "597ebe97-cea6-420f-9b51-33ff11491f9a",
-              "sourcePlayerId": "91976474-1ab3-4feb-93b2-5787dc707641",
-              "registrationId": "03c7f971-5dea-4562-b89d-bd9007cfb5b2",
-              "playerAccountId": "355d2d48-8d4b-4d94-9e3c-591f9715e08c",
-              "name": "*Fouji",
-              "displayName": "*Fouji",
+              "id": "2f6a7362-856c-49a5-8ef6-cc0ed14fc810",
+              "sourcePlayerId": "19804cbc-4205-4f7f-841d-e119050bf014",
+              "registrationId": "21865397-f96d-4d0a-b7f4-2a9332e6978e",
+              "playerAccountId": "a85bf13b-ad4f-4f2b-9a42-bc4ee2c2f5b6",
+              "name": "MiyaMc",
+              "displayName": "MiyaMc",
               "role": "Carry",
               "roles": [
-                "Carry"
+                "Carry",
+                "Mid"
               ],
-              "mmr": 3700,
-              "steamName": "*Fouji",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198254389672/",
-              "discordHandle": "Foujii..",
-              "location": "manipur",
+              "mmr": 3000,
+              "steamName": "MiyaMC",
+              "steamProfile": "https://steamcommunity.com/id/miyathemc/",
+              "discordHandle": "MiyaMC",
+              "location": "Indore",
               "isCaptain": false,
-              "slug": "shailesh-zambare",
-              "bpcId": "BPC-100"
+              "slug": "miyamc",
+              "bpcId": "BPC-006"
+            },
+            {
+              "id": "bd4f239d-2cac-462c-9193-0d15c5b9d9fd",
+              "sourcePlayerId": "17f6a28e-0229-4bbc-9beb-3e86e0f51ace",
+              "registrationId": "7a5a0e24-8cb7-4fb2-b814-79790d378aa6",
+              "playerAccountId": "d3b1726a-d460-4ba9-b45a-f060015b9efe",
+              "name": "JinxD",
+              "displayName": "JinxD",
+              "role": "Mid",
+              "roles": [
+                "Mid"
+              ],
+              "mmr": 5200,
+              "steamName": "JinxD",
+              "steamProfile": "https://steamcommunity.com/id/Vampire9868/",
+              "discordHandle": "Jinx",
+              "location": "India",
+              "isCaptain": false,
+              "slug": "jinxd",
+              "bpcId": "BPC-114"
             },
             {
               "id": "ddabd9ab-5256-48ec-924a-3207fcc5784b",
@@ -865,6 +886,26 @@
               "bpcId": "BPC-147"
             },
             {
+              "id": "597ebe97-cea6-420f-9b51-33ff11491f9a",
+              "sourcePlayerId": "91976474-1ab3-4feb-93b2-5787dc707641",
+              "registrationId": "03c7f971-5dea-4562-b89d-bd9007cfb5b2",
+              "playerAccountId": "355d2d48-8d4b-4d94-9e3c-591f9715e08c",
+              "name": "*Fouji",
+              "displayName": "*Fouji",
+              "role": "Carry",
+              "roles": [
+                "Carry"
+              ],
+              "mmr": 3700,
+              "steamName": "*Fouji",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198254389672/",
+              "discordHandle": "Foujii..",
+              "location": "manipur",
+              "isCaptain": false,
+              "slug": "shailesh-zambare",
+              "bpcId": "BPC-100"
+            },
+            {
               "id": "f65683b2-4463-4263-bd64-0ec413667a81",
               "sourcePlayerId": "d1f6607c-0fac-43ab-a761-97a87f74c209",
               "registrationId": "5a7015db-0987-475b-b46d-96e278cbca3a",
@@ -886,47 +927,6 @@
               "isCaptain": false,
               "slug": "rohan-shah",
               "bpcId": "BPC-121"
-            },
-            {
-              "id": "bd4f239d-2cac-462c-9193-0d15c5b9d9fd",
-              "sourcePlayerId": "17f6a28e-0229-4bbc-9beb-3e86e0f51ace",
-              "registrationId": "7a5a0e24-8cb7-4fb2-b814-79790d378aa6",
-              "playerAccountId": "d3b1726a-d460-4ba9-b45a-f060015b9efe",
-              "name": "JinxD",
-              "displayName": "JinxD",
-              "role": "Mid",
-              "roles": [
-                "Mid"
-              ],
-              "mmr": 5200,
-              "steamName": "JinxD",
-              "steamProfile": "https://steamcommunity.com/id/Vampire9868/",
-              "discordHandle": "Jinx",
-              "location": "India",
-              "isCaptain": false,
-              "slug": "jinxd",
-              "bpcId": "BPC-114"
-            },
-            {
-              "id": "2f6a7362-856c-49a5-8ef6-cc0ed14fc810",
-              "sourcePlayerId": "19804cbc-4205-4f7f-841d-e119050bf014",
-              "registrationId": "21865397-f96d-4d0a-b7f4-2a9332e6978e",
-              "playerAccountId": "a85bf13b-ad4f-4f2b-9a42-bc4ee2c2f5b6",
-              "name": "MiyaMc",
-              "displayName": "MiyaMc",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Mid"
-              ],
-              "mmr": 3000,
-              "steamName": "MiyaMC",
-              "steamProfile": "https://steamcommunity.com/id/miyathemc/",
-              "discordHandle": "MiyaMC",
-              "location": "Indore",
-              "isCaptain": false,
-              "slug": "miyamc",
-              "bpcId": "BPC-006"
             }
           ]
         },
@@ -941,6 +941,46 @@
           "accentColor": "#aba7a0",
           "groupKey": "B",
           "players": [
+            {
+              "id": "4222273e-b813-44fc-9eee-26c1d88cc651",
+              "sourcePlayerId": "1e1a355a-fdb1-4d71-a782-569b7d9e2b3b",
+              "registrationId": "3cba5ca5-8305-4b0e-8609-64545beefc85",
+              "playerAccountId": "075f8eec-c807-4e20-a253-eaceb331d27f",
+              "name": "Senor Pink",
+              "displayName": "Senor Pink",
+              "role": "Carry",
+              "roles": [
+                "Carry"
+              ],
+              "mmr": 4500,
+              "steamName": "Senor Pink",
+              "steamProfile": "https://steamcommunity.com/id/378183228/",
+              "discordHandle": "SULTAN",
+              "location": "Sangli",
+              "isCaptain": false,
+              "slug": "senor-pink-2",
+              "bpcId": "BPC-016"
+            },
+            {
+              "id": "78e3896d-e198-42a1-8f1c-38a784df241a",
+              "sourcePlayerId": "5fd7dead-933f-4812-81f8-a5126b894a98",
+              "registrationId": "50e3a4fe-133d-4529-a215-b7c6f9237345",
+              "playerAccountId": "6cb10644-6093-46ef-8dfb-d1d05c0fd546",
+              "name": "MYM | LUCKY13",
+              "displayName": "MYM | LUCKY13",
+              "role": "Soft support",
+              "roles": [
+                "Soft support"
+              ],
+              "mmr": 3432,
+              "steamName": "MYM | Lucky13",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198111784982/",
+              "discordHandle": "Lucky13 (Mohit Mandrekar)",
+              "location": "Thane",
+              "isCaptain": false,
+              "slug": "mym-lucky13",
+              "bpcId": "BPC-044"
+            },
             {
               "id": "840c8887-01c0-4237-a0a7-3fcf3b99b04a",
               "sourcePlayerId": "4f2e3938-231f-4edb-9ce3-a0f847746021",
@@ -962,46 +1002,6 @@
               "isCaptain": false,
               "slug": "indrajeet-nand",
               "bpcId": "BPC-104"
-            },
-            {
-              "id": "2796708d-8b74-4b81-a15d-c039a8af43b0",
-              "sourcePlayerId": "24b0261f-a970-45bc-968a-19e75e0b88f9",
-              "registrationId": "eb930d8e-4326-4dee-b48d-15438b850d1f",
-              "playerAccountId": "4b50e86c-ecfb-4115-9252-33c663f6512d",
-              "name": "SUBVERSION",
-              "displayName": "SUBVERSION",
-              "role": "Mid",
-              "roles": [
-                "Mid"
-              ],
-              "mmr": 5600,
-              "steamName": "SUBVERSION  (MAX 40 X 3  Fps)",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198353666149/",
-              "discordHandle": "Shub ( SUBVERSION )",
-              "location": "kolhapur",
-              "isCaptain": true,
-              "slug": "subversion",
-              "bpcId": "BPC-032"
-            },
-            {
-              "id": "4222273e-b813-44fc-9eee-26c1d88cc651",
-              "sourcePlayerId": "1e1a355a-fdb1-4d71-a782-569b7d9e2b3b",
-              "registrationId": "3cba5ca5-8305-4b0e-8609-64545beefc85",
-              "playerAccountId": "075f8eec-c807-4e20-a253-eaceb331d27f",
-              "name": "Senor Pink",
-              "displayName": "Senor Pink",
-              "role": "Carry",
-              "roles": [
-                "Carry"
-              ],
-              "mmr": 4500,
-              "steamName": "Senor Pink",
-              "steamProfile": "https://steamcommunity.com/id/378183228/",
-              "discordHandle": "SULTAN",
-              "location": "Sangli",
-              "isCaptain": false,
-              "slug": "senor-pink-2",
-              "bpcId": "BPC-016"
             },
             {
               "id": "93eef4e2-b1b6-4f79-9d91-da1c1274b5c6",
@@ -1027,24 +1027,24 @@
               "bpcId": "BPC-021"
             },
             {
-              "id": "78e3896d-e198-42a1-8f1c-38a784df241a",
-              "sourcePlayerId": "5fd7dead-933f-4812-81f8-a5126b894a98",
-              "registrationId": "50e3a4fe-133d-4529-a215-b7c6f9237345",
-              "playerAccountId": "6cb10644-6093-46ef-8dfb-d1d05c0fd546",
-              "name": "MYM | LUCKY13",
-              "displayName": "MYM | LUCKY13",
-              "role": "Soft support",
+              "id": "2796708d-8b74-4b81-a15d-c039a8af43b0",
+              "sourcePlayerId": "24b0261f-a970-45bc-968a-19e75e0b88f9",
+              "registrationId": "eb930d8e-4326-4dee-b48d-15438b850d1f",
+              "playerAccountId": "4b50e86c-ecfb-4115-9252-33c663f6512d",
+              "name": "SUBVERSION",
+              "displayName": "SUBVERSION",
+              "role": "Mid",
               "roles": [
-                "Soft support"
+                "Mid"
               ],
-              "mmr": 3432,
-              "steamName": "MYM | Lucky13",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198111784982/",
-              "discordHandle": "Lucky13 (Mohit Mandrekar)",
-              "location": "Thane",
-              "isCaptain": false,
-              "slug": "mym-lucky13",
-              "bpcId": "BPC-044"
+              "mmr": 5600,
+              "steamName": "SUBVERSION  (MAX 40 X 3  Fps)",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198353666149/",
+              "discordHandle": "Shub ( SUBVERSION )",
+              "location": "kolhapur",
+              "isCaptain": true,
+              "slug": "subversion",
+              "bpcId": "BPC-032"
             }
           ]
         },
@@ -1059,49 +1059,6 @@
           "accentColor": "#4fd2e3",
           "groupKey": "A",
           "players": [
-            {
-              "id": "01becd5d-6b29-491f-b676-bb444a931b67",
-              "sourcePlayerId": "5f8e2280-2a78-47aa-a742-f51cd94b5f63",
-              "registrationId": "f918b794-71f8-4716-b180-b842007fa505",
-              "playerAccountId": "1276b266-1cb2-4a12-bd73-1e2a28d8beae",
-              "name": "【ĦǾ₱モ】",
-              "displayName": "【ĦǾ₱モ】",
-              "role": "Mid",
-              "roles": [
-                "Mid",
-                "Carry"
-              ],
-              "mmr": 7400,
-              "steamName": "【ĦǾ₱モ】",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198143083184/",
-              "discordHandle": "hope_is_good",
-              "location": "Mumbai, India",
-              "isCaptain": true,
-              "slug": "be-happy",
-              "bpcId": "BPC-146"
-            },
-            {
-              "id": "d9f1d2e8-bc1c-4acc-bc92-ccb53103907e",
-              "sourcePlayerId": "23ddf152-0e5a-4b77-82c7-b3bd7b5fdb87",
-              "registrationId": "49adb043-41c0-471a-9d7c-6c2a9a96d057",
-              "playerAccountId": "ebb6dc25-829d-4112-8bc0-a4a363181977",
-              "name": "`ShutDown",
-              "displayName": "`ShutDown",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Soft support",
-                "Offlane"
-              ],
-              "mmr": 4200,
-              "steamName": "`ShutDown",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198242433886/",
-              "discordHandle": "farhan622",
-              "location": "Mumbai,India",
-              "isCaptain": false,
-              "slug": "farhan-shaikh",
-              "bpcId": "BPC-122"
-            },
             {
               "id": "b324bce0-a273-42d2-86bb-36b32b7b2ec7",
               "sourcePlayerId": "293569dd-dcda-4389-b271-be4d8680f1db",
@@ -1144,6 +1101,49 @@
               "isCaptain": false,
               "slug": "romaan-shaikh",
               "bpcId": "BPC-094"
+            },
+            {
+              "id": "d9f1d2e8-bc1c-4acc-bc92-ccb53103907e",
+              "sourcePlayerId": "23ddf152-0e5a-4b77-82c7-b3bd7b5fdb87",
+              "registrationId": "49adb043-41c0-471a-9d7c-6c2a9a96d057",
+              "playerAccountId": "ebb6dc25-829d-4112-8bc0-a4a363181977",
+              "name": "`ShutDown",
+              "displayName": "`ShutDown",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Soft support",
+                "Offlane"
+              ],
+              "mmr": 4200,
+              "steamName": "`ShutDown",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198242433886/",
+              "discordHandle": "farhan622",
+              "location": "Mumbai,India",
+              "isCaptain": false,
+              "slug": "farhan-shaikh",
+              "bpcId": "BPC-122"
+            },
+            {
+              "id": "01becd5d-6b29-491f-b676-bb444a931b67",
+              "sourcePlayerId": "5f8e2280-2a78-47aa-a742-f51cd94b5f63",
+              "registrationId": "f918b794-71f8-4716-b180-b842007fa505",
+              "playerAccountId": "1276b266-1cb2-4a12-bd73-1e2a28d8beae",
+              "name": "【ĦǾ₱モ】",
+              "displayName": "【ĦǾ₱モ】",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Carry"
+              ],
+              "mmr": 7400,
+              "steamName": "【ĦǾ₱モ】",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198143083184/",
+              "discordHandle": "hope_is_good",
+              "location": "Mumbai, India",
+              "isCaptain": true,
+              "slug": "be-happy",
+              "bpcId": "BPC-146"
             },
             {
               "id": "5f93dcaf-b42a-466c-bc63-dc3b8eca15c5",
@@ -1200,26 +1200,26 @@
               "bpcId": "BPC-085"
             },
             {
-              "id": "ff1166d2-c9c4-4f79-a19d-955d279922ec",
-              "sourcePlayerId": "0b687400-e7b4-4d42-a0f6-f802a9c3054c",
-              "registrationId": "4191259d-3501-4b00-8a88-483e7bdc75e9",
-              "playerAccountId": "679ec250-38a2-4527-840a-a39a1a274f40",
-              "name": "Master Instinct",
-              "displayName": "Master Instinct",
-              "role": "Mid",
+              "id": "5dac5fe0-a47c-4a71-9510-a507ea086844",
+              "sourcePlayerId": "efbcda26-57b8-4477-a8b2-6fa7c6274e81",
+              "registrationId": "790da6d2-1b47-4f09-86fe-8100c5674f50",
+              "playerAccountId": "9ded21da-0de7-4b50-96ce-9a3a6a5aba1f",
+              "name": "Machine",
+              "displayName": "Machine",
+              "role": "Offlane",
               "roles": [
-                "Mid",
-                "Carry",
-                "Hard support"
+                "Offlane",
+                "Hard support",
+                "Soft support"
               ],
-              "mmr": 7174,
-              "steamName": "MASTER INSTINCT",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198124876950/",
-              "discordHandle": "Master Instinct",
-              "location": "Kolkata",
-              "isCaptain": true,
-              "slug": "master-instinct",
-              "bpcId": "BPC-035"
+              "mmr": 3600,
+              "steamName": "Machine",
+              "steamProfile": "https://steamcommunity.com/id/machine0211/",
+              "discordHandle": "Machine",
+              "location": "Vadodara",
+              "isCaptain": false,
+              "slug": "nisarg-parikh",
+              "bpcId": "BPC-093"
             },
             {
               "id": "a91930cf-53f3-497c-bb0c-9a26f66d63c2",
@@ -1243,28 +1243,6 @@
               "bpcId": "BPC-059"
             },
             {
-              "id": "5dac5fe0-a47c-4a71-9510-a507ea086844",
-              "sourcePlayerId": "efbcda26-57b8-4477-a8b2-6fa7c6274e81",
-              "registrationId": "790da6d2-1b47-4f09-86fe-8100c5674f50",
-              "playerAccountId": "9ded21da-0de7-4b50-96ce-9a3a6a5aba1f",
-              "name": "Machine",
-              "displayName": "Machine",
-              "role": "Offlane",
-              "roles": [
-                "Offlane",
-                "Hard support",
-                "Soft support"
-              ],
-              "mmr": 3600,
-              "steamName": "Machine",
-              "steamProfile": "https://steamcommunity.com/id/machine0211/",
-              "discordHandle": "Machine",
-              "location": "Vadodara",
-              "isCaptain": false,
-              "slug": "nisarg-parikh",
-              "bpcId": "BPC-093"
-            },
-            {
               "id": "2c85e18c-7b7c-47af-b001-ee427f5c35bd",
               "sourcePlayerId": "2ae90c5a-3b87-426e-975e-59db34267b94",
               "registrationId": "9c5b91a2-a987-4f4f-b383-35f4ba7acc5d",
@@ -1284,6 +1262,28 @@
               "isCaptain": false,
               "slug": "keyur-sankhe",
               "bpcId": "BPC-109"
+            },
+            {
+              "id": "ff1166d2-c9c4-4f79-a19d-955d279922ec",
+              "sourcePlayerId": "0b687400-e7b4-4d42-a0f6-f802a9c3054c",
+              "registrationId": "4191259d-3501-4b00-8a88-483e7bdc75e9",
+              "playerAccountId": "679ec250-38a2-4527-840a-a39a1a274f40",
+              "name": "Master Instinct",
+              "displayName": "Master Instinct",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Carry",
+                "Hard support"
+              ],
+              "mmr": 7174,
+              "steamName": "MASTER INSTINCT",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198124876950/",
+              "discordHandle": "Master Instinct",
+              "location": "Kolkata",
+              "isCaptain": true,
+              "slug": "master-instinct",
+              "bpcId": "BPC-035"
             }
           ]
         },
@@ -1298,47 +1298,6 @@
           "accentColor": "#f5b56b",
           "groupKey": "C",
           "players": [
-            {
-              "id": "95e62b0d-6a37-4f64-9320-8d760ae0577f",
-              "sourcePlayerId": "b4aa62ff-fb5d-4e15-aa0d-2ee74ae6856a",
-              "registrationId": "8706a103-06bb-4276-8cb7-edc97cbb9c83",
-              "playerAccountId": "feaccb63-9641-47e0-adb8-fc04c3442292",
-              "name": "Rexxx14",
-              "displayName": "Rexxx14",
-              "role": "Offlane",
-              "roles": [
-                "Offlane",
-                "Soft support"
-              ],
-              "mmr": 4080,
-              "steamName": "R",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198068573542/",
-              "discordHandle": "Rexxx14",
-              "location": "Pune,India",
-              "isCaptain": false,
-              "slug": "pankaj-teli",
-              "bpcId": "BPC-127"
-            },
-            {
-              "id": "e5d70a22-3794-4b2c-8062-b8f1b8e5a119",
-              "sourcePlayerId": "e69036b8-b9d1-40b6-9f15-94650bd4a80e",
-              "registrationId": "a040e0ad-0edc-4ae4-b229-e791f7e9e471",
-              "playerAccountId": "228f442b-bd03-4424-8615-cef46ff65d3b",
-              "name": "Icarus",
-              "displayName": "Icarus",
-              "role": "Mid",
-              "roles": [
-                "Mid"
-              ],
-              "mmr": 8500,
-              "steamName": "\"I was good. I was really good.\"",
-              "steamProfile": "https://steamcommunity.com/profiles/76561199634110560/",
-              "discordHandle": "Icarus-",
-              "location": "KOLKATA",
-              "isCaptain": true,
-              "slug": "icarus",
-              "bpcId": "BPC-031"
-            },
             {
               "id": "7e127878-7e2b-4e3d-923e-c6d2aead7f8d",
               "sourcePlayerId": "24a30d8e-af4c-4c66-acbd-f151b607c38a",
@@ -1358,6 +1317,27 @@
               "isCaptain": false,
               "slug": "chinya",
               "bpcId": "BPC-037"
+            },
+            {
+              "id": "d4fe74ac-7a9d-4da9-8a08-d9e510aac0e2",
+              "sourcePlayerId": "0d9dcfce-7390-422a-a37f-26b1db462e6f",
+              "registrationId": "e4616a39-3980-49e4-ad6f-48e97bc4c97f",
+              "playerAccountId": "002ed382-8905-4d08-b981-957828dc5342",
+              "name": "voidsilverscar",
+              "displayName": "voidsilverscar",
+              "role": "Hard support",
+              "roles": [
+                "Hard support",
+                "Soft support"
+              ],
+              "mmr": 2100,
+              "steamName": "Vibe",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198085976245/",
+              "discordHandle": "DrunkenYeti",
+              "location": "Hyderabad",
+              "isCaptain": false,
+              "slug": "voidsilverscar",
+              "bpcId": "BPC-026"
             },
             {
               "id": "af560c84-4d42-449c-8071-acf2588dbf64",
@@ -1382,25 +1362,45 @@
               "bpcId": "BPC-034"
             },
             {
-              "id": "d4fe74ac-7a9d-4da9-8a08-d9e510aac0e2",
-              "sourcePlayerId": "0d9dcfce-7390-422a-a37f-26b1db462e6f",
-              "registrationId": "e4616a39-3980-49e4-ad6f-48e97bc4c97f",
-              "playerAccountId": "002ed382-8905-4d08-b981-957828dc5342",
-              "name": "voidsilverscar",
-              "displayName": "voidsilverscar",
-              "role": "Hard support",
+              "id": "e5d70a22-3794-4b2c-8062-b8f1b8e5a119",
+              "sourcePlayerId": "e69036b8-b9d1-40b6-9f15-94650bd4a80e",
+              "registrationId": "a040e0ad-0edc-4ae4-b229-e791f7e9e471",
+              "playerAccountId": "228f442b-bd03-4424-8615-cef46ff65d3b",
+              "name": "Icarus",
+              "displayName": "Icarus",
+              "role": "Mid",
               "roles": [
-                "Hard support",
+                "Mid"
+              ],
+              "mmr": 8500,
+              "steamName": "\"I was good. I was really good.\"",
+              "steamProfile": "https://steamcommunity.com/profiles/76561199634110560/",
+              "discordHandle": "Icarus-",
+              "location": "KOLKATA",
+              "isCaptain": true,
+              "slug": "icarus",
+              "bpcId": "BPC-031"
+            },
+            {
+              "id": "95e62b0d-6a37-4f64-9320-8d760ae0577f",
+              "sourcePlayerId": "b4aa62ff-fb5d-4e15-aa0d-2ee74ae6856a",
+              "registrationId": "8706a103-06bb-4276-8cb7-edc97cbb9c83",
+              "playerAccountId": "feaccb63-9641-47e0-adb8-fc04c3442292",
+              "name": "Rexxx14",
+              "displayName": "Rexxx14",
+              "role": "Offlane",
+              "roles": [
+                "Offlane",
                 "Soft support"
               ],
-              "mmr": 2100,
-              "steamName": "Vibe",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198085976245/",
-              "discordHandle": "DrunkenYeti",
-              "location": "Hyderabad",
+              "mmr": 4080,
+              "steamName": "R",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198068573542/",
+              "discordHandle": "Rexxx14",
+              "location": "Pune,India",
               "isCaptain": false,
-              "slug": "voidsilverscar",
-              "bpcId": "BPC-026"
+              "slug": "pankaj-teli",
+              "bpcId": "BPC-127"
             }
           ]
         },
@@ -1415,6 +1415,27 @@
           "accentColor": "#db4d4d",
           "groupKey": "D",
           "players": [
+            {
+              "id": "4634e789-ec26-48f2-9598-3d74facfb3c4",
+              "sourcePlayerId": "82b2770d-a798-45a1-b0bc-c933095f8ca9",
+              "registrationId": "d4cccdb2-77b2-46e8-b3cd-9e07cf4f8e7e",
+              "playerAccountId": "602abc22-6fab-44e5-aa5f-0e21f5a4a7d2",
+              "name": "Bhai Got no chill !!!",
+              "displayName": "Bhai Got no chill !!!",
+              "role": "Soft support",
+              "roles": [
+                "Soft support",
+                "Carry"
+              ],
+              "mmr": 3500,
+              "steamName": "Bhai Got No Chill",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198337915793/",
+              "discordHandle": "9Pasha*",
+              "location": "",
+              "isCaptain": false,
+              "slug": "bhai-got-no-chill",
+              "bpcId": "BPC-065"
+            },
             {
               "id": "1a0c0080-05e8-4ab1-ab8c-c3dc8def9ade",
               "sourcePlayerId": "3e617aad-6a99-4028-9a01-11c4d6c79e32",
@@ -1499,27 +1520,6 @@
               "isCaptain": false,
               "slug": "noctis",
               "bpcId": "BPC-108"
-            },
-            {
-              "id": "4634e789-ec26-48f2-9598-3d74facfb3c4",
-              "sourcePlayerId": "82b2770d-a798-45a1-b0bc-c933095f8ca9",
-              "registrationId": "d4cccdb2-77b2-46e8-b3cd-9e07cf4f8e7e",
-              "playerAccountId": "602abc22-6fab-44e5-aa5f-0e21f5a4a7d2",
-              "name": "Bhai Got no chill !!!",
-              "displayName": "Bhai Got no chill !!!",
-              "role": "Soft support",
-              "roles": [
-                "Soft support",
-                "Carry"
-              ],
-              "mmr": 3500,
-              "steamName": "Bhai Got No Chill",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198337915793/",
-              "discordHandle": "9Pasha*",
-              "location": "",
-              "isCaptain": false,
-              "slug": "bhai-got-no-chill",
-              "bpcId": "BPC-065"
             }
           ]
         },
@@ -1534,6 +1534,27 @@
           "accentColor": "#7dd572",
           "groupKey": "A",
           "players": [
+            {
+              "id": "d651653c-b893-4024-9a18-0ab0cc24f5dd",
+              "sourcePlayerId": "3c54e723-097d-4b99-8c9f-b80436f0257f",
+              "registrationId": "c530e3ea-1197-409c-b1f8-a02922f975a6",
+              "playerAccountId": "8d21de94-bc53-4f8d-9642-ac8c15b6a501",
+              "name": "Meet",
+              "displayName": "Meet",
+              "role": "Soft support",
+              "roles": [
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 2700,
+              "steamName": "Elon Tusk",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198105146154/",
+              "discordHandle": "Meet9251",
+              "location": "Guj,ind",
+              "isCaptain": false,
+              "slug": "meet",
+              "bpcId": "BPC-144"
+            },
             {
               "id": "488a3e77-73af-4e9b-806f-653aabe0240f",
               "sourcePlayerId": "388b5e4d-ab82-4824-a62b-40d161624c1f",
@@ -1556,24 +1577,25 @@
               "bpcId": "BPC-143"
             },
             {
-              "id": "e4738a6b-bbdd-4bd4-98f4-cd5bd9c97439",
-              "sourcePlayerId": "639d2c28-a263-4b90-921b-79fa15cf886f",
-              "registrationId": "aec44923-3abc-4b66-9624-cc167f241659",
-              "playerAccountId": "23b12c28-ba83-4769-a1a5-cb30b8270ec1",
-              "name": "ㄨ4 DeathClutch 唯",
-              "displayName": "ㄨ4 DeathClutch 唯",
-              "role": "Carry",
+              "id": "9d3e0248-6851-4447-9dd8-47822a40756c",
+              "sourcePlayerId": "0aa032f2-12e0-47fb-a19d-63e575b31714",
+              "registrationId": "d23fc01c-41b8-4950-8f74-c30b0760e9a5",
+              "playerAccountId": "613cceea-e424-402f-98ad-041ce2f2853d",
+              "name": "S1mple0",
+              "displayName": "S1mple0",
+              "role": "Soft support",
               "roles": [
-                "Carry"
+                "Soft support",
+                "Hard support"
               ],
-              "mmr": 3800,
-              "steamName": "ㄨ4 DeathClutch 唯一",
-              "steamProfile": "https://steamcommunity.com/id/Deathclutches/",
-              "discordHandle": "X4DeathClutch",
-              "location": "Surat, Gujarat, India",
+              "mmr": 5000,
+              "steamName": "S1mple0",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198085409965/",
+              "discordHandle": "S1mple0",
+              "location": "gujarat",
               "isCaptain": false,
-              "slug": "pahlan-bodhanwala",
-              "bpcId": "BPC-148"
+              "slug": "s1mple0",
+              "bpcId": "BPC-153"
             },
             {
               "id": "18d45c85-7e90-4ea3-9e63-650cf6951e4d",
@@ -1598,46 +1620,24 @@
               "bpcId": "BPC-151"
             },
             {
-              "id": "9d3e0248-6851-4447-9dd8-47822a40756c",
-              "sourcePlayerId": "0aa032f2-12e0-47fb-a19d-63e575b31714",
-              "registrationId": "d23fc01c-41b8-4950-8f74-c30b0760e9a5",
-              "playerAccountId": "613cceea-e424-402f-98ad-041ce2f2853d",
-              "name": "S1mple0",
-              "displayName": "S1mple0",
-              "role": "Soft support",
+              "id": "e4738a6b-bbdd-4bd4-98f4-cd5bd9c97439",
+              "sourcePlayerId": "639d2c28-a263-4b90-921b-79fa15cf886f",
+              "registrationId": "aec44923-3abc-4b66-9624-cc167f241659",
+              "playerAccountId": "23b12c28-ba83-4769-a1a5-cb30b8270ec1",
+              "name": "ㄨ4 DeathClutch 唯",
+              "displayName": "ㄨ4 DeathClutch 唯",
+              "role": "Carry",
               "roles": [
-                "Soft support",
-                "Hard support"
+                "Carry"
               ],
-              "mmr": 5000,
-              "steamName": "S1mple0",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198085409965/",
-              "discordHandle": "S1mple0",
-              "location": "gujarat",
+              "mmr": 3800,
+              "steamName": "ㄨ4 DeathClutch 唯一",
+              "steamProfile": "https://steamcommunity.com/id/Deathclutches/",
+              "discordHandle": "X4DeathClutch",
+              "location": "Surat, Gujarat, India",
               "isCaptain": false,
-              "slug": "s1mple0",
-              "bpcId": "BPC-153"
-            },
-            {
-              "id": "d651653c-b893-4024-9a18-0ab0cc24f5dd",
-              "sourcePlayerId": "3c54e723-097d-4b99-8c9f-b80436f0257f",
-              "registrationId": "c530e3ea-1197-409c-b1f8-a02922f975a6",
-              "playerAccountId": "8d21de94-bc53-4f8d-9642-ac8c15b6a501",
-              "name": "Meet",
-              "displayName": "Meet",
-              "role": "Soft support",
-              "roles": [
-                "Soft support",
-                "Hard support"
-              ],
-              "mmr": 2700,
-              "steamName": "Elon Tusk",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198105146154/",
-              "discordHandle": "Meet9251",
-              "location": "Guj,ind",
-              "isCaptain": false,
-              "slug": "meet",
-              "bpcId": "BPC-144"
+              "slug": "pahlan-bodhanwala",
+              "bpcId": "BPC-148"
             }
           ]
         },
@@ -1652,70 +1652,6 @@
           "accentColor": "#63a5e3",
           "groupKey": "D",
           "players": [
-            {
-              "id": "5577edab-00c1-4934-874e-f83034d71179",
-              "sourcePlayerId": "1b218e13-77d0-4ca3-a526-3582887838c7",
-              "registrationId": "5a833303-47ac-444c-a5fd-6729361b6f04",
-              "playerAccountId": "45ee7f4b-61f6-467e-8a3c-895a8ee21c24",
-              "name": "Verlin Raed",
-              "displayName": "Verlin Raed",
-              "role": "Soft support",
-              "roles": [
-                "Soft support"
-              ],
-              "mmr": 9000,
-              "steamName": "Verlin Raed",
-              "steamProfile": "https://steamcommunity.com/id/Verlin_102/",
-              "discordHandle": "Verlin Raed",
-              "location": "Puducherry ",
-              "isCaptain": true,
-              "slug": "verlin-raed",
-              "bpcId": "BPC-133"
-            },
-            {
-              "id": "2b71128c-ed24-4f15-883a-5b21023cbe79",
-              "sourcePlayerId": "edfff156-5212-4811-ac6f-4cbe97b94868",
-              "registrationId": "3c84dc19-c934-4f9d-bd96-71fdbb2537fb",
-              "playerAccountId": "d80bb411-f23a-495c-a9ef-97e1f031a52b",
-              "name": "Repredetta97",
-              "displayName": "Repredetta97",
-              "role": "Mid",
-              "roles": [
-                "Mid",
-                "Carry",
-                "Offlane",
-                "Soft support"
-              ],
-              "mmr": 4820,
-              "steamName": "Repredetta97",
-              "steamProfile": "https://steamcommunity.com/id/repredetta97/",
-              "discordHandle": "Repredetta97",
-              "location": "Pune",
-              "isCaptain": false,
-              "slug": "repredetta97",
-              "bpcId": "BPC-038"
-            },
-            {
-              "id": "0496ac7b-a015-4076-bda6-d108662bcfd3",
-              "sourcePlayerId": "1604396c-77e6-4bbe-88f7-e9cc747529b9",
-              "registrationId": "7d66b32a-23d4-49af-91fb-e343fff6bca6",
-              "playerAccountId": "2e3dbd3c-22cd-4b4a-ae86-3c486b71ba98",
-              "name": "Dynamodon",
-              "displayName": "Dynamodon",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Offlane"
-              ],
-              "mmr": 4000,
-              "steamName": "DynamoDon",
-              "steamProfile": "https://steamcommunity.com/id/DynamoDon/",
-              "discordHandle": "《★~ DynamoDon ~★ 》",
-              "location": "chennai",
-              "isCaptain": false,
-              "slug": "dynamodon",
-              "bpcId": "BPC-011"
-            },
             {
               "id": "a3c88e27-d7c5-4259-8e7b-83dfb97ccf05",
               "sourcePlayerId": "a9648b90-3015-44dd-9080-4059a917be27",
@@ -1758,6 +1694,70 @@
               "isCaptain": false,
               "slug": "slappy",
               "bpcId": "BPC-129"
+            },
+            {
+              "id": "0496ac7b-a015-4076-bda6-d108662bcfd3",
+              "sourcePlayerId": "1604396c-77e6-4bbe-88f7-e9cc747529b9",
+              "registrationId": "7d66b32a-23d4-49af-91fb-e343fff6bca6",
+              "playerAccountId": "2e3dbd3c-22cd-4b4a-ae86-3c486b71ba98",
+              "name": "Dynamodon",
+              "displayName": "Dynamodon",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Offlane"
+              ],
+              "mmr": 4000,
+              "steamName": "DynamoDon",
+              "steamProfile": "https://steamcommunity.com/id/DynamoDon/",
+              "discordHandle": "《★~ DynamoDon ~★ 》",
+              "location": "chennai",
+              "isCaptain": false,
+              "slug": "dynamodon",
+              "bpcId": "BPC-011"
+            },
+            {
+              "id": "5577edab-00c1-4934-874e-f83034d71179",
+              "sourcePlayerId": "1b218e13-77d0-4ca3-a526-3582887838c7",
+              "registrationId": "5a833303-47ac-444c-a5fd-6729361b6f04",
+              "playerAccountId": "45ee7f4b-61f6-467e-8a3c-895a8ee21c24",
+              "name": "Verlin Raed",
+              "displayName": "Verlin Raed",
+              "role": "Soft support",
+              "roles": [
+                "Soft support"
+              ],
+              "mmr": 9000,
+              "steamName": "Verlin Raed",
+              "steamProfile": "https://steamcommunity.com/id/Verlin_102/",
+              "discordHandle": "Verlin Raed",
+              "location": "Puducherry ",
+              "isCaptain": true,
+              "slug": "verlin-raed",
+              "bpcId": "BPC-133"
+            },
+            {
+              "id": "2b71128c-ed24-4f15-883a-5b21023cbe79",
+              "sourcePlayerId": "edfff156-5212-4811-ac6f-4cbe97b94868",
+              "registrationId": "3c84dc19-c934-4f9d-bd96-71fdbb2537fb",
+              "playerAccountId": "d80bb411-f23a-495c-a9ef-97e1f031a52b",
+              "name": "Repredetta97",
+              "displayName": "Repredetta97",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Carry",
+                "Offlane",
+                "Soft support"
+              ],
+              "mmr": 4820,
+              "steamName": "Repredetta97",
+              "steamProfile": "https://steamcommunity.com/id/repredetta97/",
+              "discordHandle": "Repredetta97",
+              "location": "Pune",
+              "isCaptain": false,
+              "slug": "repredetta97",
+              "bpcId": "BPC-038"
             }
           ]
         },
@@ -1772,6 +1772,27 @@
           "accentColor": "#f37cef",
           "groupKey": "C",
           "players": [
+            {
+              "id": "d4fb523d-b9ec-4ec3-922f-74f41065f0af",
+              "sourcePlayerId": "ee6f5bac-edea-4092-87e9-e97f76f1be87",
+              "registrationId": "91b67ed7-6157-472a-9b8e-4ef8443550f3",
+              "playerAccountId": "c01a7516-87b4-4194-be6f-ccb6c17f2cde",
+              "name": "Scapular1s",
+              "displayName": "Scapular1s",
+              "role": "Soft support",
+              "roles": [
+                "Soft support",
+                "Mid"
+              ],
+              "mmr": 2900,
+              "steamName": "Scapular1s",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198057114143/",
+              "discordHandle": "pyro0165",
+              "location": "Mumbai",
+              "isCaptain": false,
+              "slug": "scapular1s",
+              "bpcId": "BPC-014"
+            },
             {
               "id": "dc258215-52f5-48e8-a914-525f4ba59333",
               "sourcePlayerId": "708f5f19-a2f3-4701-bb53-cf51a4102a6c",
@@ -1792,6 +1813,28 @@
               "isCaptain": false,
               "slug": "no-fun-left",
               "bpcId": "BPC-040"
+            },
+            {
+              "id": "5ac9795e-585b-4098-aa0b-9fd84d064c8a",
+              "sourcePlayerId": "f377db8c-d199-43ce-93e5-d1d59648ab97",
+              "registrationId": "f424795c-db14-4fe1-a89c-27edb00aaaad",
+              "playerAccountId": "72fd1f83-aa88-4115-af33-64cd95ae0162",
+              "name": "Destroy",
+              "displayName": "Destroy",
+              "role": "Soft support",
+              "roles": [
+                "Soft support",
+                "Hard support",
+                "Offlane"
+              ],
+              "mmr": 2100,
+              "steamName": "Destroy",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198834266390/",
+              "discordHandle": "The New Shubzz is sooo cool",
+              "location": "kolkata",
+              "isCaptain": false,
+              "slug": "destroy",
+              "bpcId": "BPC-019"
             },
             {
               "id": "9b232273-8d6a-4861-b37c-53c7e95c328f",
@@ -1836,49 +1879,6 @@
               "isCaptain": false,
               "slug": "monil-sharma",
               "bpcId": "BPC-125"
-            },
-            {
-              "id": "d4fb523d-b9ec-4ec3-922f-74f41065f0af",
-              "sourcePlayerId": "ee6f5bac-edea-4092-87e9-e97f76f1be87",
-              "registrationId": "91b67ed7-6157-472a-9b8e-4ef8443550f3",
-              "playerAccountId": "c01a7516-87b4-4194-be6f-ccb6c17f2cde",
-              "name": "Scapular1s",
-              "displayName": "Scapular1s",
-              "role": "Soft support",
-              "roles": [
-                "Soft support",
-                "Mid"
-              ],
-              "mmr": 2900,
-              "steamName": "Scapular1s",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198057114143/",
-              "discordHandle": "pyro0165",
-              "location": "Mumbai",
-              "isCaptain": false,
-              "slug": "scapular1s",
-              "bpcId": "BPC-014"
-            },
-            {
-              "id": "5ac9795e-585b-4098-aa0b-9fd84d064c8a",
-              "sourcePlayerId": "f377db8c-d199-43ce-93e5-d1d59648ab97",
-              "registrationId": "f424795c-db14-4fe1-a89c-27edb00aaaad",
-              "playerAccountId": "72fd1f83-aa88-4115-af33-64cd95ae0162",
-              "name": "Destroy",
-              "displayName": "Destroy",
-              "role": "Soft support",
-              "roles": [
-                "Soft support",
-                "Hard support",
-                "Offlane"
-              ],
-              "mmr": 2100,
-              "steamName": "Destroy",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198834266390/",
-              "discordHandle": "The New Shubzz is sooo cool",
-              "location": "kolkata",
-              "isCaptain": false,
-              "slug": "destroy",
-              "bpcId": "BPC-019"
             }
           ]
         },
@@ -1894,47 +1894,24 @@
           "groupKey": "D",
           "players": [
             {
-              "id": "3e86f4b8-2716-47f7-8a1e-42eb0a2819bb",
-              "sourcePlayerId": "0142d007-354a-4eb7-b93f-925c48849cfa",
-              "registrationId": "acbd0722-eb57-4ba1-9804-2faeb241a90d",
-              "playerAccountId": "0122a46f-54b2-4173-8d8b-c1375ec5f83e",
-              "name": "Y S R",
-              "displayName": "Y S R",
-              "role": "Carry",
+              "id": "3bbbac0f-d898-4c3d-a64e-338b8b318d61",
+              "sourcePlayerId": "5f70f18b-e685-482b-9fb8-9854bb5a59d3",
+              "registrationId": "f9925846-7aa4-4c4d-873d-fe93909adb15",
+              "playerAccountId": "6b502637-99f4-4c72-926a-e9fba56492f0",
+              "name": "Yatoro",
+              "displayName": "Yatoro",
+              "role": "Mid",
               "roles": [
-                "Carry",
-                "Soft support",
-                "Hard support"
+                "Mid"
               ],
-              "mmr": 4600,
-              "steamName": "Y S R",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198146941502/",
-              "discordHandle": "Y S R",
-              "location": "Udhampur",
-              "isCaptain": false,
-              "slug": "youdhbhir-singh",
-              "bpcId": "BPC-101"
-            },
-            {
-              "id": "16837370-28fb-4723-9ce6-609907a8a627",
-              "sourcePlayerId": "ea2678d8-9a14-4ff6-9b11-be2f9c0187f5",
-              "registrationId": "d74686dd-b5d7-4008-941c-16b903bc1f40",
-              "playerAccountId": "4ece2e54-a094-458e-8cac-b9b6c0875255",
-              "name": "4Pos5",
-              "displayName": "4Pos5",
-              "role": "Hard support",
-              "roles": [
-                "Hard support",
-                "Soft support"
-              ],
-              "mmr": 4220,
-              "steamName": "4Pos5",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198167232521/",
-              "discordHandle": "Sid",
-              "location": "Jaipur",
-              "isCaptain": false,
-              "slug": "4pos5",
-              "bpcId": "BPC-009"
+              "mmr": 8000,
+              "steamName": "me vs me",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198267072361/",
+              "discordHandle": "Yatoro",
+              "location": "Shillong ",
+              "isCaptain": true,
+              "slug": "pappu-kumar",
+              "bpcId": "BPC-123"
             },
             {
               "id": "a6ffa2d3-4a0a-4cc9-8ecb-d3950694e51b",
@@ -1959,6 +1936,28 @@
               "bpcId": "BPC-062"
             },
             {
+              "id": "3e86f4b8-2716-47f7-8a1e-42eb0a2819bb",
+              "sourcePlayerId": "0142d007-354a-4eb7-b93f-925c48849cfa",
+              "registrationId": "acbd0722-eb57-4ba1-9804-2faeb241a90d",
+              "playerAccountId": "0122a46f-54b2-4173-8d8b-c1375ec5f83e",
+              "name": "Y S R",
+              "displayName": "Y S R",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 4600,
+              "steamName": "Y S R",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198146941502/",
+              "discordHandle": "Y S R",
+              "location": "Udhampur",
+              "isCaptain": false,
+              "slug": "youdhbhir-singh",
+              "bpcId": "BPC-101"
+            },
+            {
               "id": "884c3b87-8cef-4a03-a518-71ba0279df8b",
               "sourcePlayerId": "415b074b-6771-412c-bf3f-8cb545340e6e",
               "registrationId": "41b3615b-9779-42b1-aef5-7266cfbe862d",
@@ -1980,24 +1979,25 @@
               "bpcId": "BPC-049"
             },
             {
-              "id": "3bbbac0f-d898-4c3d-a64e-338b8b318d61",
-              "sourcePlayerId": "5f70f18b-e685-482b-9fb8-9854bb5a59d3",
-              "registrationId": "f9925846-7aa4-4c4d-873d-fe93909adb15",
-              "playerAccountId": "6b502637-99f4-4c72-926a-e9fba56492f0",
-              "name": "Yatoro",
-              "displayName": "Yatoro",
-              "role": "Mid",
+              "id": "16837370-28fb-4723-9ce6-609907a8a627",
+              "sourcePlayerId": "ea2678d8-9a14-4ff6-9b11-be2f9c0187f5",
+              "registrationId": "d74686dd-b5d7-4008-941c-16b903bc1f40",
+              "playerAccountId": "4ece2e54-a094-458e-8cac-b9b6c0875255",
+              "name": "4Pos5",
+              "displayName": "4Pos5",
+              "role": "Hard support",
               "roles": [
-                "Mid"
+                "Hard support",
+                "Soft support"
               ],
-              "mmr": 8000,
-              "steamName": "me vs me",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198267072361/",
-              "discordHandle": "Yatoro",
-              "location": "Shillong ",
-              "isCaptain": true,
-              "slug": "pappu-kumar",
-              "bpcId": "BPC-123"
+              "mmr": 4220,
+              "steamName": "4Pos5",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198167232521/",
+              "discordHandle": "Sid",
+              "location": "Jaipur",
+              "isCaptain": false,
+              "slug": "4pos5",
+              "bpcId": "BPC-009"
             }
           ]
         },
@@ -2012,28 +2012,6 @@
           "accentColor": "#49e9ac",
           "groupKey": "B",
           "players": [
-            {
-              "id": "673929b9-58ea-430d-b867-8b0e285cf925",
-              "sourcePlayerId": "dc2634e5-c5c8-4420-ad1e-64a4ce78e22a",
-              "registrationId": "6b19590f-4029-4c95-8d16-cc826140b77f",
-              "playerAccountId": "7d9f59ec-6ad0-4148-a774-fe1754c6e9d6",
-              "name": "jukn",
-              "displayName": "jukn",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Mid",
-                "Offlane"
-              ],
-              "mmr": 9500,
-              "steamName": "A",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198314823652/",
-              "discordHandle": "Deep",
-              "location": "sikkim gangtok india",
-              "isCaptain": true,
-              "slug": "jukn",
-              "bpcId": "BPC-112"
-            },
             {
               "id": "af430bbe-a391-4947-94a6-3ad3b61c5a09",
               "sourcePlayerId": "0fd54182-790b-4aa0-b2e2-2bef71ef6b86",
@@ -2115,6 +2093,28 @@
               "isCaptain": false,
               "slug": "akhteebq",
               "bpcId": "BPC-107"
+            },
+            {
+              "id": "673929b9-58ea-430d-b867-8b0e285cf925",
+              "sourcePlayerId": "dc2634e5-c5c8-4420-ad1e-64a4ce78e22a",
+              "registrationId": "6b19590f-4029-4c95-8d16-cc826140b77f",
+              "playerAccountId": "7d9f59ec-6ad0-4148-a774-fe1754c6e9d6",
+              "name": "jukn",
+              "displayName": "jukn",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Mid",
+                "Offlane"
+              ],
+              "mmr": 9500,
+              "steamName": "A",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198314823652/",
+              "discordHandle": "Deep",
+              "location": "sikkim gangtok india",
+              "isCaptain": true,
+              "slug": "jukn",
+              "bpcId": "BPC-112"
             }
           ]
         },
@@ -2130,46 +2130,24 @@
           "groupKey": "C",
           "players": [
             {
-              "id": "55eb1b6e-b5a8-45c5-a2c2-e87770413b0f",
-              "sourcePlayerId": "fbd9b0cc-5692-4103-b40d-5be4ddfda944",
-              "registrationId": "756def83-f8de-4ebe-99c6-3f91019c13a0",
-              "playerAccountId": "e0b33121-e6b2-419f-8dfe-771251214496",
-              "name": "Rockrobin",
-              "displayName": "Rockrobin",
-              "role": "Offlane",
+              "id": "65673bf8-f011-4770-a1e6-8131b2de33b1",
+              "sourcePlayerId": "752a9891-a7b3-4548-84a1-f8ae26936e12",
+              "registrationId": "09530a44-7451-417c-ad02-992c9e25c026",
+              "playerAccountId": "96b98a6d-cf10-4b7d-a781-2b5c83da26b0",
+              "name": "bull",
+              "displayName": "bull",
+              "role": "Mid",
               "roles": [
-                "Offlane",
-                "Hard support"
+                "Mid"
               ],
-              "mmr": 5600,
-              "steamName": "RockrobiN",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198158529135/",
-              "discordHandle": "Robin",
-              "location": "Pune",
-              "isCaptain": true,
-              "slug": "rockrobin",
-              "bpcId": "BPC-036"
-            },
-            {
-              "id": "2fabe904-a573-4862-89c7-3e3e974b259a",
-              "sourcePlayerId": "d4762a89-63d6-4236-9354-57a36434c4c7",
-              "registrationId": "867c83f8-b674-4ce4-b323-e124c2876d9b",
-              "playerAccountId": "a247fe47-02a2-4d4f-8814-0feea6537d80",
-              "name": "lil puns",
-              "displayName": "lil puns",
-              "role": "Hard support",
-              "roles": [
-                "Hard support",
-                "Carry"
-              ],
-              "mmr": 4600,
-              "steamName": "Lil Puns",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198305583170/",
-              "discordHandle": "harshit",
-              "location": "Jaipur",
+              "mmr": 2700,
+              "steamName": "END FAST TY",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198080338787/",
+              "discordHandle": "WELCOME",
+              "location": "Bhubaneswar",
               "isCaptain": false,
-              "slug": "lil-puns",
-              "bpcId": "BPC-043"
+              "slug": "bull",
+              "bpcId": "BPC-015"
             },
             {
               "id": "f670c5cf-17ab-4543-8219-8d669b99c236",
@@ -2194,26 +2172,6 @@
               "bpcId": "BPC-039"
             },
             {
-              "id": "65673bf8-f011-4770-a1e6-8131b2de33b1",
-              "sourcePlayerId": "752a9891-a7b3-4548-84a1-f8ae26936e12",
-              "registrationId": "09530a44-7451-417c-ad02-992c9e25c026",
-              "playerAccountId": "96b98a6d-cf10-4b7d-a781-2b5c83da26b0",
-              "name": "bull",
-              "displayName": "bull",
-              "role": "Mid",
-              "roles": [
-                "Mid"
-              ],
-              "mmr": 2700,
-              "steamName": "END FAST TY",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198080338787/",
-              "discordHandle": "WELCOME",
-              "location": "Bhubaneswar",
-              "isCaptain": false,
-              "slug": "bull",
-              "bpcId": "BPC-015"
-            },
-            {
               "id": "c1ca2b01-2c93-4a58-b13f-98247d6d56ea",
               "sourcePlayerId": "3e11bafa-7277-4e63-b23f-4039417a9c6a",
               "registrationId": "7e57da48-90f1-41cd-9f8e-cdb465a09679",
@@ -2233,6 +2191,48 @@
               "isCaptain": false,
               "slug": "roronoa-zoro",
               "bpcId": "BPC-033"
+            },
+            {
+              "id": "2fabe904-a573-4862-89c7-3e3e974b259a",
+              "sourcePlayerId": "d4762a89-63d6-4236-9354-57a36434c4c7",
+              "registrationId": "867c83f8-b674-4ce4-b323-e124c2876d9b",
+              "playerAccountId": "a247fe47-02a2-4d4f-8814-0feea6537d80",
+              "name": "lil puns",
+              "displayName": "lil puns",
+              "role": "Hard support",
+              "roles": [
+                "Hard support",
+                "Carry"
+              ],
+              "mmr": 4600,
+              "steamName": "Lil Puns",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198305583170/",
+              "discordHandle": "harshit",
+              "location": "Jaipur",
+              "isCaptain": false,
+              "slug": "lil-puns",
+              "bpcId": "BPC-043"
+            },
+            {
+              "id": "55eb1b6e-b5a8-45c5-a2c2-e87770413b0f",
+              "sourcePlayerId": "fbd9b0cc-5692-4103-b40d-5be4ddfda944",
+              "registrationId": "756def83-f8de-4ebe-99c6-3f91019c13a0",
+              "playerAccountId": "e0b33121-e6b2-419f-8dfe-771251214496",
+              "name": "Rockrobin",
+              "displayName": "Rockrobin",
+              "role": "Offlane",
+              "roles": [
+                "Offlane",
+                "Hard support"
+              ],
+              "mmr": 5600,
+              "steamName": "RockrobiN",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198158529135/",
+              "discordHandle": "Robin",
+              "location": "Pune",
+              "isCaptain": true,
+              "slug": "rockrobin",
+              "bpcId": "BPC-036"
             }
           ]
         },
@@ -2248,24 +2248,26 @@
           "groupKey": "C",
           "players": [
             {
-              "id": "86556a43-83bf-451e-9c37-083ecba5bde1",
-              "sourcePlayerId": "749fae7d-bba2-42a9-947b-5ae10a6c91a0",
-              "registrationId": "19124d60-9005-41b9-b8d1-33daa4293a71",
-              "playerAccountId": "abc1284e-04c9-4667-966d-4610570ede6f",
-              "name": "Cazrath",
-              "displayName": "Cazrath",
-              "role": "Mid",
+              "id": "a8a72384-226d-4136-9960-cdf0ad226e18",
+              "sourcePlayerId": "5614b4db-2b2b-4b95-a2e0-61d5fefc1cab",
+              "registrationId": "359778fe-7f59-438f-a520-a553ee056997",
+              "playerAccountId": "b3491922-5f5e-44d4-9014-b583de14dfd9",
+              "name": "DO SOMETHING",
+              "displayName": "DO SOMETHING",
+              "role": "Soft support",
               "roles": [
-                "Mid"
+                "Soft support",
+                "Offlane",
+                "Hard support"
               ],
-              "mmr": 6550,
-              "steamName": "󠀡󠀡　⁧⁧Cazrath",
-              "steamProfile": "https://steamcommunity.com/id/Cazrath/",
-              "discordHandle": "Cazrath",
-              "location": "Mumbai , Thane",
-              "isCaptain": true,
-              "slug": "cazrath",
-              "bpcId": "BPC-132"
+              "mmr": 2946,
+              "steamName": "DO SOMETHING",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198273925622/",
+              "discordHandle": "Atul",
+              "location": "Pune, Maharashtra",
+              "isCaptain": false,
+              "slug": "atul-agrawal",
+              "bpcId": "BPC-089"
             },
             {
               "id": "8545cb21-9672-4d7b-b4f4-021d2cfd38ae",
@@ -2329,26 +2331,24 @@
               "bpcId": "BPC-118"
             },
             {
-              "id": "a8a72384-226d-4136-9960-cdf0ad226e18",
-              "sourcePlayerId": "5614b4db-2b2b-4b95-a2e0-61d5fefc1cab",
-              "registrationId": "359778fe-7f59-438f-a520-a553ee056997",
-              "playerAccountId": "b3491922-5f5e-44d4-9014-b583de14dfd9",
-              "name": "DO SOMETHING",
-              "displayName": "DO SOMETHING",
-              "role": "Soft support",
+              "id": "86556a43-83bf-451e-9c37-083ecba5bde1",
+              "sourcePlayerId": "749fae7d-bba2-42a9-947b-5ae10a6c91a0",
+              "registrationId": "19124d60-9005-41b9-b8d1-33daa4293a71",
+              "playerAccountId": "abc1284e-04c9-4667-966d-4610570ede6f",
+              "name": "Cazrath",
+              "displayName": "Cazrath",
+              "role": "Mid",
               "roles": [
-                "Soft support",
-                "Offlane",
-                "Hard support"
+                "Mid"
               ],
-              "mmr": 2946,
-              "steamName": "DO SOMETHING",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198273925622/",
-              "discordHandle": "Atul",
-              "location": "Pune, Maharashtra",
-              "isCaptain": false,
-              "slug": "atul-agrawal",
-              "bpcId": "BPC-089"
+              "mmr": 6550,
+              "steamName": "󠀡󠀡　⁧⁧Cazrath",
+              "steamProfile": "https://steamcommunity.com/id/Cazrath/",
+              "discordHandle": "Cazrath",
+              "location": "Mumbai , Thane",
+              "isCaptain": true,
+              "slug": "cazrath",
+              "bpcId": "BPC-132"
             }
           ]
         }

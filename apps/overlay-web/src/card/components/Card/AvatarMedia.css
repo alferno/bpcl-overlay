@@ -1,0 +1,23 @@
+.avatar-media {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  max-height: none;
+}
+
+.avatar-media--empty {
+  position: absolute;
+  inset: 0;
+}
+
+.avatar-media--image,
+.avatar-media--video {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+}
