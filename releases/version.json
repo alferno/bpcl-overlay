@@ -1,7 +1,7 @@
 {
-    "version":  "1.1.37",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.37/BPCL-Streamer-v1.1.37-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.37/BPCL-Streamer-v1.1.37-Update.zip",
-    "notes":  "Ready to Go!",
-    "publishedAt":  "2026-07-18T01:54:15.9746379+05:30"
+    "version":  "1.1.38",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.38/BPCL-Streamer-v1.1.38-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.1.38/BPCL-Streamer-v1.1.38-Update.zip",
+    "notes":  "BPCL Season 2",
+    "publishedAt":  "2026-07-18T02:30:23.0309765+05:30"
 }
