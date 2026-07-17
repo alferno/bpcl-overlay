@@ -16,6 +16,13 @@ import type { BpclMember } from '../api/bpclMembers';
  * @param name    - Display name to show on the card (from roster or live GSI)
  * @param avatar  - Optional avatar URL override (e.g. from Steam if API has none)
  */
+const DEFAULT_STATS = [
+  { id: 'gpm', label: 'GPM', value: '--' },
+  { id: 'xpm', label: 'XPM', value: '--' },
+  { id: 'kda', label: 'KDA', value: '--' },
+  { id: 'winrate', label: 'Win Rate', value: '--%' },
+];
+
 export function buildCardData(
   member: BpclMember | undefined,
   name: string,
@@ -31,7 +38,7 @@ export function buildCardData(
         label: s.label,
         value: s.value,
       }))
-    : [];
+    : DEFAULT_STATS;
 
   // Avatar: prefer API, then override, then null
   const avatar: string | null = member?.avatarUrl || avatarOverride || null;

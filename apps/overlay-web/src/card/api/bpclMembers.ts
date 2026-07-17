@@ -53,20 +53,24 @@ function normalizeStats(stats: unknown): BpclCardStat[] {
       if (!stat || typeof stat !== 'object') return [];
       const { id, label, value } = stat as Record<string, unknown>;
       if (typeof id !== 'string') return [];
+      const isWinrate = id.toLowerCase() === 'winrate';
+      const fallback = isWinrate ? '--%' : '--';
       return [{
         id,
         label: typeof label === 'string' ? label : STAT_LABELS[id] ?? id,
-        value: value === undefined || value === null ? '' : String(value),
+        value: value === undefined || value === null || String(value).trim() === '' ? fallback : String(value),
       }];
     });
   }
 
   if (!stats || typeof stats !== 'object') return [];
-  return Object.entries(stats as Record<string, unknown>).flatMap(([id, value]) =>
-    value === undefined || value === null || typeof value === 'object'
-      ? []
-      : [{ id, label: STAT_LABELS[id] ?? id, value: String(value) }],
-  );
+  return Object.entries(stats as Record<string, unknown>).flatMap(([id, value]) => {
+    if (value !== null && typeof value === 'object') return [];
+    const isWinrate = id.toLowerCase() === 'winrate';
+    const fallback = isWinrate ? '--%' : '--';
+    const valStr = value === undefined || value === null || String(value).trim() === '' ? fallback : String(value);
+    return [{ id, label: STAT_LABELS[id] ?? id, value: valStr }];
+  });
 }
 
 function normalizeMember(member: CommunityMemberPayload): BpclMember {
