@@ -12,6 +12,7 @@
   "dependencies": {
     "@bpc/shared-types": "*",
     "@bpc/state-manager": "*",
+    "axios": "^1.18.1",
     "bottleneck": "^2.19.5",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

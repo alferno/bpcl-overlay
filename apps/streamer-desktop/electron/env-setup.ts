@@ -31,6 +31,7 @@ if (!process.env.REPLAY_LAST_COMPLETED_FILE)  process.env.REPLAY_LAST_COMPLETED_
 if (!process.env.REPLAY_PLAYBACK_DIR)         process.env.REPLAY_PLAYBACK_DIR         = path.join(bpclBase, 'Playback')
 if (!process.env.REPLAY_FOLDER)               process.env.REPLAY_FOLDER               = path.join(bpclBase, 'Replays')
 if (!process.env.ROSTER_CSV_PATH)             process.env.ROSTER_CSV_PATH             = path.join(bpclBase, 'System', 'Rosters', 'players_roster_prepared.csv')
+if (!process.env.COMMUNITY_CSV_PATH)          process.env.COMMUNITY_CSV_PATH          = path.join(bpclBase, 'System', 'Rosters', 'community_members.csv')
 if (!process.env.LEAGUE_STATS_DIR)            process.env.LEAGUE_STATS_DIR            = path.join(bpclBase, 'System', 'Stats')
 
 export { bpclBase }

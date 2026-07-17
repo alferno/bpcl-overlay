@@ -310,16 +310,15 @@ export async function fetchSeasonConfigFromBpcLeague(seasonSlug?: string): Promi
  */
 export async function fetchCommunityPlayers(): Promise<Array<{ bpcId: string; displayName: string; slug: string; avatarUrl?: string; steam32?: number }>> {
   try {
-    const payload = await fetchCachedJson<any>("https://api.bpcleague.in/api/public/community", 10 * 60 * 1000);
-    const players = (payload.players || []).map((p: any) => ({
-      bpcId: p.bpcId || "",
+    const { getCommunityData } = await import("./community-csv.js");
+    const players = await getCommunityData();
+    return players.map((p) => ({
+      bpcId: p.cardTier || "", // Keep field matching or blank if no exact bpcId in new payload format (or set to fallback)
       displayName: p.displayName || "",
-      slug: p.slug || "",
-      avatarUrl: p.avatarUrl || p.card?.avatarUrl || undefined,
-      steam32: p.steam32 ? Number(p.steam32) : undefined,
+      slug: "",
+      avatarUrl: p.avatarUrl,
+      steam32: p.steam32Id,
     }));
-    logger.info({ count: players.length }, "[Community] Fetched community player list");
-    return players;
   } catch (err) {
     logger.warn({ err }, "[Community] Failed to fetch community players");
     return [];

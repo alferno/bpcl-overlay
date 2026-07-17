@@ -54,14 +54,23 @@ export function attachRestRoutes(opts: {
 
   app.get("/api/community", async (_req, res) => {
     try {
-      const community = await fetchCachedJson<unknown>(
-        "https://api.bpcleague.in/api/public/community",
-        5 * 60 * 1000,
-      );
-      res.json(community);
+      const { getCommunityData } = await import("./services/community-csv.js");
+      const members = await getCommunityData();
+      res.json({ players: members });
     } catch (err) {
-      logger.warn({ err }, "[BPCLeague] Community proxy request failed");
-      res.status(502).json({ error: "Community data is temporarily unavailable" });
+      logger.warn({ err }, "[BPCLeague] Serving community data failed");
+      res.status(500).json({ error: "Community data is temporarily unavailable" });
+    }
+  });
+
+  app.post("/api/community/refresh", requireBroadcastAuth, async (_req, res) => {
+    try {
+      const { fetchAndWriteCommunityCsv } = await import("./services/community-csv.js");
+      const members = await fetchAndWriteCommunityCsv();
+      res.json({ success: true, count: members.length });
+    } catch (err) {
+      logger.warn({ err }, "[BPCLeague] Community sync refresh failed");
+      res.status(500).json({ error: "Failed to refresh community stats" });
     }
   });
 
