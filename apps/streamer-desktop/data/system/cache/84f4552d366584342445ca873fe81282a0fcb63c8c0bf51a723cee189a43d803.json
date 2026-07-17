@@ -1,5 +1,5 @@
 {
-  "timestamp": 1784233662325,
+  "timestamp": 1784312712486,
   "data": {
     "season": {
       "id": "5f814f1e-f1e9-412f-974a-6514a270b57a",
@@ -243,28 +243,6 @@
           "logoUrl": "/images/teams/arrisecorp.png",
           "players": [
             {
-              "id": "4adf04ee-f15f-4b57-a3e3-8a7e0859672e",
-              "sourcePlayerId": "5067eede-f1b0-4057-bc71-0980e124ea5d",
-              "registrationId": "754437ad-9651-4d9e-a683-23c39bf0b86c",
-              "playerAccountId": "d80bb411-f23a-495c-a9ef-97e1f031a52b",
-              "name": "Repredetta97",
-              "displayName": "Repredetta97",
-              "role": "Mid",
-              "roles": [
-                "Mid",
-                "Offlane",
-                "Soft support"
-              ],
-              "mmr": 3900,
-              "steamName": "Repredetta97",
-              "steamProfile": "https://steamcommunity.com/id/repredetta97/",
-              "discordHandle": "Repredetta97",
-              "location": "Pune",
-              "isCaptain": false,
-              "slug": "repredetta97",
-              "bpcId": "BPC-038"
-            },
-            {
               "id": "0589a37c-4f06-4ebb-86fb-862aba2f718b",
               "sourcePlayerId": "fb95bb76-a0eb-43a9-a849-210c3b33f2e9",
               "registrationId": "276bced9-b9c1-46cb-8bbf-5e4ac2419fd5",
@@ -348,6 +326,28 @@
               "isCaptain": false,
               "slug": "shaidota",
               "bpcId": "BPC-021"
+            },
+            {
+              "id": "4adf04ee-f15f-4b57-a3e3-8a7e0859672e",
+              "sourcePlayerId": "5067eede-f1b0-4057-bc71-0980e124ea5d",
+              "registrationId": "754437ad-9651-4d9e-a683-23c39bf0b86c",
+              "playerAccountId": "d80bb411-f23a-495c-a9ef-97e1f031a52b",
+              "name": "Repredetta97",
+              "displayName": "Repredetta97",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Offlane",
+                "Soft support"
+              ],
+              "mmr": 3900,
+              "steamName": "Repredetta97",
+              "steamProfile": "https://steamcommunity.com/id/repredetta97/",
+              "discordHandle": "Repredetta97",
+              "location": "Pune",
+              "isCaptain": false,
+              "slug": "repredetta97",
+              "bpcId": "BPC-038"
             }
           ],
           "groupKey": "A",
@@ -362,29 +362,6 @@
           "captain": "emp.ror",
           "logoUrl": "/images/teams/phantomdivision.png",
           "players": [
-            {
-              "id": "adfa864b-fd7e-4b89-8f26-22178dab45b7",
-              "sourcePlayerId": "effeba15-d6fa-40a3-a652-7fb8613ac32a",
-              "registrationId": "82323352-01b7-4b7e-9904-79e14fd4ee13",
-              "playerAccountId": "4d2be6cd-ac9e-407c-858e-e2cc7fce57c9",
-              "name": "fLabber",
-              "displayName": "fLabber",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Offlane",
-                "Soft support",
-                "Mid"
-              ],
-              "mmr": 2099,
-              "steamName": "fLabber",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198081607826/",
-              "discordHandle": "flabberizmad",
-              "location": "sonepat",
-              "isCaptain": false,
-              "slug": "flabber",
-              "bpcId": "BPC-028"
-            },
             {
               "id": "dddfb282-8a1f-49a5-bcc1-4d7125eb18f8",
               "sourcePlayerId": "e5545c84-095f-4450-be6f-19bc8f47dd9f",
@@ -452,6 +429,29 @@
               "bpcId": "BPC-036"
             },
             {
+              "id": "adfa864b-fd7e-4b89-8f26-22178dab45b7",
+              "sourcePlayerId": "effeba15-d6fa-40a3-a652-7fb8613ac32a",
+              "registrationId": "82323352-01b7-4b7e-9904-79e14fd4ee13",
+              "playerAccountId": "4d2be6cd-ac9e-407c-858e-e2cc7fce57c9",
+              "name": "fLabber",
+              "displayName": "fLabber",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Offlane",
+                "Soft support",
+                "Mid"
+              ],
+              "mmr": 2099,
+              "steamName": "fLabber",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198081607826/",
+              "discordHandle": "flabberizmad",
+              "location": "sonepat",
+              "isCaptain": false,
+              "slug": "flabber",
+              "bpcId": "BPC-028"
+            },
+            {
               "id": "4521746b-f2cc-462d-b546-b0bd211fee0c",
               "sourcePlayerId": null,
               "registrationId": "696d8d4c-0d3a-4ea8-817c-96a415a2db1b",
@@ -486,28 +486,26 @@
           "logoUrl": "/images/teams/emberfall.png",
           "players": [
             {
-              "id": "eedcad65-9abc-4261-b6f9-544188cc6207",
-              "sourcePlayerId": "344641db-9780-4e91-b20e-2820c4c5abfb",
-              "registrationId": "c8c597ba-1969-404d-935e-8ccf66f2e49f",
-              "playerAccountId": "b4193411-f16e-4c50-8cae-cba8b4d5bb60",
-              "name": "NJ",
-              "displayName": "NJ",
-              "role": "Carry",
+              "id": "61533517-0881-40d2-99e9-582f657c7dc0",
+              "sourcePlayerId": "26d70c03-78e3-4166-b978-9631bb5a9ae7",
+              "registrationId": "7cfd5bea-4e9e-4932-bb58-b67d79169c6f",
+              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
+              "name": "SQueEZee",
+              "displayName": "SQueEZee",
+              "role": "Hard support",
               "roles": [
+                "Hard support",
                 "Carry",
-                "Mid",
-                "Offlane",
-                "Soft support",
-                "Hard support"
+                "Offlane"
               ],
-              "mmr": 4200,
-              "steamName": "NJ",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198260703559/",
-              "discordHandle": "___nj__",
-              "location": "SURAT",
-              "isCaptain": false,
-              "slug": "nj",
-              "bpcId": "BPC-024"
+              "mmr": 6600,
+              "steamName": "SQueEZee",
+              "steamProfile": "https://steamcommunity.com/id/squeezee-/",
+              "discordHandle": "squeezee",
+              "location": "",
+              "isCaptain": true,
+              "slug": "squeezee",
+              "bpcId": "BPC-066"
             },
             {
               "id": "6a14debd-0333-435b-aac5-6497ceeb1b87",
@@ -531,26 +529,28 @@
               "bpcId": "BPC-026"
             },
             {
-              "id": "61533517-0881-40d2-99e9-582f657c7dc0",
-              "sourcePlayerId": "26d70c03-78e3-4166-b978-9631bb5a9ae7",
-              "registrationId": "7cfd5bea-4e9e-4932-bb58-b67d79169c6f",
-              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
-              "name": "SQueEZee",
-              "displayName": "SQueEZee",
-              "role": "Hard support",
+              "id": "eedcad65-9abc-4261-b6f9-544188cc6207",
+              "sourcePlayerId": "344641db-9780-4e91-b20e-2820c4c5abfb",
+              "registrationId": "c8c597ba-1969-404d-935e-8ccf66f2e49f",
+              "playerAccountId": "b4193411-f16e-4c50-8cae-cba8b4d5bb60",
+              "name": "NJ",
+              "displayName": "NJ",
+              "role": "Carry",
               "roles": [
-                "Hard support",
                 "Carry",
-                "Offlane"
+                "Mid",
+                "Offlane",
+                "Soft support",
+                "Hard support"
               ],
-              "mmr": 6600,
-              "steamName": "SQueEZee",
-              "steamProfile": "https://steamcommunity.com/id/squeezee-/",
-              "discordHandle": "squeezee",
-              "location": "",
-              "isCaptain": true,
-              "slug": "squeezee",
-              "bpcId": "BPC-066"
+              "mmr": 4200,
+              "steamName": "NJ",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198260703559/",
+              "discordHandle": "___nj__",
+              "location": "SURAT",
+              "isCaptain": false,
+              "slug": "nj",
+              "bpcId": "BPC-024"
             },
             {
               "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
@@ -961,28 +961,6 @@
           "logoUrl": "/images/teams/crimsonveil.png",
           "players": [
             {
-              "id": "bf74fbb4-f94d-44a7-b688-c7c5b95947cb",
-              "sourcePlayerId": "18a8aecc-18d7-446d-9cc9-22a513030b21",
-              "registrationId": "62da847f-30ba-4c81-aa50-292035f6a908",
-              "playerAccountId": "64173c9a-1345-4381-adb4-4ce96318478c",
-              "name": "RagnaR",
-              "displayName": "RagnaR",
-              "role": "Hard support",
-              "roles": [
-                "Hard support",
-                "Offlane",
-                "Carry"
-              ],
-              "mmr": 4400,
-              "steamName": "https://steamcommunity.com/id/fireheart1111/",
-              "steamProfile": "https://steamcommunity.com/id/fireheart1111/",
-              "discordHandle": "Ragnar",
-              "location": "Jaipur",
-              "isCaptain": false,
-              "slug": "ragnar",
-              "bpcId": "BPC-002"
-            },
-            {
               "id": "f17af6f8-dd0c-43c5-ab80-7f5d49ada2fa",
               "sourcePlayerId": "93d2b255-0a13-4551-b008-2228ce012bf9",
               "registrationId": "8be5d433-e9f5-44fd-bcfc-8a87cfffa3b4",
@@ -1069,6 +1047,28 @@
               "isCaptain": false,
               "slug": "gurjarkage",
               "bpcId": "BPC-056"
+            },
+            {
+              "id": "bf74fbb4-f94d-44a7-b688-c7c5b95947cb",
+              "sourcePlayerId": "18a8aecc-18d7-446d-9cc9-22a513030b21",
+              "registrationId": "62da847f-30ba-4c81-aa50-292035f6a908",
+              "playerAccountId": "64173c9a-1345-4381-adb4-4ce96318478c",
+              "name": "RagnaR",
+              "displayName": "RagnaR",
+              "role": "Hard support",
+              "roles": [
+                "Hard support",
+                "Offlane",
+                "Carry"
+              ],
+              "mmr": 4400,
+              "steamName": "https://steamcommunity.com/id/fireheart1111/",
+              "steamProfile": "https://steamcommunity.com/id/fireheart1111/",
+              "discordHandle": "Ragnar",
+              "location": "Jaipur",
+              "isCaptain": false,
+              "slug": "ragnar",
+              "bpcId": "BPC-002"
             }
           ],
           "groupKey": "A",
@@ -3173,28 +3173,6 @@
           "logoUrl": "/images/teams/arrisecorp.png",
           "players": [
             {
-              "id": "4adf04ee-f15f-4b57-a3e3-8a7e0859672e",
-              "sourcePlayerId": "5067eede-f1b0-4057-bc71-0980e124ea5d",
-              "registrationId": "754437ad-9651-4d9e-a683-23c39bf0b86c",
-              "playerAccountId": "d80bb411-f23a-495c-a9ef-97e1f031a52b",
-              "name": "Repredetta97",
-              "displayName": "Repredetta97",
-              "role": "Mid",
-              "roles": [
-                "Mid",
-                "Offlane",
-                "Soft support"
-              ],
-              "mmr": 3900,
-              "steamName": "Repredetta97",
-              "steamProfile": "https://steamcommunity.com/id/repredetta97/",
-              "discordHandle": "Repredetta97",
-              "location": "Pune",
-              "isCaptain": false,
-              "slug": "repredetta97",
-              "bpcId": "BPC-038"
-            },
-            {
               "id": "0589a37c-4f06-4ebb-86fb-862aba2f718b",
               "sourcePlayerId": "fb95bb76-a0eb-43a9-a849-210c3b33f2e9",
               "registrationId": "276bced9-b9c1-46cb-8bbf-5e4ac2419fd5",
@@ -3278,6 +3256,28 @@
               "isCaptain": false,
               "slug": "shaidota",
               "bpcId": "BPC-021"
+            },
+            {
+              "id": "4adf04ee-f15f-4b57-a3e3-8a7e0859672e",
+              "sourcePlayerId": "5067eede-f1b0-4057-bc71-0980e124ea5d",
+              "registrationId": "754437ad-9651-4d9e-a683-23c39bf0b86c",
+              "playerAccountId": "d80bb411-f23a-495c-a9ef-97e1f031a52b",
+              "name": "Repredetta97",
+              "displayName": "Repredetta97",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Offlane",
+                "Soft support"
+              ],
+              "mmr": 3900,
+              "steamName": "Repredetta97",
+              "steamProfile": "https://steamcommunity.com/id/repredetta97/",
+              "discordHandle": "Repredetta97",
+              "location": "Pune",
+              "isCaptain": false,
+              "slug": "repredetta97",
+              "bpcId": "BPC-038"
             }
           ],
           "groupKey": "A",
@@ -3292,29 +3292,6 @@
           "captain": "emp.ror",
           "logoUrl": "/images/teams/phantomdivision.png",
           "players": [
-            {
-              "id": "adfa864b-fd7e-4b89-8f26-22178dab45b7",
-              "sourcePlayerId": "effeba15-d6fa-40a3-a652-7fb8613ac32a",
-              "registrationId": "82323352-01b7-4b7e-9904-79e14fd4ee13",
-              "playerAccountId": "4d2be6cd-ac9e-407c-858e-e2cc7fce57c9",
-              "name": "fLabber",
-              "displayName": "fLabber",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Offlane",
-                "Soft support",
-                "Mid"
-              ],
-              "mmr": 2099,
-              "steamName": "fLabber",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198081607826/",
-              "discordHandle": "flabberizmad",
-              "location": "sonepat",
-              "isCaptain": false,
-              "slug": "flabber",
-              "bpcId": "BPC-028"
-            },
             {
               "id": "dddfb282-8a1f-49a5-bcc1-4d7125eb18f8",
               "sourcePlayerId": "e5545c84-095f-4450-be6f-19bc8f47dd9f",
@@ -3382,6 +3359,29 @@
               "bpcId": "BPC-036"
             },
             {
+              "id": "adfa864b-fd7e-4b89-8f26-22178dab45b7",
+              "sourcePlayerId": "effeba15-d6fa-40a3-a652-7fb8613ac32a",
+              "registrationId": "82323352-01b7-4b7e-9904-79e14fd4ee13",
+              "playerAccountId": "4d2be6cd-ac9e-407c-858e-e2cc7fce57c9",
+              "name": "fLabber",
+              "displayName": "fLabber",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Offlane",
+                "Soft support",
+                "Mid"
+              ],
+              "mmr": 2099,
+              "steamName": "fLabber",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198081607826/",
+              "discordHandle": "flabberizmad",
+              "location": "sonepat",
+              "isCaptain": false,
+              "slug": "flabber",
+              "bpcId": "BPC-028"
+            },
+            {
               "id": "4521746b-f2cc-462d-b546-b0bd211fee0c",
               "sourcePlayerId": null,
               "registrationId": "696d8d4c-0d3a-4ea8-817c-96a415a2db1b",
@@ -3416,28 +3416,26 @@
           "logoUrl": "/images/teams/emberfall.png",
           "players": [
             {
-              "id": "eedcad65-9abc-4261-b6f9-544188cc6207",
-              "sourcePlayerId": "344641db-9780-4e91-b20e-2820c4c5abfb",
-              "registrationId": "c8c597ba-1969-404d-935e-8ccf66f2e49f",
-              "playerAccountId": "b4193411-f16e-4c50-8cae-cba8b4d5bb60",
-              "name": "NJ",
-              "displayName": "NJ",
-              "role": "Carry",
+              "id": "61533517-0881-40d2-99e9-582f657c7dc0",
+              "sourcePlayerId": "26d70c03-78e3-4166-b978-9631bb5a9ae7",
+              "registrationId": "7cfd5bea-4e9e-4932-bb58-b67d79169c6f",
+              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
+              "name": "SQueEZee",
+              "displayName": "SQueEZee",
+              "role": "Hard support",
               "roles": [
+                "Hard support",
                 "Carry",
-                "Mid",
-                "Offlane",
-                "Soft support",
-                "Hard support"
+                "Offlane"
               ],
-              "mmr": 4200,
-              "steamName": "NJ",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198260703559/",
-              "discordHandle": "___nj__",
-              "location": "SURAT",
-              "isCaptain": false,
-              "slug": "nj",
-              "bpcId": "BPC-024"
+              "mmr": 6600,
+              "steamName": "SQueEZee",
+              "steamProfile": "https://steamcommunity.com/id/squeezee-/",
+              "discordHandle": "squeezee",
+              "location": "",
+              "isCaptain": true,
+              "slug": "squeezee",
+              "bpcId": "BPC-066"
             },
             {
               "id": "6a14debd-0333-435b-aac5-6497ceeb1b87",
@@ -3461,26 +3459,28 @@
               "bpcId": "BPC-026"
             },
             {
-              "id": "61533517-0881-40d2-99e9-582f657c7dc0",
-              "sourcePlayerId": "26d70c03-78e3-4166-b978-9631bb5a9ae7",
-              "registrationId": "7cfd5bea-4e9e-4932-bb58-b67d79169c6f",
-              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
-              "name": "SQueEZee",
-              "displayName": "SQueEZee",
-              "role": "Hard support",
+              "id": "eedcad65-9abc-4261-b6f9-544188cc6207",
+              "sourcePlayerId": "344641db-9780-4e91-b20e-2820c4c5abfb",
+              "registrationId": "c8c597ba-1969-404d-935e-8ccf66f2e49f",
+              "playerAccountId": "b4193411-f16e-4c50-8cae-cba8b4d5bb60",
+              "name": "NJ",
+              "displayName": "NJ",
+              "role": "Carry",
               "roles": [
-                "Hard support",
                 "Carry",
-                "Offlane"
+                "Mid",
+                "Offlane",
+                "Soft support",
+                "Hard support"
               ],
-              "mmr": 6600,
-              "steamName": "SQueEZee",
-              "steamProfile": "https://steamcommunity.com/id/squeezee-/",
-              "discordHandle": "squeezee",
-              "location": "",
-              "isCaptain": true,
-              "slug": "squeezee",
-              "bpcId": "BPC-066"
+              "mmr": 4200,
+              "steamName": "NJ",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198260703559/",
+              "discordHandle": "___nj__",
+              "location": "SURAT",
+              "isCaptain": false,
+              "slug": "nj",
+              "bpcId": "BPC-024"
             },
             {
               "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
@@ -3891,28 +3891,6 @@
           "logoUrl": "/images/teams/crimsonveil.png",
           "players": [
             {
-              "id": "bf74fbb4-f94d-44a7-b688-c7c5b95947cb",
-              "sourcePlayerId": "18a8aecc-18d7-446d-9cc9-22a513030b21",
-              "registrationId": "62da847f-30ba-4c81-aa50-292035f6a908",
-              "playerAccountId": "64173c9a-1345-4381-adb4-4ce96318478c",
-              "name": "RagnaR",
-              "displayName": "RagnaR",
-              "role": "Hard support",
-              "roles": [
-                "Hard support",
-                "Offlane",
-                "Carry"
-              ],
-              "mmr": 4400,
-              "steamName": "https://steamcommunity.com/id/fireheart1111/",
-              "steamProfile": "https://steamcommunity.com/id/fireheart1111/",
-              "discordHandle": "Ragnar",
-              "location": "Jaipur",
-              "isCaptain": false,
-              "slug": "ragnar",
-              "bpcId": "BPC-002"
-            },
-            {
               "id": "f17af6f8-dd0c-43c5-ab80-7f5d49ada2fa",
               "sourcePlayerId": "93d2b255-0a13-4551-b008-2228ce012bf9",
               "registrationId": "8be5d433-e9f5-44fd-bcfc-8a87cfffa3b4",
@@ -3999,6 +3977,28 @@
               "isCaptain": false,
               "slug": "gurjarkage",
               "bpcId": "BPC-056"
+            },
+            {
+              "id": "bf74fbb4-f94d-44a7-b688-c7c5b95947cb",
+              "sourcePlayerId": "18a8aecc-18d7-446d-9cc9-22a513030b21",
+              "registrationId": "62da847f-30ba-4c81-aa50-292035f6a908",
+              "playerAccountId": "64173c9a-1345-4381-adb4-4ce96318478c",
+              "name": "RagnaR",
+              "displayName": "RagnaR",
+              "role": "Hard support",
+              "roles": [
+                "Hard support",
+                "Offlane",
+                "Carry"
+              ],
+              "mmr": 4400,
+              "steamName": "https://steamcommunity.com/id/fireheart1111/",
+              "steamProfile": "https://steamcommunity.com/id/fireheart1111/",
+              "discordHandle": "Ragnar",
+              "location": "Jaipur",
+              "isCaptain": false,
+              "slug": "ragnar",
+              "bpcId": "BPC-002"
             }
           ],
           "groupKey": "A",

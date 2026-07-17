@@ -1,7 +1,6 @@
 import type { LeagueConfig, PlayerHeroLeagueStats } from "@bpc/shared-types";
 import { colorAlpha } from "../../draft/team-colors";
 import { withBaseUrl } from "../../asset-paths";
-import { Trophy3D } from "./Trophy3D";
 
 export function DraftDataOverlay({
   leagueConfig,
@@ -121,11 +120,7 @@ function DraftStatsView({
       <div className="flex justify-between items-start w-full relative">
         {/* Radiant Stats */}
         {renderTeamStats(radiantPlayers, teamColors.radiant, false)}
-        
-        {/* Center 3D Trophy */}
-        <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 flex justify-center scale-90 origin-top opacity-90 drop-shadow-[0_0_20px_rgba(255,215,0,0.2)]">
-          <Trophy3D />
-        </div>
+
 
         {/* Dire Stats */}
         {renderTeamStats(direPlayers, teamColors.dire, true)}
