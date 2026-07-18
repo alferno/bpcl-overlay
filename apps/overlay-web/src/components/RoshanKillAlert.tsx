@@ -13,7 +13,23 @@ interface RoshanKillEvent {
   killerTeam?: "radiant" | "dire" | null;
   pickerTeam?: "radiant" | "dire" | null;
   pickerPlayerName?: string;
+  drops?: string[];
 }
+
+const ITEM_ICON_BASE = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items";
+
+function itemIconUrl(itemName: string): string {
+  return `${ITEM_ICON_BASE}/${itemName.replace("item_", "")}.png`;
+}
+
+function itemDisplayName(itemName: string): string {
+  return itemName
+    .replace("item_", "")
+    .split("_")
+    .map((w) => w[0]?.toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -347,31 +363,36 @@ export function RoshanKillAlert() {
                   </div>
                 </div>
 
-                {/* Aegis icon badge */}
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 6,
-                    background:
-                      "linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.1) 100%)",
-                    border: "1px solid rgba(251,191,36,0.3)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    boxShadow: "0 0 10px rgba(251,191,36,0.15)",
-                  }}
-                >
-                  <img
-                    src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/aegis.png"
-                    alt="Aegis"
-                    style={{ width: 26, height: 20, objectFit: "contain" }}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display =
-                        "none";
-                    }}
-                  />
+                {/* Roshan drop icons — falls back to Aegis-only if drops wasn't populated */}
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  {(event.drops && event.drops.length > 0 ? event.drops : ["item_aegis"]).map((item) => (
+                    <div
+                      key={item}
+                      title={itemDisplayName(item)}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 6,
+                        background:
+                          "linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.1) 100%)",
+                        border: "1px solid rgba(251,191,36,0.3)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 0 10px rgba(251,191,36,0.15)",
+                      }}
+                    >
+                      <img
+                        src={itemIconUrl(item)}
+                        alt={itemDisplayName(item)}
+                        style={{ width: 26, height: 20, objectFit: "contain" }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display =
+                            "none";
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

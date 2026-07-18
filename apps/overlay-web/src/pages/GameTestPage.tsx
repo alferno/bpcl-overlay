@@ -100,6 +100,12 @@ export default function GameTestPage() {
       killerTeam: roshIsStolen ? "radiant" : "dire",
       pickerTeam: "dire",
       pickerPlayerName: "Nisha",
+      drops:
+        roshKillNum >= 3
+          ? ["item_aegis", "item_cheese", "item_refresher_shard"]
+          : roshKillNum === 2
+          ? ["item_aegis", "item_cheese"]
+          : ["item_aegis"],
     });
     setRoshKillNum(roshKillNum + 1);
   };

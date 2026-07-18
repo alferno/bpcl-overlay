@@ -161,6 +161,9 @@ ipcMain.handle('obs-connect', async (_, host, port, password) => {
     }
 });
 // ── Auto-Installer for Dota 2 Gamestate Integration ─────────
+// Bump this whenever the "data" block below changes. Lets us confirm from
+// logs that a given install actually picked up the new cfg after an update.
+const GSI_CFG_VERSION = 2;
 function installDotaGSI() {
     const CFG_CONTENT = `"dota2-gsi Configuration"
 {
@@ -171,18 +174,25 @@ function installDotaGSI() {
     "heartbeat"         "30.0"
     "data"
     {
-        "buildings"     "1"
+        "auth"          "1"
         "provider"      "1"
         "map"           "1"
         "player"        "1"
         "hero"          "1"
         "abilities"     "1"
         "items"         "1"
+        "events"        "1"
+        "buildings"     "1"
+        "league"        "1"
         "draft"         "1"
         "wearables"     "1"
+        "minimap"       "1"
+        "roshan"        "1"
+        "couriers"      "1"
+        "neutralitems"  "1"
     }
 }
-`;
+`; // cfg v${GSI_CFG_VERSION}
     try {
         const regOutput = execSync('reg query HKCU\\Software\\Valve\\Steam /v SteamPath').toString();
         const match = regOutput.match(/SteamPath\s+REG_SZ\s+(.+)/i);
@@ -217,9 +227,13 @@ function installDotaGSI() {
             fs.mkdirSync(cfgDir, { recursive: true });
         }
         const cfgPath = path.join(cfgDir, 'gamestate_integration_bpcl.cfg');
-        // Overwrite to guarantee URI is correct
+        const existing = fs.existsSync(cfgPath) ? fs.readFileSync(cfgPath, 'utf8') : null;
+        const alreadyCurrent = existing === CFG_CONTENT;
+        // Overwrite unconditionally to guarantee URI/data blocks are correct —
+        // Dota only reads this file at launch, so it must always reflect the
+        // build that's currently running.
         fs.writeFileSync(cfgPath, CFG_CONTENT, 'utf8');
-        console.log(`[BPCL Streamer] Auto-installed Dota 2 GSI configuration to: ${cfgPath}`);
+        console.log(`[BPCL Streamer] GSI config v${GSI_CFG_VERSION} ${alreadyCurrent ? 'already current' : 'installed/updated'} at: ${cfgPath}`);
     }
     catch (err) {
         console.error('Failed to auto-install Dota 2 GSI:', err);

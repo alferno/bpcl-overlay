@@ -41,7 +41,6 @@ let globalLastDireScanCooldown = 0;
 // ── Roshan Kill Tracking ───────────────────────────────────────────────────────
 let globalRoshanKillCount = 0;
 let globalLastRoshanState: string | null = null;
-let globalLastRoshanKillerTeam: "radiant" | "dire" | null = null;
 
 let globalLastAutoReplaySaveAt = 0;
 let globalPreGameTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -284,6 +283,79 @@ export function getBountyStats() {
 const SHARD_VALUE = 1400;
 const TOLERANCE = 100;
 const RESPAWN_SECONDS = 600;
+
+// ── Roshan Killer Team Detection (net-worth delta) ──────────────────────────
+// GSI has no reliable killer attribution for Roshan (Valve confirms this is a
+// known gap: ValveSoftware/Dota2-Gameplay#33015, "who killed roshan?"). We
+// infer the killer the same way we infer Tormentor kills: compare each
+// team's aggregate net worth against the tick *before* Roshan's state
+// flipped from "alive". If neither team clearly spiked, return null rather
+// than guess.
+const ROSHAN_KILL_MIN_NW_GAP = 300;
+
+function sumTeamNetWorth(payload: any, teamKey: "team2" | "team3"): number | null {
+  const teamPlayers = payload?.player?.[teamKey];
+  if (!teamPlayers) return null;
+
+  let total = 0;
+  let sawAny = false;
+  for (let i = 0; i < 5; i++) {
+    const p = teamPlayers[`player${i}`];
+    if (p && typeof p.net_worth === "number") {
+      total += p.net_worth;
+      sawAny = true;
+    }
+  }
+  return sawAny ? total : null;
+}
+
+function detectRoshanKillerTeam(
+  prevPayload: any,
+  currPayload: any,
+): "radiant" | "dire" | null {
+  const prevRadiant = sumTeamNetWorth(prevPayload, "team2");
+  const currRadiant = sumTeamNetWorth(currPayload, "team2");
+  const prevDire = sumTeamNetWorth(prevPayload, "team3");
+  const currDire = sumTeamNetWorth(currPayload, "team3");
+
+  if (prevRadiant === null || currRadiant === null || prevDire === null || currDire === null) {
+    return null;
+  }
+
+  const gap = (currRadiant - prevRadiant) - (currDire - prevDire);
+  if (Math.abs(gap) < ROSHAN_KILL_MIN_NW_GAP) {
+    return null; // too close to call — don't guess
+  }
+
+  return gap > 0 ? "radiant" : "dire";
+}
+
+// ── Roshan Drops ─────────────────────────────────────────────────────────────
+// Requires "roshan" "1" in the GSI cfg data block. Shape hasn't been verified
+// against a live payload yet — this handles the two most common GSI shapes
+// (object map of slot -> item, or an array) and logs anything else so it can
+// be tightened up once a real payload is captured.
+function extractRoshanDrops(payload: any): string[] {
+  const drops = payload?.roshan?.drops?.items ?? payload?.roshan?.drops;
+  if (!drops) return [];
+
+  let names: string[] = [];
+
+  if (Array.isArray(drops)) {
+    names = drops
+      .map((d: any) => (typeof d === "string" ? d : d?.name))
+      .filter((n: any): n is string => typeof n === "string");
+  } else if (typeof drops === "object") {
+    names = Object.values(drops)
+      .map((d: any) => (typeof d === "string" ? d : d?.name))
+      .filter((n: any): n is string => typeof n === "string");
+  } else {
+    logger.warn({ drops }, "[roshan] Unrecognized roshan.drops shape — update extractRoshanDrops");
+    return [];
+  }
+
+  return Array.from(new Set(names)); // dedupe
+}
 
 function getLowestNetWorthCandidates(payload: any, teamKey: "team2" | "team3") {
   const teamPlayers = payload?.player?.[teamKey];
@@ -630,6 +702,12 @@ export function attachGsiRoutes(opts: {
       const clockTime = (payload?.map as any)?.clock_time || 0;
       const gameTime = (payload?.map as any)?.game_time || 0;
 
+      // Snapshot of the previous tick, captured before globalPrevPayload gets
+      // overwritten with the current tick further down. Roshan Kill Detection
+      // below needs the *pre-death* tick to compute net-worth deltas — using
+      // globalPrevPayload directly there would just see the current tick.
+      const roshanPrevPayload = globalPrevPayload;
+
       // Handle new games or large rewinds
       const currentMatchId = (payload?.map as any)?.matchid;
       const prevClockTime = (globalPrevPayload?.map as any)?.clock_time || 0;
@@ -645,7 +723,6 @@ export function attachGsiRoutes(opts: {
         globalLastDireScanCooldown = 0;
         globalRoshanKillCount = 0;
         globalLastRoshanState = null;
-        globalLastRoshanKillerTeam = null;
         // Reset bounty tracking for new match
         globalBountyRadiantCount = 0;
         globalBountyRadiantGold = 0;
@@ -678,15 +755,14 @@ export function attachGsiRoutes(opts: {
       if (payload?.events && Array.isArray(payload.events)) {
         for (const ev of payload.events) {
           if (ev.game_time && ev.game_time > globalLastProcessedEventTime) {
-            if (ev.event_type === "roshan_killed") {
-              globalLastRoshanKillerTeam = ev.killer_team === 2 ? "radiant" : ev.killer_team === 3 ? "dire" : null;
-            }
-            
             // Auto-Replay Triggers
+            // Note: "aegis_stolen" was never a real GSI event type and has
+            // been removed. Roshan killer attribution now comes from
+            // detectRoshanKillerTeam() (net-worth delta) instead of a
+            // "roshan_killed" event, since GSI doesn't reliably populate a
+            // killer for Roshan even with the events block enabled.
             if (
-              ev.event_type === "first_blood" || 
-              ev.event_type === "aegis_stolen" || 
-              ev.event_type === "roshan_killed" ||
+              ev.event_type === "first_blood" ||
               (ev.event_type === "kill_streak" && ev.kill_streak >= 3)
             ) {
               const now = Date.now();
@@ -957,6 +1033,8 @@ export function attachGsiRoutes(opts: {
         // Roshan just died — increment kill count
         globalRoshanKillCount += 1;
         const killNumber = globalRoshanKillCount;
+        const killerTeam = detectRoshanKillerTeam(roshanPrevPayload, payload);
+        const drops = extractRoshanDrops(payload);
 
         // Determine which team picked up aegis by scanning player items
         let aegisTeam: "radiant" | "dire" | null = null;
@@ -1003,7 +1081,7 @@ export function attachGsiRoutes(opts: {
         }
 
         logger.info(
-          { killNumber, clockTime, aegisTeam, teamName, killerTeam: globalLastRoshanKillerTeam, pickerPlayerName },
+          { killNumber, clockTime, aegisTeam, teamName, killerTeam, pickerPlayerName, drops },
           "[roshan] Roshan killed — emitting ROSHAN_KILLED event",
         );
 
@@ -1012,9 +1090,10 @@ export function attachGsiRoutes(opts: {
           clockTime,
           teamName,
           teamLogoUrl,
-          killerTeam: globalLastRoshanKillerTeam,
+          killerTeam,
           pickerTeam: aegisTeam,
           pickerPlayerName,
+          drops,
         });
       }
 
