@@ -100,29 +100,42 @@ async function detectAndApplySubstitutes(
   const existingRadiant: (number | null)[] = currentMatchSetup?.pickPlayers?.radiant ?? [null, null, null, null, null];
   const existingDire: (number | null)[] = currentMatchSetup?.pickPlayers?.dire ?? [null, null, null, null, null];
 
-  // Build existing set of all assigned steam32 IDs from the match setup
-  const existingSet = new Set<number>(
-    [...existingRadiant, ...existingDire].filter((x): x is number => x != null && x > 0)
-  );
+  const toSet = (arr: (number | null)[]) =>
+    new Set<number>(arr.filter((x): x is number => x != null && x > 0));
 
-  // Check if the lobby players match the existing pickPlayers exactly
-  const lobbySet = new Set<number>(
-    [...lobbyPlayers.radiant, ...lobbyPlayers.dire].filter((x): x is number => x != null && x > 0)
-  );
+  const existingRadiantSet = toSet(existingRadiant);
+  const existingDireSet = toSet(existingDire);
+  const lobbyRadiantSet = toSet(lobbyPlayers.radiant);
+  const lobbyDireSet = toSet(lobbyPlayers.dire);
+
+  const lobbySet = new Set<number>([...lobbyRadiantSet, ...lobbyDireSet]);
 
   // If lobby is empty or doesn't have enough players, skip
   if (lobbySet.size < 2) return null;
 
-  // Build a key to track if this is a new lobby configuration
-  const lobbyKey = [...lobbySet].sort().join(",");
+  // Build a key to track if this is a new lobby configuration. This MUST be
+  // side-aware (not just the combined set of all 10 IDs) — otherwise a side
+  // swap between series games (same 10 players, radiant/dire flipped) looks
+  // identical to "no change" and gets skipped, leaving pickPlayers stuck
+  // pointing the wrong steam32 IDs at the wrong side.
+  const lobbyKey = `r:${[...lobbyRadiantSet].sort().join(",")}|d:${[...lobbyDireSet].sort().join(",")}`;
   if (lobbyKey === globalLastLobbyKey) return null;
 
-  // Check if all lobby players match exactly — if so, no substitute detected
-  const allMatch = lobbySet.size === existingSet.size && [...lobbySet].every((id) => existingSet.has(id));
+  // Check per-side, not as a combined union — a side swap has the exact same
+  // 10 people, so a union-based check would (wrongly) call that "no change".
+  const setsEqual = (a: Set<number>, b: Set<number>) =>
+    a.size === b.size && [...a].every((id) => b.has(id));
+  const allMatch =
+    setsEqual(existingRadiantSet, lobbyRadiantSet) &&
+    setsEqual(existingDireSet, lobbyDireSet);
   if (allMatch) {
     globalLastLobbyKey = lobbyKey;
     return null;
   }
+
+  // Build existing set of all assigned steam32 IDs from the match setup —
+  // used below to tell genuinely-new (sub) players apart from known ones.
+  const existingSet = new Set<number>([...existingRadiantSet, ...existingDireSet]);
 
   // There's a mismatch — detect which players are subs (in lobby but not in existing setup)
   const rosterMap = new Map<number, RosterPlayer>(currentRoster.map((p) => [p.steam32, p]));
@@ -821,10 +834,12 @@ export function attachGsiRoutes(opts: {
         }
       }
 
-      // ── Bounty Rune Fallback: rune_pickups delta ──────────────────────────────
+      // ── Bounty Rune Fallback: runes_activated delta ───────────────────────────
       // Used when bounty_rune_pickup events are not present in the events array.
-      // rune_pickups tracks ALL rune types, so to reduce noise we only count
-      // a pickup as "bounty" if it's within 30s of a 4-min spawn boundary.
+      // runes_activated (the real GSI field — NOT rune_pickups, which doesn't
+      // exist in the payload) tracks ALL rune types, so to reduce noise we
+      // only count a pickup as "bounty" if it's within 30s of a 4-min spawn
+      // boundary.
       if (!bountyDetectedViaEvents && clockTime > 0) {
         const nearestSpawnDiff = clockTime % 240;
         const nearBountyWindow = nearestSpawnDiff <= 30 || nearestSpawnDiff >= 210;
@@ -836,7 +851,7 @@ export function attachGsiRoutes(opts: {
             const pKey = `player${i}`;
             const player = teamPlayers[pKey];
             if (!player) continue;
-            const currentPickups = Number(player.rune_pickups ?? 0);
+            const currentPickups = Number(player.runes_activated ?? 0);
             const cacheKey = `${teamKey}-${pKey}`;
             const prevPickups = globalPrevRunePickups.get(cacheKey) ?? currentPickups;
             if (currentPickups > prevPickups && nearBountyWindow) {
@@ -861,9 +876,13 @@ export function attachGsiRoutes(opts: {
       }
 
       // ── Wisdom Rune Fallback: XP jump delta ──────────────────────────────
+      // Patch 7.41 renamed this to the Wisdom Shrine and changed the curve
+      // from a flat 280/interval to 200 base + 300 per subsequent shrine
+      // (200, 500, 800, 1100, ...). Using the old 280*n formula makes every
+      // real spike fall outside the tolerance band below, so it never counts.
       if (clockTime >= 420) {
         const currentInterval = Math.floor(clockTime / 420);
-        const expectedXpPerHero = 280 * currentInterval;
+        const expectedXpPerHero = 200 + 300 * (currentInterval - 1);
         const expectedTeamXp = expectedXpPerHero * 2;
         
         for (const [teamKey, side] of [["team2", "radiant"], ["team3", "dire"]] as const) {
@@ -1066,8 +1085,14 @@ export function attachGsiRoutes(opts: {
         let teamName: string | undefined;
         let teamLogoUrl: string | undefined;
 
-        if (aegisTeam) {
-          if (aegisTeam === "radiant") {
+        // Prefer the aegis holder's team (definitive), but aegis pickup often
+        // isn't reflected in inventory on the same tick the kill is detected.
+        // Fall back to killerTeam (net-worth-delta based, computed above) so
+        // the alert still shows a team instead of rendering blank.
+        const displayTeam = aegisTeam ?? killerTeam;
+
+        if (displayTeam) {
+          if (displayTeam === "radiant") {
             teamName = draftSnap?.radiant?.name ?? matchSetupSnap?.radiantTeamKey ?? "Radiant";
             teamLogoUrl = draftSnap?.radiant?.logoUrl ?? (matchSetupSnap?.radiantTeamKey ? `/teams/${matchSetupSnap.radiantTeamKey}.png` : undefined);
           } else {
@@ -1075,7 +1100,8 @@ export function attachGsiRoutes(opts: {
             teamLogoUrl = draftSnap?.dire?.logoUrl ?? (matchSetupSnap?.direTeamKey ? `/teams/${matchSetupSnap.direTeamKey}.png` : undefined);
           }
         } else {
-          // Fallback — aegis not yet visible in GSI tick, still fire event without team
+          // Neither aegis holder nor a confident net-worth-delta winner yet —
+          // still fire the event without a team rather than guess.
           teamName = undefined;
           teamLogoUrl = undefined;
         }

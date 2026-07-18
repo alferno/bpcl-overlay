@@ -34,7 +34,7 @@ import {
   assertLeagueStatsReady,
   LeagueStatsNotReadyError,
 } from "./services/league-stats-guard.js";
-import { parseRosterCsv, teamColorsFromRoster, serializeRosterCsv } from "./services/roster-parser.js";
+import { parseRosterCsv, parseRosterCsvAsync, teamColorsFromRoster, serializeRosterCsv } from "./services/roster-parser.js";
 import { listTeamsFromRoster } from "./services/roster-teams.js";
 import {
   applyPickPlayersToDraft,
@@ -197,7 +197,7 @@ export function attachLeagueAndStatsRoutes(opts: {
     if (!parsed.success)
       return res.status(400).json({ error: parsed.error.flatten() });
 
-    const parsedRoster = parseRosterCsv(parsed.data.csv);
+    const parsedRoster = await parseRosterCsvAsync(parsed.data.csv);
     const roster = await enrichRosterAvatars(parsedRoster, opendota);
     const teamColors = teamColorsFromRoster(roster);
     const next = await state.patchState({

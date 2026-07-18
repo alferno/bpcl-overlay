@@ -149,6 +149,11 @@ export function RosterSyncPanel({
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Option B: Manual CSV Upload</h4>
             <p className="mt-1 text-[10px] text-slate-400">
               Format: <code>displayName,steam32,teamName,teamKey,teamColor[,avatarUrl]</code>
+              <br />
+              Column 2 also accepts a full Steam profile URL (
+              <code>steamcommunity.com/profiles/...</code> or{" "}
+              <code>steamcommunity.com/id/vanity</code>) instead of a raw Steam32 ID
+              — paste the URL from the player's profile and it'll be resolved on upload.
             </p>
           </div>
           <textarea

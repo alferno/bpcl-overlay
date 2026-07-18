@@ -28,13 +28,52 @@ function saveCache(): void {
 }
 
 // Convert Steam64 number-string to Steam32
-function steam64ToSteam32(steam64Str: string): number {
+export function steam64ToSteam32(steam64Str: string): number {
   try {
     const steam64 = BigInt(steam64Str);
     return Number(steam64 - STEAM64_OFFSET);
   } catch {
     return 0;
   }
+}
+
+/**
+ * Synchronously extracts a Steam32 ID from an already-unambiguous identifier:
+ *  - a bare Steam32 int ("123456789")
+ *  - a bare Steam64 int ("76561198083722417")
+ *  - a /profiles/<steam64>/ URL
+ * Returns null for anything requiring a network lookup (vanity /id/ URLs) or
+ * unrecognized input — callers should fall back to resolveSteamProfileToSteam32
+ * for those.
+ */
+export function parseSteamIdentifierSync(raw: string): number | null {
+  const s = raw.trim();
+  if (!s) return null;
+
+  const profilesMatch = s.toLowerCase().match(/\/profiles\/(\d+)/);
+  if (profilesMatch) {
+    const steam32 = steam64ToSteam32(profilesMatch[1]);
+    return steam32 > 0 ? steam32 : null;
+  }
+
+  if (/^\d+$/.test(s)) {
+    // Steam64 IDs are 17 digits and start at 76561197960265728.
+    if (s.length >= 17) {
+      const steam32 = steam64ToSteam32(s);
+      return steam32 > 0 ? steam32 : null;
+    }
+    const n = Number(s);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  return null;
+}
+
+/** True if the raw column value is a Steam profile URL of any kind. */
+export function isSteamProfileUrl(raw: string): boolean {
+  return /^https?:\/\/(www\.)?steamcommunity\.com\/(profiles|id)\//i.test(
+    raw.trim(),
+  );
 }
 
 /**
