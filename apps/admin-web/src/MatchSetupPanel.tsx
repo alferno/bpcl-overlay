@@ -128,6 +128,11 @@ export function MatchSetupPanel({
     () => [...EMPTY_PICK_PLAYERS],
   );
   const [busy, setBusy] = useState(false);
+  const [subFixSteam32, setSubFixSteam32] = useState("");
+  const [subFixName, setSubFixName] = useState("");
+  const [subFixTeamKey, setSubFixTeamKey] = useState("");
+  const [subFixBusy, setSubFixBusy] = useState(false);
+  const [subFixMsg, setSubFixMsg] = useState<string | null>(null);
   const [selectedBpcMatchId, setSelectedBpcMatchId] = useState<string>("");
   const [bpcMatches, setBpcMatches] = useState<any[]>([]);
   const [matchSeason, setMatchSeason] = useState<string>("");
@@ -342,6 +347,57 @@ export function MatchSetupPanel({
       setBusy(false);
     }
   }
+
+  async function submitSubFix() {
+    const steam32 = parseInt(subFixSteam32.trim(), 10);
+    if (!Number.isFinite(steam32) || steam32 <= 0) {
+      setSubFixMsg("Enter a valid steam32 ID.");
+      return;
+    }
+    if (!subFixName.trim() || !subFixTeamKey) {
+      setSubFixMsg("Name and team are required.");
+      return;
+    }
+    setSubFixBusy(true);
+    setSubFixMsg(null);
+    try {
+      const r = await apiFetch(origin, token, "/api/roster/upsert-player", {
+        method: "POST",
+        body: JSON.stringify({
+          steam32,
+          displayName: subFixName.trim(),
+          teamKey: subFixTeamKey,
+        }),
+      });
+      const t = await r.text();
+      if (!r.ok) {
+        setSubFixMsg(formatApiErrorBody(t));
+        return;
+      }
+      setSubFixMsg(`Saved — #${steam32} is now "${subFixName.trim()}".`);
+      setSubFixSteam32("");
+      setSubFixName("");
+      setTimeout(() => setSubFixMsg(null), 6000);
+    } catch (e) {
+      setSubFixMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSubFixBusy(false);
+    }
+  }
+
+  // Players currently in the live lineup that GSI couldn't resolve to a
+  // real name (auto substitute-detection falls back to "Sub#<steam32>").
+  const unresolvedSubs = useMemo(() => {
+    const ids = [...radiantPickPlayers, ...direPickPlayers].filter(
+      (id): id is number => id != null,
+    );
+    return ids
+      .map((id) => roster.find((r) => r.steam32 === id))
+      .filter(
+        (p): p is NonNullable<typeof p> =>
+          !!p && p.displayName.startsWith("Sub#"),
+      );
+  }, [radiantPickPlayers, direPickPlayers, roster]);
 
   return (
     <section className="rounded-2xl border border-violet-500/40 bg-violet-950/25 p-6">
@@ -642,6 +698,71 @@ export function MatchSetupPanel({
                   <span>{subDetectedBanner}</span>
                 </div>
               )}
+
+              <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Fix substitute player
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  For a lobby player GSI couldn't resolve to a real name/team
+                  (shows up as "Sub#steamid"). Saves instantly, no need to
+                  re-upload the roster.
+                </p>
+
+                {unresolvedSubs.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {unresolvedSubs.map((p) => (
+                      <button
+                        key={p.steam32}
+                        type="button"
+                        className="rounded-full border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-[11px] font-semibold text-amber-300 hover:bg-amber-900/60"
+                        onClick={() => {
+                          setSubFixSteam32(String(p.steam32));
+                          setSubFixTeamKey(p.teamKey ?? "");
+                          setSubFixMsg(null);
+                        }}
+                      >
+                        {p.displayName} ({p.teamName ?? "no team"})
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1.5fr_1fr_auto]">
+                  <input
+                    className={selectClass}
+                    placeholder="Steam32 ID"
+                    inputMode="numeric"
+                    value={subFixSteam32}
+                    onChange={(e) => setSubFixSteam32(e.target.value)}
+                  />
+                  <input
+                    className={selectClass}
+                    placeholder="Display name"
+                    value={subFixName}
+                    onChange={(e) => setSubFixName(e.target.value)}
+                  />
+                  <select
+                    className={selectClass}
+                    value={subFixTeamKey}
+                    onChange={(e) => setSubFixTeamKey(e.target.value)}
+                  >
+                    <option value="">Team…</option>
+                    {teams.map((t) => (
+                      <option key={t.teamKey} value={t.teamKey}>
+                        {t.teamName}
+                      </option>
+                    ))}
+                  </select>
+                  <Btn onClick={submitSubFix} disabled={subFixBusy}>
+                    {subFixBusy ? "Saving…" : "Save"}
+                  </Btn>
+                </div>
+                {subFixMsg && (
+                  <p className="mt-2 text-xs text-slate-300">{subFixMsg}</p>
+                )}
+              </div>
+
               <div className="mt-6 grid gap-4 md:grid-cols-2">
                 {radiantTeam ? (
                   <PickSlotSelects

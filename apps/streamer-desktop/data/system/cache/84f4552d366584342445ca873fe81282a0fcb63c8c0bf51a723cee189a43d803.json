@@ -1,5 +1,5 @@
 {
-  "timestamp": 1784321817125,
+  "timestamp": 1784396207965,
   "data": {
     "season": {
       "id": "5f814f1e-f1e9-412f-974a-6514a270b57a",
@@ -243,6 +243,28 @@
           "logoUrl": "/images/teams/arrisecorp.png",
           "players": [
             {
+              "id": "d5190d05-13cb-45b1-959f-06b9dfdddcd3",
+              "sourcePlayerId": "c0b8e2aa-c589-4030-acbb-5022a5b1fd89",
+              "registrationId": "9e336759-cf18-4238-b5c2-674e8d22ae99",
+              "playerAccountId": "cad47b54-2939-40cc-a0dc-70c35f6cb4dd",
+              "name": "shaidota",
+              "displayName": "shaidota",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Mid",
+                "Hard support"
+              ],
+              "mmr": 3000,
+              "steamName": "Sha1-",
+              "steamProfile": "https://steamcommunity.com/id/shaidota/",
+              "discordHandle": "shaidota#9470",
+              "location": "Mumbai",
+              "isCaptain": false,
+              "slug": "shaidota",
+              "bpcId": "BPC-021"
+            },
+            {
               "id": "0589a37c-4f06-4ebb-86fb-862aba2f718b",
               "sourcePlayerId": "fb95bb76-a0eb-43a9-a849-210c3b33f2e9",
               "registrationId": "276bced9-b9c1-46cb-8bbf-5e4ac2419fd5",
@@ -304,28 +326,6 @@
               "isCaptain": true,
               "slug": "tambamgod",
               "bpcId": "BPC-048"
-            },
-            {
-              "id": "d5190d05-13cb-45b1-959f-06b9dfdddcd3",
-              "sourcePlayerId": "c0b8e2aa-c589-4030-acbb-5022a5b1fd89",
-              "registrationId": "9e336759-cf18-4238-b5c2-674e8d22ae99",
-              "playerAccountId": "cad47b54-2939-40cc-a0dc-70c35f6cb4dd",
-              "name": "shaidota",
-              "displayName": "shaidota",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Mid",
-                "Hard support"
-              ],
-              "mmr": 3000,
-              "steamName": "Sha1-",
-              "steamProfile": "https://steamcommunity.com/id/shaidota/",
-              "discordHandle": "shaidota#9470",
-              "location": "Mumbai",
-              "isCaptain": false,
-              "slug": "shaidota",
-              "bpcId": "BPC-021"
             },
             {
               "id": "4adf04ee-f15f-4b57-a3e3-8a7e0859672e",
@@ -748,27 +748,6 @@
               "bpcId": "BPC-045"
             },
             {
-              "id": "6bc6bf45-95f4-4995-a52e-9058e74b40ed",
-              "sourcePlayerId": "2ee433df-097a-497d-908f-6dd86c5302e1",
-              "registrationId": "7c7eb4ea-263c-4825-b26f-d2d3a49a5606",
-              "playerAccountId": "b6b0ebf5-9614-42b0-8cc3-53a93a3d5ce0",
-              "name": "L!NU$. 4 ^ JpR",
-              "displayName": "L!NU$. 4 ^ JpR",
-              "role": "Soft support",
-              "roles": [
-                "Soft support",
-                "Hard support"
-              ],
-              "mmr": 2350,
-              "steamName": "L!NU$. 4 ^ JpR",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198034030852/",
-              "discordHandle": "linus4jpr",
-              "location": "Jaipur",
-              "isCaptain": false,
-              "slug": "l-nu-4-jpr",
-              "bpcId": "BPC-030"
-            },
-            {
               "id": "55cd0574-a540-4cf1-8b39-ddb35621ecc2",
               "sourcePlayerId": "14a9f11c-10cd-477f-be8d-9e26e28fda6e",
               "registrationId": "eee4d03e-531d-452b-87db-acd6ae70e3c8",
@@ -808,6 +787,27 @@
               "isCaptain": false,
               "slug": "ssm-iwnl",
               "bpcId": "BPC-012"
+            },
+            {
+              "id": "6bc6bf45-95f4-4995-a52e-9058e74b40ed",
+              "sourcePlayerId": "2ee433df-097a-497d-908f-6dd86c5302e1",
+              "registrationId": "7c7eb4ea-263c-4825-b26f-d2d3a49a5606",
+              "playerAccountId": "b6b0ebf5-9614-42b0-8cc3-53a93a3d5ce0",
+              "name": "L!NU$. 4 ^ JpR",
+              "displayName": "L!NU$. 4 ^ JpR",
+              "role": "Soft support",
+              "roles": [
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 2350,
+              "steamName": "L!NU$. 4 ^ JpR",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198034030852/",
+              "discordHandle": "linus4jpr",
+              "location": "Jaipur",
+              "isCaptain": false,
+              "slug": "l-nu-4-jpr",
+              "bpcId": "BPC-030"
             },
             {
               "id": "7859708d-102d-494e-8a80-b61d98dfdf47",
@@ -3173,6 +3173,28 @@
           "logoUrl": "/images/teams/arrisecorp.png",
           "players": [
             {
+              "id": "d5190d05-13cb-45b1-959f-06b9dfdddcd3",
+              "sourcePlayerId": "c0b8e2aa-c589-4030-acbb-5022a5b1fd89",
+              "registrationId": "9e336759-cf18-4238-b5c2-674e8d22ae99",
+              "playerAccountId": "cad47b54-2939-40cc-a0dc-70c35f6cb4dd",
+              "name": "shaidota",
+              "displayName": "shaidota",
+              "role": "Carry",
+              "roles": [
+                "Carry",
+                "Mid",
+                "Hard support"
+              ],
+              "mmr": 3000,
+              "steamName": "Sha1-",
+              "steamProfile": "https://steamcommunity.com/id/shaidota/",
+              "discordHandle": "shaidota#9470",
+              "location": "Mumbai",
+              "isCaptain": false,
+              "slug": "shaidota",
+              "bpcId": "BPC-021"
+            },
+            {
               "id": "0589a37c-4f06-4ebb-86fb-862aba2f718b",
               "sourcePlayerId": "fb95bb76-a0eb-43a9-a849-210c3b33f2e9",
               "registrationId": "276bced9-b9c1-46cb-8bbf-5e4ac2419fd5",
@@ -3234,28 +3256,6 @@
               "isCaptain": true,
               "slug": "tambamgod",
               "bpcId": "BPC-048"
-            },
-            {
-              "id": "d5190d05-13cb-45b1-959f-06b9dfdddcd3",
-              "sourcePlayerId": "c0b8e2aa-c589-4030-acbb-5022a5b1fd89",
-              "registrationId": "9e336759-cf18-4238-b5c2-674e8d22ae99",
-              "playerAccountId": "cad47b54-2939-40cc-a0dc-70c35f6cb4dd",
-              "name": "shaidota",
-              "displayName": "shaidota",
-              "role": "Carry",
-              "roles": [
-                "Carry",
-                "Mid",
-                "Hard support"
-              ],
-              "mmr": 3000,
-              "steamName": "Sha1-",
-              "steamProfile": "https://steamcommunity.com/id/shaidota/",
-              "discordHandle": "shaidota#9470",
-              "location": "Mumbai",
-              "isCaptain": false,
-              "slug": "shaidota",
-              "bpcId": "BPC-021"
             },
             {
               "id": "4adf04ee-f15f-4b57-a3e3-8a7e0859672e",
@@ -3678,27 +3678,6 @@
               "bpcId": "BPC-045"
             },
             {
-              "id": "6bc6bf45-95f4-4995-a52e-9058e74b40ed",
-              "sourcePlayerId": "2ee433df-097a-497d-908f-6dd86c5302e1",
-              "registrationId": "7c7eb4ea-263c-4825-b26f-d2d3a49a5606",
-              "playerAccountId": "b6b0ebf5-9614-42b0-8cc3-53a93a3d5ce0",
-              "name": "L!NU$. 4 ^ JpR",
-              "displayName": "L!NU$. 4 ^ JpR",
-              "role": "Soft support",
-              "roles": [
-                "Soft support",
-                "Hard support"
-              ],
-              "mmr": 2350,
-              "steamName": "L!NU$. 4 ^ JpR",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198034030852/",
-              "discordHandle": "linus4jpr",
-              "location": "Jaipur",
-              "isCaptain": false,
-              "slug": "l-nu-4-jpr",
-              "bpcId": "BPC-030"
-            },
-            {
               "id": "55cd0574-a540-4cf1-8b39-ddb35621ecc2",
               "sourcePlayerId": "14a9f11c-10cd-477f-be8d-9e26e28fda6e",
               "registrationId": "eee4d03e-531d-452b-87db-acd6ae70e3c8",
@@ -3738,6 +3717,27 @@
               "isCaptain": false,
               "slug": "ssm-iwnl",
               "bpcId": "BPC-012"
+            },
+            {
+              "id": "6bc6bf45-95f4-4995-a52e-9058e74b40ed",
+              "sourcePlayerId": "2ee433df-097a-497d-908f-6dd86c5302e1",
+              "registrationId": "7c7eb4ea-263c-4825-b26f-d2d3a49a5606",
+              "playerAccountId": "b6b0ebf5-9614-42b0-8cc3-53a93a3d5ce0",
+              "name": "L!NU$. 4 ^ JpR",
+              "displayName": "L!NU$. 4 ^ JpR",
+              "role": "Soft support",
+              "roles": [
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 2350,
+              "steamName": "L!NU$. 4 ^ JpR",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198034030852/",
+              "discordHandle": "linus4jpr",
+              "location": "Jaipur",
+              "isCaptain": false,
+              "slug": "l-nu-4-jpr",
+              "bpcId": "BPC-030"
             },
             {
               "id": "7859708d-102d-494e-8a80-b61d98dfdf47",

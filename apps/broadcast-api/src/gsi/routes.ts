@@ -496,6 +496,21 @@ export function attachGsiRoutes(opts: {
       const newGameState = parsed.draftPatch?.gameState ?? prevGameState;
       const overlayVisibilityPatch: Record<string, string> = {};
 
+      // ── Draft / Strategy Time Guard: force-hide Standout Player ─────────────
+      // Whenever GSI reports we're in hero selection (draft) or strategy time,
+      // the Standout Player card should never be on screen — whether it got
+      // there via the post-game auto-selector or a manual producer push.
+      const isDraftOrStrategyTime =
+        newGameState === "DOTA_GAMERULES_STATE_HERO_SELECTION" ||
+        newGameState === "DOTA_GAMERULES_STATE_STRATEGY_TIME";
+      if (isDraftOrStrategyTime && current.overlayVisibility?.standoutplayer === "visible") {
+        overlayVisibilityPatch.standoutplayer = "hidden";
+        logger.info(
+          { newGameState },
+          "[GSI Automation] Draft/Strategy time active, force-hiding Standout Player",
+        );
+      }
+
       const clearAutomationTimers = (reason: string) => {
         let cleared = false;
         if (globalVersusTimeout) {
@@ -1151,7 +1166,16 @@ export function attachGsiRoutes(opts: {
             postGameMvpFiredForMatchId = fireKey;
 
             const ranked = rankMvpCandidates(postGame.match);
-            const winner = ranked[0];
+            // Auto-selection only: Standout Player must come from the winning
+            // team. (Manual /api/standout/compute is untouched — producers can
+            // still pick anyone there.)
+            const winner = ranked.find((c) => c.won);
+            if (!winner && ranked.length > 0) {
+              logger.warn(
+                { matchId: postGame.matchId },
+                "[post-game] No winning-team candidate found in ranked MVP list — skipping auto-selection",
+              );
+            }
 
             if (winner) {
               const mvpSnap = await state.getState();
