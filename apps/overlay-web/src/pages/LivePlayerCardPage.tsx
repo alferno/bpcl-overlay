@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { FadePanel, HudCanvas } from '../HudPrimitives'
 import { useOverlayState } from '../OverlaySocketLayer'
 import { HeroStatsCardPanel } from '../components/HeroStatsCardPanel'
-import { FallbackPlayerCard } from '../components/FallbackPlayerCard'
 import { StatsPanelShell } from '../components/StatsPanelShell'
+import { Card } from '../card/components/Card/Card'
+import { buildFallbackCardData } from '../card/utils/buildCardData'
 import { useRouteVisible } from '../hooks/useRouteVisible'
 import { withBaseUrl } from '../asset-paths'
 import { CachedIframe } from '../components/CachedIframe'
@@ -508,9 +509,11 @@ export function LivePlayerCard() {
                     </div>
                   ) : (
                     <div className='absolute inset-0 flex items-center justify-center transform scale-[0.7611] origin-center z-10 w-[240px] h-[360px] top-[40px] left-[35px]'>
-                      <FallbackPlayerCard
-                        playerName={card.playerLabel || 'UNKNOWN'}
-                        color={card.teamColor || '#10b981'}
+                      <Card
+                        data={buildFallbackCardData(
+                          card.steamName || card.playerLabel || 'UNKNOWN',
+                          card.playerAvatarUrl,
+                        )}
                       />
                     </div>
                   )

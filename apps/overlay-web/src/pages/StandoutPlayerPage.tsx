@@ -7,6 +7,7 @@ import { withBaseUrl } from "../asset-paths";
 import { CachedIframe } from "../components/CachedIframe";
 import {
   resolveHeroPortraitSlug,
+  resolveOverlayPortraitForHero,
   heroPortraitHintsFromFields,
 } from "../hero-portrait";
 import type { StandoutPlayerCard } from "@bpc/shared-types";
@@ -249,9 +250,13 @@ export default function StandoutPlayerPage() {
       )
     : undefined;
 
-  let portraitUrl =
-    card?.heroPortraitUrl ??
-    (heroSlug ? `/heroes/portraits/${heroSlug}.png` : undefined);
+  let portraitUrl = card
+    ? resolveOverlayPortraitForHero(
+        card.heroId,
+        card.heroName,
+        heroPortraitHintsFromFields(card),
+      ) ?? card.heroPortraitUrl
+    : undefined;
 
   // Preload all BPC IDs from the roster so changing hero focus is instant
   const rosterBpcIds = Array.from(

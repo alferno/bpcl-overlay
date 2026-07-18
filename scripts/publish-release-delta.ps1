@@ -67,6 +67,16 @@ $PkgJson = Get-Content $PkgJsonPath -Raw | ConvertFrom-Json
 $Version = $PkgJson.version
 Write-Host "      New Version: v$Version" -ForegroundColor Green
 
+# ── 2.5 Rebuild frontend overlays ───────────────────────────────────────────
+Write-Host "`n[1.5/5] Building overlay-web + admin-web..." -ForegroundColor Yellow
+Push-Location $RepoRoot
+try {
+    & npm run build:deploy
+    if ($LASTEXITCODE -ne 0) { throw "npm run build:deploy exited with code $LASTEXITCODE" }
+} finally {
+    Pop-Location
+}
+
 # ── 3. Build streamer-desktop ───────────────────────────────────────────────
 Write-Host "`n[2/5] Building streamer-desktop..." -ForegroundColor Yellow
 Push-Location $StreamerDir
