@@ -1,5 +1,5 @@
 {
-  "timestamp": 1784397155975,
+  "timestamp": 1784412454654,
   "data": {
     "season": {
       "id": "5f814f1e-f1e9-412f-974a-6514a270b57a",
@@ -486,28 +486,6 @@
           "logoUrl": "/images/teams/emberfall.png",
           "players": [
             {
-              "id": "61533517-0881-40d2-99e9-582f657c7dc0",
-              "sourcePlayerId": "26d70c03-78e3-4166-b978-9631bb5a9ae7",
-              "registrationId": "7cfd5bea-4e9e-4932-bb58-b67d79169c6f",
-              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
-              "name": "SQueEZee",
-              "displayName": "SQueEZee",
-              "role": "Hard support",
-              "roles": [
-                "Hard support",
-                "Carry",
-                "Offlane"
-              ],
-              "mmr": 6600,
-              "steamName": "The Great Pagoda Escaper.",
-              "steamProfile": "https://steamcommunity.com/id/awspx/",
-              "discordHandle": "squeezee",
-              "location": "",
-              "isCaptain": true,
-              "slug": "squeezee",
-              "bpcId": "BPC-066"
-            },
-            {
               "id": "6a14debd-0333-435b-aac5-6497ceeb1b87",
               "sourcePlayerId": "4528f545-179f-4901-981e-3494b5a872df",
               "registrationId": "e6110de9-c406-49b8-bb0a-3ee9807eecd1",
@@ -553,26 +531,26 @@
               "bpcId": "BPC-024"
             },
             {
-              "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
-              "sourcePlayerId": null,
-              "registrationId": "7b1a045c-174d-4582-a0b1-c7ad250e2a16",
-              "playerAccountId": "9b594083-5196-4e7c-b235-2249ef0c9f36",
-              "name": "Animesh Parab",
-              "displayName": "Shiro",
-              "role": "Mid",
+              "id": "61533517-0881-40d2-99e9-582f657c7dc0",
+              "sourcePlayerId": "26d70c03-78e3-4166-b978-9631bb5a9ae7",
+              "registrationId": "7cfd5bea-4e9e-4932-bb58-b67d79169c6f",
+              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
+              "name": "SQueEZee",
+              "displayName": "SQueEZee",
+              "role": "Hard support",
               "roles": [
-                "Mid",
-                "Soft support",
-                "Hard support"
+                "Hard support",
+                "Carry",
+                "Offlane"
               ],
-              "mmr": 4605,
-              "steamName": "Shiro",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198091918772/",
-              "discordHandle": "shiro_ngnl",
-              "location": "Mumbai",
-              "isCaptain": false,
-              "slug": "shiro",
-              "bpcId": "BPC-071"
+              "mmr": 6600,
+              "steamName": "The Great Pagoda Escaper.",
+              "steamProfile": "https://steamcommunity.com/id/awspx/",
+              "discordHandle": "squeezee",
+              "location": "",
+              "isCaptain": true,
+              "slug": "squeezee",
+              "bpcId": "BPC-066"
             },
             {
               "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
@@ -593,6 +571,28 @@
               "isCaptain": false,
               "slug": "raiden",
               "bpcId": "BPC-074"
+            },
+            {
+              "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
+              "sourcePlayerId": null,
+              "registrationId": "7b1a045c-174d-4582-a0b1-c7ad250e2a16",
+              "playerAccountId": "9b594083-5196-4e7c-b235-2249ef0c9f36",
+              "name": "Animesh Parab",
+              "displayName": "Shiro",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 4605,
+              "steamName": "Shiro",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198091918772/",
+              "discordHandle": "shiro_ngnl",
+              "location": "Mumbai",
+              "isCaptain": false,
+              "slug": "shiro",
+              "bpcId": "BPC-071"
             }
           ],
           "groupKey": "B",
@@ -844,6 +844,28 @@
           "logoUrl": "/images/teams/ashborn.png",
           "players": [
             {
+              "id": "2706cbb1-d35b-4c53-bb4a-48354c0d4ac2",
+              "sourcePlayerId": "b05ad9f1-d831-47df-97e0-e9bb5b8d8bb6",
+              "registrationId": "fc78d966-67d2-4aff-a34f-fe288f6d2363",
+              "playerAccountId": "cc223091-55bc-4c7b-b27c-a2a2fa51c4aa",
+              "name": "[V]Engeance",
+              "displayName": "[V]Engeance",
+              "role": "Hard support",
+              "roles": [
+                "Hard support",
+                "Soft support",
+                "Offlane"
+              ],
+              "mmr": 2800,
+              "steamName": "[V]Engeance",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198089394394/",
+              "discordHandle": "hitesh3819683",
+              "location": "bangalore",
+              "isCaptain": false,
+              "slug": "v-engeance",
+              "bpcId": "BPC-034"
+            },
+            {
               "id": "c6fc8346-7999-42fe-aa5e-f8c1ac62ad85",
               "sourcePlayerId": "2db7e333-4e92-4220-a205-6b37ffea79ee",
               "registrationId": "3d599ac6-460f-4cac-8c72-ec28957babca",
@@ -904,28 +926,6 @@
               "isCaptain": false,
               "slug": "alferno",
               "bpcId": "BPC-001"
-            },
-            {
-              "id": "2706cbb1-d35b-4c53-bb4a-48354c0d4ac2",
-              "sourcePlayerId": "b05ad9f1-d831-47df-97e0-e9bb5b8d8bb6",
-              "registrationId": "fc78d966-67d2-4aff-a34f-fe288f6d2363",
-              "playerAccountId": "cc223091-55bc-4c7b-b27c-a2a2fa51c4aa",
-              "name": "[V]Engeance",
-              "displayName": "[V]Engeance",
-              "role": "Hard support",
-              "roles": [
-                "Hard support",
-                "Soft support",
-                "Offlane"
-              ],
-              "mmr": 2800,
-              "steamName": "[V]Engeance",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198089394394/",
-              "discordHandle": "hitesh3819683",
-              "location": "bangalore",
-              "isCaptain": false,
-              "slug": "v-engeance",
-              "bpcId": "BPC-034"
             },
             {
               "id": "f26a0634-2423-42a8-a458-894755f0378c",
@@ -3416,28 +3416,6 @@
           "logoUrl": "/images/teams/emberfall.png",
           "players": [
             {
-              "id": "61533517-0881-40d2-99e9-582f657c7dc0",
-              "sourcePlayerId": "26d70c03-78e3-4166-b978-9631bb5a9ae7",
-              "registrationId": "7cfd5bea-4e9e-4932-bb58-b67d79169c6f",
-              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
-              "name": "SQueEZee",
-              "displayName": "SQueEZee",
-              "role": "Hard support",
-              "roles": [
-                "Hard support",
-                "Carry",
-                "Offlane"
-              ],
-              "mmr": 6600,
-              "steamName": "The Great Pagoda Escaper.",
-              "steamProfile": "https://steamcommunity.com/id/awspx/",
-              "discordHandle": "squeezee",
-              "location": "",
-              "isCaptain": true,
-              "slug": "squeezee",
-              "bpcId": "BPC-066"
-            },
-            {
               "id": "6a14debd-0333-435b-aac5-6497ceeb1b87",
               "sourcePlayerId": "4528f545-179f-4901-981e-3494b5a872df",
               "registrationId": "e6110de9-c406-49b8-bb0a-3ee9807eecd1",
@@ -3483,26 +3461,26 @@
               "bpcId": "BPC-024"
             },
             {
-              "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
-              "sourcePlayerId": null,
-              "registrationId": "7b1a045c-174d-4582-a0b1-c7ad250e2a16",
-              "playerAccountId": "9b594083-5196-4e7c-b235-2249ef0c9f36",
-              "name": "Animesh Parab",
-              "displayName": "Shiro",
-              "role": "Mid",
+              "id": "61533517-0881-40d2-99e9-582f657c7dc0",
+              "sourcePlayerId": "26d70c03-78e3-4166-b978-9631bb5a9ae7",
+              "registrationId": "7cfd5bea-4e9e-4932-bb58-b67d79169c6f",
+              "playerAccountId": "899ac0cb-d9b9-4079-bf8b-8aba26ae713d",
+              "name": "SQueEZee",
+              "displayName": "SQueEZee",
+              "role": "Hard support",
               "roles": [
-                "Mid",
-                "Soft support",
-                "Hard support"
+                "Hard support",
+                "Carry",
+                "Offlane"
               ],
-              "mmr": 4605,
-              "steamName": "Shiro",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198091918772/",
-              "discordHandle": "shiro_ngnl",
-              "location": "Mumbai",
-              "isCaptain": false,
-              "slug": "shiro",
-              "bpcId": "BPC-071"
+              "mmr": 6600,
+              "steamName": "The Great Pagoda Escaper.",
+              "steamProfile": "https://steamcommunity.com/id/awspx/",
+              "discordHandle": "squeezee",
+              "location": "",
+              "isCaptain": true,
+              "slug": "squeezee",
+              "bpcId": "BPC-066"
             },
             {
               "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
@@ -3523,6 +3501,28 @@
               "isCaptain": false,
               "slug": "raiden",
               "bpcId": "BPC-074"
+            },
+            {
+              "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
+              "sourcePlayerId": null,
+              "registrationId": "7b1a045c-174d-4582-a0b1-c7ad250e2a16",
+              "playerAccountId": "9b594083-5196-4e7c-b235-2249ef0c9f36",
+              "name": "Animesh Parab",
+              "displayName": "Shiro",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 4605,
+              "steamName": "Shiro",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198091918772/",
+              "discordHandle": "shiro_ngnl",
+              "location": "Mumbai",
+              "isCaptain": false,
+              "slug": "shiro",
+              "bpcId": "BPC-071"
             }
           ],
           "groupKey": "B",
@@ -3774,6 +3774,28 @@
           "logoUrl": "/images/teams/ashborn.png",
           "players": [
             {
+              "id": "2706cbb1-d35b-4c53-bb4a-48354c0d4ac2",
+              "sourcePlayerId": "b05ad9f1-d831-47df-97e0-e9bb5b8d8bb6",
+              "registrationId": "fc78d966-67d2-4aff-a34f-fe288f6d2363",
+              "playerAccountId": "cc223091-55bc-4c7b-b27c-a2a2fa51c4aa",
+              "name": "[V]Engeance",
+              "displayName": "[V]Engeance",
+              "role": "Hard support",
+              "roles": [
+                "Hard support",
+                "Soft support",
+                "Offlane"
+              ],
+              "mmr": 2800,
+              "steamName": "[V]Engeance",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198089394394/",
+              "discordHandle": "hitesh3819683",
+              "location": "bangalore",
+              "isCaptain": false,
+              "slug": "v-engeance",
+              "bpcId": "BPC-034"
+            },
+            {
               "id": "c6fc8346-7999-42fe-aa5e-f8c1ac62ad85",
               "sourcePlayerId": "2db7e333-4e92-4220-a205-6b37ffea79ee",
               "registrationId": "3d599ac6-460f-4cac-8c72-ec28957babca",
@@ -3834,28 +3856,6 @@
               "isCaptain": false,
               "slug": "alferno",
               "bpcId": "BPC-001"
-            },
-            {
-              "id": "2706cbb1-d35b-4c53-bb4a-48354c0d4ac2",
-              "sourcePlayerId": "b05ad9f1-d831-47df-97e0-e9bb5b8d8bb6",
-              "registrationId": "fc78d966-67d2-4aff-a34f-fe288f6d2363",
-              "playerAccountId": "cc223091-55bc-4c7b-b27c-a2a2fa51c4aa",
-              "name": "[V]Engeance",
-              "displayName": "[V]Engeance",
-              "role": "Hard support",
-              "roles": [
-                "Hard support",
-                "Soft support",
-                "Offlane"
-              ],
-              "mmr": 2800,
-              "steamName": "[V]Engeance",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198089394394/",
-              "discordHandle": "hitesh3819683",
-              "location": "bangalore",
-              "isCaptain": false,
-              "slug": "v-engeance",
-              "bpcId": "BPC-034"
             },
             {
               "id": "f26a0634-2423-42a8-a458-894755f0378c",

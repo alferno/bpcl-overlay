@@ -349,9 +349,9 @@ export function MatchSetupPanel({
   }
 
   async function submitSubFix() {
-    const steam32 = parseInt(subFixSteam32.trim(), 10);
-    if (!Number.isFinite(steam32) || steam32 <= 0) {
-      setSubFixMsg("Enter a valid steam32 ID.");
+    const steamInput = subFixSteam32.trim();
+    if (!steamInput) {
+      setSubFixMsg("Enter a steam32 ID or a steamcommunity.com profile URL.");
       return;
     }
     if (!subFixName.trim() || !subFixTeamKey) {
@@ -364,7 +364,7 @@ export function MatchSetupPanel({
       const r = await apiFetch(origin, token, "/api/roster/upsert-player", {
         method: "POST",
         body: JSON.stringify({
-          steam32,
+          steam32: steamInput,
           displayName: subFixName.trim(),
           teamKey: subFixTeamKey,
         }),
@@ -374,7 +374,8 @@ export function MatchSetupPanel({
         setSubFixMsg(formatApiErrorBody(t));
         return;
       }
-      setSubFixMsg(`Saved — #${steam32} is now "${subFixName.trim()}".`);
+      const parsed = JSON.parse(t) as { player?: { steam32: number } };
+      setSubFixMsg(`Saved — #${parsed.player?.steam32 ?? "?"} is now "${subFixName.trim()}".`);
       setSubFixSteam32("");
       setSubFixName("");
       setTimeout(() => setSubFixMsg(null), 6000);
@@ -384,6 +385,7 @@ export function MatchSetupPanel({
       setSubFixBusy(false);
     }
   }
+
 
   // Players currently in the live lineup that GSI couldn't resolve to a
   // real name (auto substitute-detection falls back to "Sub#<steam32>").

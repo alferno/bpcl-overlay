@@ -35,6 +35,8 @@ import {
   LeagueStatsNotReadyError,
 } from "./services/league-stats-guard.js";
 import { parseRosterCsv, parseRosterCsvAsync, teamColorsFromRoster, serializeRosterCsv } from "./services/roster-parser.js";
+import { parseSteamIdentifierSync, isSteamProfileUrl, resolveSteamProfileToSteam32 } from "./services/steam32-resolver.js";
+import type { RosterPlayer } from "@bpc/shared-types";
 import { listTeamsFromRoster } from "./services/roster-teams.js";
 import {
   applyPickPlayersToDraft,
@@ -302,6 +304,58 @@ export function attachLeagueAndStatsRoutes(opts: {
   app.get("/api/roster", requireBroadcastAuth, async (_req, res) => {
     const snap = await state.getState();
     res.json(snap.leagueConfig?.roster ?? []);
+  });
+
+  app.post("/api/roster/upsert-player", requireBroadcastAuth, async (req, res) => {
+    const schema = z.object({
+      steam32: z.string().min(1), // accepts a bare steam32/steam64 id OR a steam profile URL
+      displayName: z.string().min(1),
+      teamKey: z.string().min(1),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success)
+      return res.status(400).json({ error: parsed.error.flatten() });
+
+    const { steam32: rawSteamInput, displayName, teamKey } = parsed.data;
+
+    // Reuse the same resolver the CSV upload path uses — handles bare ids,
+    // /profiles/<id> URLs (sync), and /id/<vanity> URLs (Steam API lookup).
+    let steam32 = parseSteamIdentifierSync(rawSteamInput);
+    if (steam32 === null && isSteamProfileUrl(rawSteamInput)) {
+      steam32 = await resolveSteamProfileToSteam32(rawSteamInput);
+    }
+    if (steam32 === null) {
+      return res.status(400).json({
+        error: "Could not resolve a Steam32 ID from the given value. Paste a valid Steam32 ID, Steam64 ID, or steamcommunity.com profile URL.",
+      });
+    }
+
+    const snap = await state.getState();
+    const roster = snap.leagueConfig?.roster ?? [];
+
+    const existing = findRosterPlayer(roster, steam32);
+    // teamColors is Record<string, string> (teamKey → hex) — teamName comes from
+    // the existing roster entry or falls back to the raw teamKey.
+    const teamName = existing?.teamName ?? teamKey;
+
+    const upserted: RosterPlayer = {
+      ...existing,
+      steam32,
+      displayName,
+      teamKey,
+      teamName,
+    };
+
+    const nextRoster = existing
+      ? roster.map((p) => (p.steam32 === steam32 ? upserted : p))
+      : [...roster, upserted];
+
+    const next = await state.patchState({
+      leagueConfig: { ...snap.leagueConfig, roster: nextRoster, leagueId: env.LEAGUE_ID },
+    });
+    await broadcast.broadcastFull(next);
+
+    res.json({ ok: true, player: upserted });
   });
 
   app.get("/api/teams", requireBroadcastAuth, async (_req, res) => {

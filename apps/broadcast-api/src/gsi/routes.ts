@@ -1268,8 +1268,6 @@ export function attachGsiRoutes(opts: {
           const alreadyFired = postGameMvpFiredForMatchId === fireKey && !enteredPostGame;
 
           if (postGame.isPostGame && !alreadyFired && postGame.match.players && postGame.match.players.length >= 2) {
-            postGameMvpFiredForMatchId = fireKey;
-
             const ranked = rankMvpCandidates(postGame.match);
             // Auto-selection only: Standout Player must come from the winning
             // team. (Manual /api/standout/compute is untouched — producers can
@@ -1278,11 +1276,15 @@ export function attachGsiRoutes(opts: {
             if (!winner && ranked.length > 0) {
               logger.warn(
                 { matchId: postGame.matchId },
-                "[post-game] No winning-team candidate found in ranked MVP list — skipping auto-selection",
+                "[post-game] No winning-team candidate found in ranked MVP list — will retry on next GSI tick",
               );
             }
 
             if (winner) {
+              // Only latch "fired" once we've actually got a valid winner,
+              // so an early/incomplete post-game tick (e.g. radiant_win not
+              // yet populated) doesn't permanently block the real push.
+              postGameMvpFiredForMatchId = fireKey;
               const mvpSnap = await state.getState();
               const mvpRoster = mvpSnap.leagueConfig?.roster ?? [];
               const rosterPlayer = winner.accountId

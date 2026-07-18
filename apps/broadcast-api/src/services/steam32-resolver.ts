@@ -18,6 +18,7 @@ function loadCache(): void {
     steam32Cache = {};
   }
 }
+loadCache();
 
 function saveCache(): void {
   try {
@@ -88,8 +89,10 @@ export async function resolveSteamProfileToSteam32(
 ): Promise<number | null> {
   if (!profileUrl) return null;
 
-  // Normalize the URL (some entries have "Https" or trailing paths)
-  const url = profileUrl.trim().toLowerCase();
+  // Normalize only the scheme/host/prefix and keep the vanity slug case-sensitive
+  const trimmed = profileUrl.trim();
+  const match = trimmed.match(/^(https?:\/\/(?:www\.)?steamcommunity\.com\/(?:profiles|id)\/)(.*)$/i);
+  const url = match ? (match[1].toLowerCase() + match[2]) : trimmed.toLowerCase();
 
   // Extract Steam64 from /profiles/ URL
   const profilesMatch = url.match(/\/profiles\/(\d+)/);
@@ -154,6 +157,5 @@ export async function resolveSteamProfileToSteam32(
 export async function batchResolveSteam32(
   profileUrls: string[]
 ): Promise<(number | null)[]> {
-  loadCache();
   return Promise.all(profileUrls.map((url) => resolveSteamProfileToSteam32(url)));
 }
