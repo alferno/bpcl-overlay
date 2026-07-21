@@ -206,8 +206,8 @@ export function LiveStatsHud() {
   const enemyKills = card.enemyHeroKills ?? [];
 
   const layout = state.production?.layoutConfig?.kdaCard;
-  const top = layout?.y ?? 8;
-  const left = layout?.x ?? 16;
+  const top = layout?.y ?? 1;
+  const left = layout?.x ?? 1;
   const scale = layout?.scale ?? 1;
 
   return (

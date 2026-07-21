@@ -57,7 +57,32 @@ export default function App() {
   }, [])
 
   const [obsPort, setObsPort] = useState('4455')
-  const [obsPassword, setObsPassword] = useState('')
+  const [obsPassword, setObsPassword] = useState('bpcls2')
+
+  useEffect(() => {
+    if (apiStatus !== 'Local API ready' || !window.ipcRenderer) return;
+
+    let cancelled = false;
+
+    const attemptConnect = async () => {
+      if (cancelled) return;
+      const res = await window.ipcRenderer!.invoke('obs-connect', '127.0.0.1', 4455, 'bpcls2');
+      if (res.ok) {
+        setLogs(prev => [...prev, "Auto-connected to OBS successfully!"]);
+      } else {
+        setLogs(prev => [...prev, "Auto-connect to OBS failed (retrying in 5s)..."]);
+        if (!cancelled) {
+          setTimeout(attemptConnect, 5000);
+        }
+      }
+    };
+
+    attemptConnect();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiStatus]);
 
   const handleObsConnect = async () => {
     if (!window.ipcRenderer) {

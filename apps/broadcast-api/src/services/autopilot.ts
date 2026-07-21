@@ -126,7 +126,7 @@ class AutopilotManager {
           this.opendota,
           player.steam32,
           player.displayName,
-          snap.playerHeroIndex,
+          snap.lifetimePlayerHeroIndex,
           roster
         );
         const next = await this.state.patchState({
@@ -143,7 +143,7 @@ class AutopilotManager {
       else if (cardType === "player-hero") {
         const player = activePlayers[Math.floor(Math.random() * activePlayers.length)];
         // Find heroes player has stats for
-        const playerHeroIndex = snap.playerHeroIndex ?? {};
+        const playerHeroIndex = snap.lifetimePlayerHeroIndex ?? {};
         const prefix = `${player.steam32}:`;
         const playedHeroIds = Object.keys(playerHeroIndex)
           .filter((k) => k.startsWith(prefix))
@@ -154,7 +154,7 @@ class AutopilotManager {
           heroId = playedHeroIds[Math.floor(Math.random() * playedHeroIds.length)];
         } else {
           // Check active draft picks or tournament index
-          const tourneyHeroes = Object.keys(snap.tournamentHeroIndex ?? {});
+          const tourneyHeroes = Object.keys(snap.lifetimeTournamentHeroIndex ?? {});
           if (tourneyHeroes.length > 0) {
             heroId = Number(tourneyHeroes[Math.floor(Math.random() * tourneyHeroes.length)]);
           }
@@ -165,9 +165,9 @@ class AutopilotManager {
           player.steam32,
           heroId,
           player.displayName,
-          snap.tournamentHeroIndex ?? {},
+          snap.lifetimeTournamentHeroIndex ?? {},
           roster,
-          snap.playerHeroIndex
+          snap.lifetimePlayerHeroIndex
         );
 
         const carousel = buildCarouselFromHeroCard(card, 4000);
@@ -183,13 +183,13 @@ class AutopilotManager {
       } 
       
       else if (cardType === "tournament-hero") {
-        const indexKeys = Object.keys(snap.tournamentHeroIndex ?? {});
+        const indexKeys = Object.keys(snap.lifetimeTournamentHeroIndex ?? {});
         if (indexKeys.length === 0) return;
         const heroId = Number(indexKeys[Math.floor(Math.random() * indexKeys.length)]);
         const card = await buildTournamentHeroCard(
           this.opendota,
           heroId,
-          snap.tournamentHeroIndex ?? {}
+          snap.lifetimeTournamentHeroIndex ?? {}
         );
         const next = await this.state.patchState({
           heroStatsCard: card,
@@ -221,7 +221,7 @@ class AutopilotManager {
           heroA = slotA.heroId!;
           heroB = slotB.heroId!;
         } else {
-          const indexKeys = Object.keys(snap.tournamentHeroIndex ?? {});
+          const indexKeys = Object.keys(snap.lifetimeTournamentHeroIndex ?? {});
           if (indexKeys.length >= 2) {
             heroA = Number(indexKeys[Math.floor(Math.random() * indexKeys.length)]);
             heroB = Number(indexKeys[Math.floor(Math.random() * indexKeys.length)]);

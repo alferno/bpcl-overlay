@@ -545,6 +545,10 @@
         state.phase = 'upToDate'
       }
       render()
+      
+      if (state.phase === 'upToDate') {
+        setTimeout(() => launch(), 1500)
+      }
     } catch (err) {
       state.phase = 'error'
       render()

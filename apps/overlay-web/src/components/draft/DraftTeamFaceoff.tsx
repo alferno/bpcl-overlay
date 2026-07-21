@@ -4,12 +4,33 @@ import { withBaseUrl } from "../../asset-paths";
 import { formatSeriesLabel } from "../../draft/broadcast-theme";
 import { colorAlpha } from "../../draft/team-colors";
 
-export function draftTeamSides(draft: DraftState) {
+export function draftTeamSides(draft: DraftState, leagueConfig?: LeagueConfig) {
+  let radiantName = draft.radiant?.name ?? draft.series.teamA ?? "Radiant";
+  let direName = draft.dire?.name ?? draft.series.teamB ?? "Dire";
+  let radiantLogo = withBaseUrl(draft.radiant?.logoUrl ?? draft.series.logoUrlA);
+  let direLogo = withBaseUrl(draft.dire?.logoUrl ?? draft.series.logoUrlB);
+
+  // Force resolve from live leagueConfig if available
+  if (leagueConfig?.matchSetup) {
+    const roster = leagueConfig.roster ?? [];
+    const rKey = leagueConfig.matchSetup.radiantTeamKey;
+    const dKey = leagueConfig.matchSetup.direTeamKey;
+
+    if (rKey) {
+      const p = roster.find(r => r.teamKey === rKey);
+      if (p) radiantName = p.teamName || p.teamKey || radiantName;
+    }
+    if (dKey) {
+      const p = roster.find(r => r.teamKey === dKey);
+      if (p) direName = p.teamName || p.teamKey || direName;
+    }
+  }
+
   return {
-    radiantName: draft.radiant?.name ?? draft.series.teamA ?? "Radiant",
-    direName: draft.dire?.name ?? draft.series.teamB ?? "Dire",
-    radiantLogo: withBaseUrl(draft.radiant?.logoUrl ?? draft.series.logoUrlA),
-    direLogo: withBaseUrl(draft.dire?.logoUrl ?? draft.series.logoUrlB),
+    radiantName,
+    direName,
+    radiantLogo,
+    direLogo,
     scoreLabel:
       draft.series.scoreA > 0 || draft.series.scoreB > 0
         ? `${draft.series.scoreA} – ${draft.series.scoreB}`
@@ -32,7 +53,7 @@ export function DraftTeamFaceoff({
   spread?: boolean;
 }) {
   const { radiantName, direName, radiantLogo, direLogo, scoreLabel } =
-    draftTeamSides(draft);
+    draftTeamSides(draft, leagueConfig);
 
   const logoBox = size === "large" ? "h-[120px] w-[120px]" : "h-[76px] w-[76px]";
   const nameClass =

@@ -74,6 +74,23 @@ export function attachRestRoutes(opts: {
     }
   });
 
+  app.post("/api/timings/refresh", requireBroadcastAuth, async (_req, res) => {
+    try {
+      const { fetchAndSaveLeagueTimingsCsv, preloadItemTimings } = await import("./services/item-timings.js");
+      const snap = await state.getState();
+      const leagueIds = snap.leagueConfig?.leagueIds ?? (snap.leagueConfig?.leagueId ? [snap.leagueConfig.leagueId] : []);
+      // Run both in parallel in background
+      void Promise.all([
+        preloadItemTimings(),
+        leagueIds.length > 0 ? fetchAndSaveLeagueTimingsCsv(leagueIds) : Promise.resolve(),
+      ]);
+      res.json({ success: true, leagueIds });
+    } catch (err) {
+      logger.warn({ err }, "Timings refresh failed");
+      res.status(500).json({ error: "Failed to start timings refresh" });
+    }
+  });
+
   // Serve original replays directly to avoid remuxing
   app.use(
     "/api/replays/media",
@@ -391,7 +408,7 @@ export function attachRestRoutes(opts: {
     const leaguePh =
       parsed.data.accountId !== undefined
         ? leaguePlayerHeroFromIndex(
-            snap.playerHeroIndex,
+            snap.lifetimePlayerHeroIndex,
             parsed.data.accountId,
             parsed.data.heroId,
           )

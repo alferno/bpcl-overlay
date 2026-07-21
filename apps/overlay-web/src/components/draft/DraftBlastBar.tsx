@@ -9,6 +9,7 @@ import { resolveDraftTeamColors } from "../../draft/team-colors";
 import { DraftBroadcastShell } from "./DraftBroadcastShell";
 import { DraftCenterHub } from "./DraftCenterHub";
 import { DraftTeamColumn } from "./DraftTeamColumn";
+import { draftTeamSides } from "./DraftTeamFaceoff";
 
 export function DraftBlastBar({
   draft,
@@ -26,6 +27,7 @@ export function DraftBlastBar({
   const turnAction = resolveTurnAction(draft);
   const teamColors = resolveDraftTeamColors(draft, leagueConfig);
   const heroSelectionMode = draft.phase === "done";
+  const { radiantName, direName, radiantLogo, direLogo } = draftTeamSides(draft, leagueConfig);
 
   return (
     <DraftBroadcastShell
@@ -36,8 +38,8 @@ export function DraftBlastBar({
       <div className="relative flex min-w-0 w-full max-w-none items-stretch gap-2 font-body">
         <DraftTeamColumn
           slots={draft.radiant?.slots}
-          teamLogoUrl={draft.radiant?.logoUrl ?? draft.series.logoUrlA}
-          teamName={draft.radiant?.name ?? draft.series.teamA}
+          teamLogoUrl={radiantLogo}
+          teamName={radiantName}
           isActive={active === "radiant"}
           heroSelectionMode={heroSelectionMode}
           leagueConfig={leagueConfig}
@@ -57,8 +59,8 @@ export function DraftBlastBar({
 
         <DraftTeamColumn
           slots={draft.dire?.slots}
-          teamLogoUrl={draft.dire?.logoUrl ?? draft.series.logoUrlB}
-          teamName={draft.dire?.name ?? draft.series.teamB}
+          teamLogoUrl={direLogo}
+          teamName={direName}
           isActive={active === "dire"}
           heroSelectionMode={heroSelectionMode}
           leagueConfig={leagueConfig}

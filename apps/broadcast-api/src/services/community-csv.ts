@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 import axios from "axios";
 import { logger } from "../logger.js";
@@ -120,27 +120,28 @@ export async function loadCommunityCsv(): Promise<BpclMember[]> {
   return parseCommunityCsvContent(content);
 }
 
-/** Fetch pages 1 and 2 in parallel, merge, deduplicate, and write CSV to disk */
+/** Fetch all pages, merge, deduplicate, and write CSV to disk */
 export async function fetchAndWriteCommunityCsv(): Promise<BpclMember[]> {
-  const url1 = `https://api.bpcleague.in/api/public/community?limit=${PAGE_SIZE}&offset=0`;
-  const url2 = `https://api.bpcleague.in/api/public/community?limit=${PAGE_SIZE}&offset=${PAGE_SIZE}`;
-
-  logger.info("[Community] Fetching community players from API (paginated, limit=100)...");
+  let offset = 0;
+  const rawMerged: any[] = [];
   
-  const [res1, res2] = await Promise.all([
-    axios.get<any>(url1).then((r) => r.data),
-    axios.get<any>(url2).then((r) => r.data)
-  ]);
-
-  const players1: any[] = res1?.players || [];
-  const players2: any[] = res2?.players || [];
-
-  const total = Number(res1?.total || res2?.total || 0);
-  if (total > 200) {
-    logger.warn(`[Community] Warning: Total community members is ${total}, which exceeds the 200 limit fetched by 2 fixed pages. Some players may be omitted.`);
+  while (true) {
+    const url = `https://api.bpcleague.in/api/public/community?limit=${PAGE_SIZE}&offset=${offset}`;
+    try {
+      const res = await axios.get<any>(url);
+      const players = res.data?.players || [];
+      if (players.length === 0) break;
+      rawMerged.push(...players);
+      if (players.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    } catch (err) {
+      logger.error({ err, url }, "[Community] Failed to fetch community players page");
+      break;
+    }
   }
 
-  const rawMerged = [...players1, ...players2];
+  const total = rawMerged.length;
+  logger.info(`[Community] Fetched ${total} total community members.`);
 
   // Map raw API payloads to BpclMember format and deduplicate by steam32Id
   const uniqueMembers = new Map<number, BpclMember>();
@@ -179,17 +180,37 @@ export async function fetchAndWriteCommunityCsv(): Promise<BpclMember[]> {
   return membersList;
 }
 
-/** Get community data, loading from CSV if it exists, otherwise fetching and saving. */
+// How long to trust the on-disk cache before re-fetching from bpcleague.in
+// automatically. Previously this cache never expired on its own — it only
+// refreshed via a manual POST /api/community/refresh call, so a player's
+// updated cardTier (e.g. newly granted "holo") could silently never show up
+// until someone remembered to hit that endpoint by hand.
+const COMMUNITY_CSV_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+/** Get community data, loading from CSV if it exists and is still fresh,
+ * otherwise fetching and saving. Falls back to the stale file (rather than
+ * failing the request) if a refresh attempt errors out. */
 export async function getCommunityData(): Promise<BpclMember[]> {
   const csvPath = path.resolve(env.COMMUNITY_CSV_PATH);
   if (existsSync(csvPath)) {
     try {
-      const data = await loadCommunityCsv();
-      logger.info({ count: data.length }, "[Community] Loaded community members from CSV first.");
-      return data;
+      const stats = await stat(csvPath);
+      const age = Date.now() - stats.mtimeMs;
+      if (age < COMMUNITY_CSV_TTL_MS) {
+        const data = await loadCommunityCsv();
+        logger.info({ count: data.length, ageMs: age }, "[Community] Loaded community members from fresh-enough CSV cache.");
+        return data;
+      }
+      logger.info({ ageMs: age }, "[Community] Cache expired — refreshing from bpcleague.in.");
     } catch (err) {
-      logger.warn({ err }, "[Community] Failed reading existing CSV, falling back to fetch.");
+      logger.warn({ err }, "[Community] Failed checking CSV cache age, falling back to fetch.");
     }
   }
-  return fetchAndWriteCommunityCsv();
+  try {
+    return await fetchAndWriteCommunityCsv();
+  } catch (err) {
+    logger.warn({ err }, "[Community] Refresh fetch failed — serving stale CSV if we have one.");
+    if (existsSync(csvPath)) return loadCommunityCsv();
+    throw err;
+  }
 }

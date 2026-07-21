@@ -45,6 +45,7 @@ import {
 import { enrichRosterAvatars } from "./services/steam-profile.js";
 import { fetchRosterFromBpcLeague, fetchMatchesFromBpcLeague, fetchSeasonsFromBpcLeague, fetchSeasonConfigFromBpcLeague, fetchActiveSeasonSlug } from "./services/bpcleague-sync.js";
 import { tournamentAggregator } from "./services/tournament-aggregator.js";
+import { globalLatestGsiPayload } from "./gsi/routes.js";
 import { autopilotManager } from "./services/autopilot.js";
 import { appendMatchLog } from "./services/cast-log.js";
 import {
@@ -105,7 +106,10 @@ export function attachLeagueAndStatsRoutes(opts: {
     const next = await state.patchState({
       leagueConfig: { 
         ...snap.leagueConfig, 
-        ...(parsed.data.leagueId != null ? { leagueId: parsed.data.leagueId } : {}),
+        ...(parsed.data.leagueId != null ? { leagueId: parsed.data.leagueId } : 
+           (parsed.data.leagueIds != null && parsed.data.leagueIds.length > 0 
+             ? { leagueId: parsed.data.leagueIds[parsed.data.leagueIds.length - 1] } 
+             : {})),
         ...(parsed.data.leagueIds != null ? { leagueIds: parsed.data.leagueIds } : {}),
         ...(parsed.data.overlayStatsMode != null ? { overlayStatsMode: parsed.data.overlayStatsMode } : {}),
       },
@@ -123,7 +127,6 @@ export function attachLeagueAndStatsRoutes(opts: {
     if (snap.leagueConfig?.aggregationStatus === "running") {
       await state.patchState({
         leagueConfig: {
-          leagueId: env.LEAGUE_ID,
           aggregationStatus: "idle",
           aggregationError: undefined,
         },
@@ -167,8 +170,10 @@ export function attachLeagueAndStatsRoutes(opts: {
     "/api/league/stats/storage",
     requireBroadcastAuth,
     async (_req, res) => {
-      const info = await leagueStatsFileInfo(env.LEAGUE_ID);
       const snap = await state.getState();
+      const configId = snap.leagueConfig?.leagueId ?? env.LEAGUE_ID;
+      const info = await leagueStatsFileInfo(configId);
+
       res.json({
         ...info,
         statsDir: leagueInfoFromEnv().statsDir,
@@ -187,7 +192,7 @@ export function attachLeagueAndStatsRoutes(opts: {
       res.json({
         ...prog,
         inMemoryRunning: tournamentAggregator.isBusy(),
-        leagueId: env.LEAGUE_ID,
+        leagueId: snap.leagueConfig?.leagueId ?? env.LEAGUE_ID,
         leagueConfig: snap.leagueConfig,
       });
     },
@@ -202,8 +207,9 @@ export function attachLeagueAndStatsRoutes(opts: {
     const parsedRoster = await parseRosterCsvAsync(parsed.data.csv);
     const roster = await enrichRosterAvatars(parsedRoster, opendota);
     const teamColors = teamColorsFromRoster(roster);
+    const configId = (await state.getState()).leagueConfig?.leagueId ?? env.LEAGUE_ID;
     const next = await state.patchState({
-      leagueConfig: { roster, teamColors, leagueId: env.LEAGUE_ID },
+      leagueConfig: { roster, teamColors, leagueId: configId },
     });
     await broadcast.broadcastFull(next);
     res.json({ ok: true, count: roster.length, teamColors, roster });
@@ -280,8 +286,9 @@ export function attachLeagueAndStatsRoutes(opts: {
       }
 
       const snap = await state.getState();
+      const configId = snap.leagueConfig?.leagueId ?? env.LEAGUE_ID;
       const next = await state.patchState({
-        leagueConfig: { roster, teamColors, leagueId: snap.leagueConfig?.leagueId ?? env.LEAGUE_ID, seasonSlug },
+        leagueConfig: { roster, teamColors, leagueId: configId, seasonSlug },
         sponsor: { banners: fetchedBanners, activeIndex: snap.sponsor?.activeIndex ?? 0 }
       });
       await broadcast.broadcastFull(next);
@@ -351,7 +358,7 @@ export function attachLeagueAndStatsRoutes(opts: {
       : [...roster, upserted];
 
     const next = await state.patchState({
-      leagueConfig: { ...snap.leagueConfig, roster: nextRoster, leagueId: env.LEAGUE_ID },
+      leagueConfig: { ...snap.leagueConfig, roster: nextRoster },
     });
     await broadcast.broadcastFull(next);
 
@@ -756,9 +763,9 @@ export function attachLeagueAndStatsRoutes(opts: {
       parsed.data.steam32,
       parsed.data.heroId,
       player.displayName,
-      snap.tournamentHeroIndex ?? {},
+      snap.lifetimeTournamentHeroIndex ?? {},
       roster,
-      snap.playerHeroIndex,
+      snap.lifetimePlayerHeroIndex,
     );
 
     if (parsed.data.persist) {
@@ -802,7 +809,7 @@ export function attachLeagueAndStatsRoutes(opts: {
       opendota,
       parsed.data.steam32,
       player.displayName,
-      snap.playerHeroIndex,
+      snap.lifetimePlayerHeroIndex,
       roster,
     );
 
@@ -840,7 +847,7 @@ export function attachLeagueAndStatsRoutes(opts: {
       const card = await buildTournamentHeroCard(
         opendota,
         parsed.data.heroId,
-        snap.tournamentHeroIndex ?? {},
+        snap.lifetimeTournamentHeroIndex ?? {},
       );
 
       if (parsed.data.persist) {
@@ -880,6 +887,28 @@ export function attachLeagueAndStatsRoutes(opts: {
     res.json({ ok: true, card });
   });
 
+  function extractLiveStats(steam32: number): any {
+    const payload = globalLatestGsiPayload;
+    if (!payload || !payload.player) return null;
+
+    for (const teamKey of ["team2", "team3"]) {
+      if (!payload.player[teamKey]) continue;
+      for (let i = 0; i <= 9; i++) {
+        const p = payload.player[teamKey][`player${i}`];
+        if (p && String(p.accountid) === String(steam32)) {
+          return {
+            gpm: p.gpm || 0,
+            xpm: p.xpm || 0,
+            heroDamage: p.hero_damage || 0,
+            lastHits: p.last_hits || 0,
+            denies: p.denies || 0,
+          };
+        }
+      }
+    }
+    return null;
+  }
+
   app.post("/api/producer/h2h", requireBroadcastAuth, async (req, res) => {
     const schema = z.object({
       player1Steam32: z.number(),
@@ -906,12 +935,15 @@ export function attachLeagueAndStatsRoutes(opts: {
       return res.status(503).json({ error: err.message });
     }
 
-    const p1Stats = aggregatePlayerLeagueFromIndex(snap.playerHeroIndex!, parsed.data.player1Steam32);
-    const p2Stats = aggregatePlayerLeagueFromIndex(snap.playerHeroIndex!, parsed.data.player2Steam32);
+    const p1Stats = aggregatePlayerLeagueFromIndex(snap.lifetimePlayerHeroIndex!, parsed.data.player1Steam32);
+    const p2Stats = aggregatePlayerLeagueFromIndex(snap.lifetimePlayerHeroIndex!, parsed.data.player2Steam32);
+
+    const p1Live = extractLiveStats(parsed.data.player1Steam32);
+    const p2Live = extractLiveStats(parsed.data.player2Steam32);
 
     const payload = {
-      player1: { ...p1, stats: p1Stats },
-      player2: { ...p2, stats: p2Stats },
+      player1: { ...p1, stats: p1Stats, live: p1Live },
+      player2: { ...p2, stats: p2Stats, live: p2Live },
     };
 
     io.of("/overlay").emit("SHOW_H2H", payload);
@@ -968,14 +1000,14 @@ export function attachLeagueAndStatsRoutes(opts: {
               manualSteam32,
               lp.heroId,
               player.displayName,
-              snap.tournamentHeroIndex ?? {},
+              snap.lifetimeTournamentHeroIndex ?? {},
               roster,
-              snap.playerHeroIndex,
+              snap.lifetimePlayerHeroIndex,
             )
           : await buildTournamentHeroCard(
               opendota,
               lp.heroId,
-              snap.tournamentHeroIndex ?? {},
+              snap.lifetimeTournamentHeroIndex ?? {},
             );
     } else if (parsed.data.type === "player-hero") {
       if (parsed.data.heroId === undefined || parsed.data.steam32 === undefined)
@@ -986,9 +1018,9 @@ export function attachLeagueAndStatsRoutes(opts: {
         parsed.data.steam32,
         parsed.data.heroId,
         player?.displayName ?? "Player",
-        snap.tournamentHeroIndex ?? {},
+        snap.lifetimeTournamentHeroIndex ?? {},
         roster,
-        snap.playerHeroIndex,
+        snap.lifetimePlayerHeroIndex,
       );
     } else {
       if (parsed.data.heroId === undefined)
@@ -996,7 +1028,7 @@ export function attachLeagueAndStatsRoutes(opts: {
       card = await buildTournamentHeroCard(
         opendota,
         parsed.data.heroId,
-        snap.tournamentHeroIndex ?? {},
+        snap.lifetimeTournamentHeroIndex ?? {},
       );
     }
 

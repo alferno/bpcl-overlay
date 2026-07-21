@@ -86,6 +86,8 @@ export interface MvpWeights {
   denies: number;
   /** Lane efficiency (OpenDota 0-1) */
   laneEfficiency: number;
+  /** Fantasy Points approximation */
+  fantasyPoints: number;
   /** Win bonus (flat boost to the winning team) */
   winBonus: number;
 }
@@ -101,6 +103,7 @@ export const DEFAULT_MVP_WEIGHTS: MvpWeights = {
   lastHits: 1.0,
   denies: 0.4,
   laneEfficiency: 0.8,
+  fantasyPoints: 1.5,
   winBonus: 1.0,
 };
 
@@ -115,6 +118,7 @@ export interface MvpScoreBreakdown {
   lastHits: number;
   denies: number;
   laneEfficiency: number;
+  fantasyPoints: number;
   winBonus: number;
 }
 
@@ -142,6 +146,7 @@ export interface MvpCandidate {
     networth: number;
     lastHits: number;
     teamKills: number;
+    fantasyPoints: number;
     items: number[];        // [i0,i1,i2,i3,i4,i5, neutral, bp0,bp1,bp2]
     hasScepter: boolean;
     hasShard: boolean;
@@ -210,6 +215,7 @@ export function scoreMvp(
       lastHits:         p.last_hits ?? 0,
       denies:           p.denies ?? 0,
       laneEfficiency:   p.lane_efficiency ?? 0,
+      fantasyPoints:    (k * 0.3) + (d * -0.3) + (a * 0.15) + ((p.last_hits ?? 0) * 0.003) + ((p.gold_per_min ?? 0) * 0.002) + ((p.xp_per_min ?? 0) * 0.002),
       winBonus:         (match.radiant_win ? side === "radiant" : side === "dire") ? 1 : 0,
       leaver:           (p.leaver_status ?? 0) > 0,
     };
@@ -218,7 +224,7 @@ export function scoreMvp(
   // ── Normalise each metric across all 10 players ────────────────────────────
   const keys = [
     "kda", "killParticipation", "gpm", "xpm", "networthShare",
-    "damagePm", "healingPm", "lastHits", "denies", "laneEfficiency",
+    "damagePm", "healingPm", "lastHits", "denies", "laneEfficiency", "fantasyPoints"
   ] as const;
 
   const normed: Record<string, number[]> = {};
@@ -247,6 +253,7 @@ export function scoreMvp(
       lastHits:         normed["lastHits"][i] * weights.lastHits,
       denies:           normed["denies"][i] * weights.denies,
       laneEfficiency:   normed["laneEfficiency"][i] * weights.laneEfficiency,
+      fantasyPoints:    normed["fantasyPoints"][i] * weights.fantasyPoints,
       winBonus:         normed["winBonus"][i] * weights.winBonus,
     };
 
@@ -259,7 +266,7 @@ function zeroBreakdown(): MvpScoreBreakdown {
   return {
     kda: 0, killParticipation: 0, gpm: 0, xpm: 0, networthShare: 0,
     damagePm: 0, healingPm: 0, lastHits: 0, denies: 0,
-    laneEfficiency: 0, winBonus: 0,
+    laneEfficiency: 0, fantasyPoints: 0, winBonus: 0,
   };
 }
 
@@ -278,6 +285,13 @@ function buildCandidate(
       ? radiantPlayers.reduce((s, x) => s + (x.kills ?? 0), 0)
       : direPlayers.reduce(  (s, x) => s + (x.kills ?? 0), 0);
 
+  const kills = p.kills ?? 0;
+  const deaths = p.deaths ?? 0;
+  const assists = p.assists ?? 0;
+  const lastHits = p.last_hits ?? 0;
+  const gpm = p.gold_per_min ?? 0;
+  const xpm = p.xp_per_min ?? 0;
+
   return {
     accountId:  p.account_id,
     personaname:p.personaname,
@@ -289,15 +303,16 @@ function buildCandidate(
     mvpScore,
     breakdown,
     raw: {
-      kills:       p.kills ?? 0,
-      deaths:      p.deaths ?? 0,
-      assists:     p.assists ?? 0,
+      kills:       kills,
+      deaths:      deaths,
+      assists:     assists,
       heroDamage:  p.hero_damage ?? 0,
-      gpm:         p.gold_per_min ?? 0,
-      xpm:         p.xp_per_min ?? 0,
+      gpm:         gpm,
+      xpm:         xpm,
       networth:    p.net_worth ?? 0,
-      lastHits:    p.last_hits ?? 0,
+      lastHits:    lastHits,
       teamKills,
+      fantasyPoints: (kills * 0.3) + (deaths * -0.3) + (assists * 0.15) + (lastHits * 0.003) + (gpm * 0.002) + (xpm * 0.002),
       items: [
         p.item_0 ?? 0,
         p.item_1 ?? 0,

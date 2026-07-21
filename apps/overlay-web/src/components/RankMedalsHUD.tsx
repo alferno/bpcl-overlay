@@ -22,25 +22,19 @@ export function RankMedalsHUD() {
   const radiantRaw = roster.filter((p) => p.teamKey === matchSetup?.radiantTeamKey);
   const radiantPlayers = Array.from({ length: 5 }).map((_, i) => {
     if (matchSetup?.pickPlayers?.radiant?.[i]) return matchSetup.pickPlayers.radiant[i];
-    return radiantRaw[i]?.steam32 ?? -(i + 1);
+    return radiantRaw[i]?.steam32 ?? null;
   });
 
   // Determine Dire players
   const direRaw = roster.filter((p) => p.teamKey === matchSetup?.direTeamKey);
   const direPlayers = Array.from({ length: 5 }).map((_, i) => {
     if (matchSetup?.pickPlayers?.dire?.[i]) return matchSetup.pickPlayers.dire[i];
-    return direRaw[i]?.steam32 ?? -(i + 10);
+    return direRaw[i]?.steam32 ?? null;
   });
 
   const renderMedal = (steam32: number | null | undefined, index: number) => {
     const player = steam32 ? roster.find((p) => p.steam32 === steam32) : null;
     let mmr = player?.mmr;
-
-    // Developer Test Mode: if steam32 is negative, inject a mock MMR
-    if (steam32 && steam32 < 0) {
-      const mockMmrs = [500, 1200, 2000, 2500, 3500, 4200, 5000, 6000, 6500, 0];
-      mmr = mockMmrs[(Math.abs(steam32) - 1) % mockMmrs.length];
-    }
     
     const rankTier = getRankFromMmr(mmr);
     const medalUrl = withBaseUrl(`/medals/${rankTier}.png`);

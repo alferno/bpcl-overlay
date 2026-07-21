@@ -23,7 +23,72 @@ import {
 import type { RosterPlayer, MatchSetup } from "@bpc/shared-types";
 import { assertLeagueStatsReady } from "../services/league-stats-guard.js";
 import { parsePostGamePayload } from "../services/post-game-mvp.js";
+import { getTeamByKey } from "../services/roster-teams.js";
 import { rankMvpCandidates } from "../services/mvp-scorer.js";
+import { writeFile, mkdir } from "node:fs/promises";
+import path from "node:path";
+
+// ── GSI Payload Dump ──────────────────────────────────────────────────────────
+// Deep-merges every incoming GSI tick into a running accumulator so that
+// all fields (including rare event types) are captured across multiple ticks.
+// Call POST /gsi/dump to flush the current snapshot to disk.
+let gsiDumpAccumulator: Record<string, any> = {};
+let gsiDumpTickCount = 0;
+let gsiDumpEventTypes = new Set<string>();
+
+function deepMergeForDump(target: Record<string, any>, source: Record<string, any>): Record<string, any> {
+  for (const key of Object.keys(source)) {
+    const sv = source[key];
+    const tv = target[key];
+    if (sv !== null && typeof sv === "object" && !Array.isArray(sv) &&
+        tv !== null && typeof tv === "object" && !Array.isArray(tv)) {
+      deepMergeForDump(tv, sv);
+    } else if (Array.isArray(sv) && Array.isArray(tv)) {
+      // For arrays (events), union all unique event_type objects
+      for (const item of sv) {
+        if (item?.event_type) {
+          const exists = tv.some((e: any) => e.event_type === item.event_type);
+          if (!exists) tv.push(item);
+        } else if (!tv.some((e: any) => JSON.stringify(e) === JSON.stringify(item))) {
+          tv.push(item);
+        }
+      }
+    } else {
+      target[key] = sv;
+    }
+  }
+  return target;
+}
+
+function accumulateGsiPayload(payload: Record<string, any>): void {
+  gsiDumpTickCount++;
+  deepMergeForDump(gsiDumpAccumulator, payload);
+  // Track all seen event types
+  if (Array.isArray(payload?.events)) {
+    for (const ev of payload.events) {
+      if (ev?.event_type) gsiDumpEventTypes.add(ev.event_type);
+    }
+  }
+}
+
+async function flushGsiDump(outputPath?: string): Promise<string> {
+  const filePath = outputPath ?? path.resolve("payload_dump.json");
+  await mkdir(path.dirname(filePath), { recursive: true });
+  const dump = {
+    _meta: {
+      capturedAt: new Date().toISOString(),
+      ticksAccumulated: gsiDumpTickCount,
+      eventTypesSeen: Array.from(gsiDumpEventTypes).sort(),
+      note: "Deep-merged across multiple GSI ticks. All known fields and event types are represented.",
+    },
+    ...gsiDumpAccumulator,
+  };
+  await writeFile(filePath, JSON.stringify(dump, null, 2), "utf8");
+  logger.info({ filePath, ticks: gsiDumpTickCount, events: gsiDumpEventTypes.size }, "[GSI Dump] Payload dump saved");
+  return filePath;
+}
+
+export let globalLatestGsiPayload: any = null;
 
 let lastGsiAt = 0;
 let gsiDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -41,6 +106,8 @@ let globalLastDireScanCooldown = 0;
 // ── Roshan Kill Tracking ───────────────────────────────────────────────────────
 let globalRoshanKillCount = 0;
 let globalLastRoshanState: string | null = null;
+let globalPendingAegisKillInfo: any = null;
+let globalPendingAegisSearchUntil = 0;
 
 let globalLastAutoReplaySaveAt = 0;
 let globalPreGameTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -65,15 +132,20 @@ function extractGsiLobbyPlayers(payload: Record<string, unknown>): { radiant: (n
 
   const extractTeam = (gsiKey: "team2" | "team3"): (number | null)[] => {
     const teamData = playerRoot[gsiKey] as Record<string, any> | undefined;
-    if (!teamData) return [null, null, null, null, null];
-    return [0, 1, 2, 3, 4].map((i) => {
-      const pData = teamData[`player${i}`] as Record<string, any> | undefined;
-      if (!pData) return null;
+    const ids: (number | null)[] = [];
+    for (let i = 0; i <= 9; i++) {
+      const pData = teamData?.[`player${i}`] as Record<string, any> | undefined;
+      if (!pData) continue;
       const accountId = pData.accountid;
-      if (accountId == null) return null;
+      if (accountId == null) continue;
       const n = parseInt(String(accountId), 10);
-      return Number.isFinite(n) && n > 0 ? n : null;
-    });
+      if (Number.isFinite(n) && n > 0) {
+        ids.push(n);
+      }
+    }
+    // Pad to exactly 5 slots with nulls if needed
+    while (ids.length < 5) ids.push(null);
+    return ids.slice(0, 5);
   };
 
   const radiant = extractTeam("team2");
@@ -87,89 +159,86 @@ function extractGsiLobbyPlayers(payload: Record<string, unknown>): { radiant: (n
 }
 
 /**
- * Detect substitute players: compare actual GSI lobby players against the current matchSetup.pickPlayers.
- * If mismatches are found, patch matchSetup.pickPlayers to reflect the actual players.
- * For unknown players (not in roster), attempts to look them up in the community API.
- * Returns the patched pickPlayers, or null if no changes were needed.
+ * Auto-detect match setup from GSI payload and roster.
+ * 1. Checks GSI map team names.
+ * 2. Checks lobby players steam32 against roster to infer teams.
+ * 3. Extracts series score and format from GSI map node.
  */
-async function detectAndApplySubstitutes(
+async function autoDetectMatchSetup(
+  payload: Record<string, unknown>,
   lobbyPlayers: { radiant: (number | null)[]; dire: (number | null)[] },
   currentRoster: RosterPlayer[],
-  currentMatchSetup: MatchSetup | null | undefined,
-): Promise<{ radiant: (number | null)[]; dire: (number | null)[] } | null> {
-  const existingRadiant: (number | null)[] = currentMatchSetup?.pickPlayers?.radiant ?? [null, null, null, null, null];
-  const existingDire: (number | null)[] = currentMatchSetup?.pickPlayers?.dire ?? [null, null, null, null, null];
-
+  currentMatchSetup: MatchSetup | null
+): Promise<{ setup: MatchSetup | null; newRosterPlayers?: RosterPlayer[] }> {
+  const mapData = payload.map as Record<string, any> | undefined;
+  
   const toSet = (arr: (number | null)[]) =>
     new Set<number>(arr.filter((x): x is number => x != null && x > 0));
 
-  const existingRadiantSet = toSet(existingRadiant);
-  const existingDireSet = toSet(existingDire);
   const lobbyRadiantSet = toSet(lobbyPlayers.radiant);
   const lobbyDireSet = toSet(lobbyPlayers.dire);
 
-  const lobbySet = new Set<number>([...lobbyRadiantSet, ...lobbyDireSet]);
-
-  // If lobby is empty or doesn't have enough players, skip
-  if (lobbySet.size < 2) return null;
-
-  // Build a key to track if this is a new lobby configuration. This MUST be
-  // side-aware (not just the combined set of all 10 IDs) — otherwise a side
-  // swap between series games (same 10 players, radiant/dire flipped) looks
-  // identical to "no change" and gets skipped, leaving pickPlayers stuck
-  // pointing the wrong steam32 IDs at the wrong side.
   const lobbyKey = `r:${[...lobbyRadiantSet].sort().join(",")}|d:${[...lobbyDireSet].sort().join(",")}`;
-  if (lobbyKey === globalLastLobbyKey) return null;
-
-  // Check per-side, not as a combined union — a side swap has the exact same
-  // 10 people, so a union-based check would (wrongly) call that "no change".
-  const setsEqual = (a: Set<number>, b: Set<number>) =>
-    a.size === b.size && [...a].every((id) => b.has(id));
-  const allMatch =
-    setsEqual(existingRadiantSet, lobbyRadiantSet) &&
-    setsEqual(existingDireSet, lobbyDireSet);
-  if (allMatch) {
-    globalLastLobbyKey = lobbyKey;
-    return null;
-  }
-
-  // Build existing set of all assigned steam32 IDs from the match setup —
-  // used below to tell genuinely-new (sub) players apart from known ones.
-  const existingSet = new Set<number>([...existingRadiantSet, ...existingDireSet]);
-
-  // There's a mismatch — detect which players are subs (in lobby but not in existing setup)
-  const rosterMap = new Map<number, RosterPlayer>(currentRoster.map((p) => [p.steam32, p]));
-  const { fetchCommunityPlayers } = await import("../services/bpcleague-sync.js");
-  const communityPlayers = await fetchCommunityPlayers();
-  const communityMap = new Map(communityPlayers.filter(p => p.steam32).map(p => [p.steam32!, p]));
-
-  const resolvePlayer = (steam32: number): { displayName: string; avatarUrl?: string; bpcId?: string } => {
-    // Check main roster first
-    const rosterEntry = rosterMap.get(steam32);
-    if (rosterEntry) return { displayName: rosterEntry.displayName, avatarUrl: rosterEntry.avatarUrl, bpcId: rosterEntry.bpcId };
+  
+  // 1. Infer Teams
+  let radiantTeamKey = currentMatchSetup?.radiantTeamKey;
+  let direTeamKey = currentMatchSetup?.direTeamKey;
+  
+  // Infer from GSI team names first if they exist and aren't default
+  const mapRadiantName = mapData?.team_name_radiant;
+  const mapDireName = mapData?.team_name_dire;
+  
+  const findTeamByKeyOrName = (nameOrKey: string) => {
+    if (!nameOrKey) return undefined;
+    const normalized = nameOrKey.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+    if (!normalized || normalized === "radiant" || normalized === "dire") return undefined;
     
-    // Fallback to community players
-    const communityEntry = communityMap.get(steam32);
-    if (communityEntry) {
-      return { 
-        displayName: communityEntry.displayName, 
-        avatarUrl: communityEntry.avatarUrl, 
-        bpcId: communityEntry.bpcId 
-      };
-    }
-    
-    // Unknown player
-    return { displayName: `Sub#${steam32}` };
+    // Look in roster
+    const team = currentRoster.find(
+      (p) => p.teamKey?.toLowerCase().replace(/[^a-z0-9]+/g, "") === normalized || 
+             p.teamName?.toLowerCase().replace(/[^a-z0-9]+/g, "") === normalized
+    );
+    return team?.teamKey;
   };
 
-  logger.info(
-    { lobbySet: [...lobbySet], existingSet: [...existingSet] },
-    "[GSI] Substitute detected — updating pickPlayers from lobby",
-  );
+  const mapInferredRadiant = findTeamByKeyOrName(mapRadiantName);
+  const mapInferredDire = findTeamByKeyOrName(mapDireName);
+  
+  // Fallback: Infer from majority of players on side
+  const inferTeamFromPlayers = (playerSet: Set<number>) => {
+    const counts: Record<string, number> = {};
+    for (const steam32 of playerSet) {
+      const p = currentRoster.find(r => r.steam32 === steam32);
+      if (p?.teamKey) {
+        counts[p.teamKey] = (counts[p.teamKey] || 0) + 1;
+      }
+    }
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return sorted.length > 0 ? sorted[0][0] : undefined;
+  };
 
-  // Smart swap logic to preserve Pos 1-5 overlay layout:
-  // 1. Clear slots for players who left the lobby.
-  // 2. Insert new players into the newly emptied (or already empty) slots.
+  const playerInferredRadiant = inferTeamFromPlayers(lobbyRadiantSet);
+  const playerInferredDire = inferTeamFromPlayers(lobbyDireSet);
+
+  radiantTeamKey = mapInferredRadiant || playerInferredRadiant || radiantTeamKey || "radiant";
+  direTeamKey = mapInferredDire || playerInferredDire || direTeamKey || "dire";
+
+  // 2. Fetch Series Info from GSI
+  // GSI match_series_type: 0=bo1, 1=bo3, 2=bo5
+  let seriesBestOf = currentMatchSetup?.seriesBestOf ?? 3;
+  if (typeof mapData?.match_series_type === "number") {
+    if (mapData.match_series_type === 0) seriesBestOf = 1;
+    else if (mapData.match_series_type === 1) seriesBestOf = 3;
+    else if (mapData.match_series_type === 2) seriesBestOf = 5;
+  }
+  
+  const scoreA = mapData?.radiant_series_wins ?? currentMatchSetup?.scoreA ?? 0;
+  const scoreB = mapData?.dire_series_wins ?? currentMatchSetup?.scoreB ?? 0;
+  
+  // 3. Smart Swap for Pick Players
+  const existingRadiant: (number | null)[] = currentMatchSetup?.pickPlayers?.radiant ?? [null, null, null, null, null];
+  const existingDire: (number | null)[] = currentMatchSetup?.pickPlayers?.dire ?? [null, null, null, null, null];
+
   const smartSwapTeam = (existing: (number | null)[], lobby: (number | null)[]) => {
     const lobbySet = new Set(lobby.filter((id): id is number => id != null && id > 0));
     const existingSet = new Set(existing.filter((id): id is number => id != null && id > 0));
@@ -178,38 +247,85 @@ async function detectAndApplySubstitutes(
     const joinedIds = lobby.filter((id): id is number => id != null && id > 0 && !existingSet.has(id));
 
     const result = [...existing];
-    
-    // Clear slots for players who left
     for (let i = 0; i < result.length; i++) {
-      if (result[i] && leftIds.has(result[i]!)) {
-        result[i] = null;
-      }
+      if (result[i] && leftIds.has(result[i]!)) result[i] = null;
     }
-
-    // Insert new players into available slots
     for (const newId of joinedIds) {
       const emptyIndex = result.indexOf(null);
-      if (emptyIndex !== -1) {
-        result[emptyIndex] = newId;
-      }
+      if (emptyIndex !== -1) result[emptyIndex] = newId;
     }
-
     return result;
   };
 
   const newRadiant = smartSwapTeam(existingRadiant, lobbyPlayers.radiant);
   const newDire = smartSwapTeam(existingDire, lobbyPlayers.dire);
 
-  // Log any new (substitute) players
-  [...newRadiant, ...newDire].forEach((id) => {
-    if (id && !existingSet.has(id) && !rosterMap.has(id)) {
-      const info = resolvePlayer(id);
-      logger.info({ steam32: id, ...info }, "[GSI] Sub player resolved from community");
+  // Check if anything actually changed
+  const pickPlayersMatch = JSON.stringify(newRadiant) === JSON.stringify(existingRadiant) && 
+                           JSON.stringify(newDire) === JSON.stringify(existingDire);
+  
+  const setupMatches = currentMatchSetup?.radiantTeamKey === radiantTeamKey &&
+                       currentMatchSetup?.direTeamKey === direTeamKey &&
+                       currentMatchSetup?.scoreA === scoreA &&
+                       currentMatchSetup?.scoreB === scoreB &&
+                       currentMatchSetup?.seriesBestOf === seriesBestOf;
+
+  let newRosterPlayers: RosterPlayer[] | undefined = undefined;
+
+  const lobbySet = new Set<number>([...lobbyRadiantSet, ...lobbyDireSet]);
+  const rosterMap = new Map<number, RosterPlayer>(currentRoster.map((p) => [p.steam32, p]));
+  const missingSteamIds = [...lobbySet].filter(id => !rosterMap.has(id));
+
+  if (missingSteamIds.length > 0) {
+    try {
+      const { fetchCommunityPlayers } = await import("../services/bpcleague-sync.js");
+      const communityPlayers = await fetchCommunityPlayers();
+      const communityMap = new Map(communityPlayers.filter(p => p.steam32).map(p => [p.steam32!, p]));
+      
+      const added: RosterPlayer[] = [];
+      missingSteamIds.forEach(id => {
+        const comm = communityMap.get(id);
+        if (comm) {
+          logger.info({ steam32: id, displayName: comm.displayName }, "[GSI] Sub player resolved from community");
+          added.push({
+            steam32: id,
+            displayName: comm.displayName,
+            avatarUrl: comm.avatarUrl,
+            bpcId: comm.bpcId,
+          });
+        } else {
+          logger.info({ steam32: id }, "[GSI] Unknown sub player in lobby");
+        }
+      });
+      if (added.length > 0) {
+        newRosterPlayers = added;
+      }
+    } catch (err) {
+      logger.warn({ err }, "[GSI] Failed to lookup subs in community API");
     }
-  });
+  }
+
+  if (pickPlayersMatch && setupMatches && lobbyKey === globalLastLobbyKey && currentMatchSetup) {
+    return { setup: null, newRosterPlayers }; // no changes to setup, but might have new players
+  }
 
   globalLastLobbyKey = lobbyKey;
-  return { radiant: newRadiant, dire: newDire };
+   
+  return {
+    setup: {
+      radiantTeamKey,
+      direTeamKey,
+      seriesBestOf: seriesBestOf as 1 | 3 | 5,
+      seriesGame: currentMatchSetup?.seriesGame ?? 1,
+      scoreA,
+      scoreB,
+      stageLabel: currentMatchSetup?.stageLabel,
+      pickPlayers: { radiant: newRadiant, dire: newDire },
+      playerMemes: currentMatchSetup?.playerMemes,
+      previousDrafts: currentMatchSetup?.previousDrafts,
+    },
+    newRosterPlayers
+  };
 }
 
 // ── Bounty Rune Tracking ──────────────────────────────────────────────────────
@@ -264,9 +380,10 @@ export interface WisdomHistoryEntry {
   team: "radiant" | "dire";
   xp: number;
 }
+let globalBountyMilestonesTriggered = new Set<number>();
 export const globalWisdomHistory: WisdomHistoryEntry[] = [];
-
-let globalLastBountyCountForEmit = 0;
+let globalWisdomMilestonesTriggered = new Set<number>();
+let globalStatMilestonesTriggered = new Set<number>();
 let globalLastWisdomCountForEmit = 0;
 
 export function getWisdomStats() {
@@ -343,31 +460,19 @@ function detectRoshanKillerTeam(
   return gap > 0 ? "radiant" : "dire";
 }
 
-// ── Roshan Drops ─────────────────────────────────────────────────────────────
-// Requires "roshan" "1" in the GSI cfg data block. Shape hasn't been verified
-// against a live payload yet — this handles the two most common GSI shapes
-// (object map of slot -> item, or an array) and logs anything else so it can
-// be tightened up once a real payload is captured.
-function extractRoshanDrops(payload: any): string[] {
-  const drops = payload?.roshan?.drops?.items ?? payload?.roshan?.drops;
-  if (!drops) return [];
-
-  let names: string[] = [];
-
-  if (Array.isArray(drops)) {
-    names = drops
-      .map((d: any) => (typeof d === "string" ? d : d?.name))
-      .filter((n: any): n is string => typeof n === "string");
-  } else if (typeof drops === "object") {
-    names = Object.values(drops)
-      .map((d: any) => (typeof d === "string" ? d : d?.name))
-      .filter((n: any): n is string => typeof n === "string");
-  } else {
-    logger.warn({ drops }, "[roshan] Unrecognized roshan.drops shape — update extractRoshanDrops");
-    return [];
-  }
-
-  return Array.from(new Set(names)); // dedupe
+// ── Roshan Drops by Kill Number ──────────────────────────────────────────────
+// GSI's payload.roshan.drops is unreliable / undocumented. Instead we compute
+// drops deterministically from the kill number, which matches Dota 2 exactly:
+//   Kill 1 : Aegis
+//   Kill 2 : Aegis + Aghanim's Banner
+//   Kill 3 : Aegis + Aghanim's Banner + Cheese
+//   Kill 4+: Aegis + Cheese + Aghanim's Banner + Refresher Shard
+function getRoshanDropsByKillNumber(killNumber: number): string[] {
+  if (killNumber <= 1)  return ["item_aegis"];
+  if (killNumber === 2) return ["item_aegis", "item_banner"];
+  if (killNumber === 3) return ["item_aegis", "item_banner", "item_cheese"];
+  // Kill 4 and beyond
+  return ["item_aegis", "item_cheese", "item_banner", "item_refresher_shard"];
 }
 
 function getLowestNetWorthCandidates(payload: any, teamKey: "team2" | "team3") {
@@ -468,6 +573,42 @@ export function attachGsiRoutes(opts: {
 }): void {
   const { app, state, broadcast, opendota, io, obs, replayManager } = opts;
 
+  // ── GSI Payload Dump endpoint ──────────────────────────────────────────────
+  // GET  /gsi/dump        — returns current accumulated dump as JSON
+  // POST /gsi/dump        — flushes current dump to payload_dump.json and resets
+  // POST /gsi/dump/reset  — clears accumulator without saving
+  app.get("/gsi/dump", (_req, res) => {
+    res.json({
+      ticks: gsiDumpTickCount,
+      eventTypesSeen: Array.from(gsiDumpEventTypes).sort(),
+      payload: gsiDumpAccumulator,
+    });
+  });
+
+  app.post("/gsi/dump", async (_req, res) => {
+    try {
+      const filePath = await flushGsiDump();
+      const ticks = gsiDumpTickCount;
+      const events = Array.from(gsiDumpEventTypes).sort();
+      // Reset after save
+      gsiDumpAccumulator = {};
+      gsiDumpTickCount = 0;
+      gsiDumpEventTypes = new Set();
+      res.json({ ok: true, filePath, ticks, eventTypesSeen: events });
+    } catch (err) {
+      logger.error(err, "[GSI Dump] Failed to flush");
+      res.status(500).json({ error: "Failed to flush dump" });
+    }
+  });
+
+  app.post("/gsi/dump/reset", (_req, res) => {
+    const ticks = gsiDumpTickCount;
+    gsiDumpAccumulator = {};
+    gsiDumpTickCount = 0;
+    gsiDumpEventTypes = new Set();
+    res.json({ ok: true, message: `Reset accumulator after ${ticks} ticks` });
+  });
+
   app.post("/gsi", async (req, res) => {
     const token =
       typeof req.query.token === "string" ? req.query.token : undefined;
@@ -477,12 +618,17 @@ export function attachGsiRoutes(opts: {
     }
 
     const payload = req.body as Record<string, unknown>;
+    globalLatestGsiPayload = payload;
     lastGsiAt = Date.now();
+
+    // Accumulate into the dump regardless of auth/game state
+    accumulateGsiPayload(payload as Record<string, any>);
+
     await ensureHeroRegistry(opendota);
 
     // Trigger power spike evaluation
     try {
-      detectPowerSpikes(payload, io);
+      void detectPowerSpikes(payload, io, state);
     } catch (err) {
       logger.error(err, "Power spike evaluation failed");
     }
@@ -505,43 +651,34 @@ export function attachGsiRoutes(opts: {
       (parsed as any).focusedPlayerAbilityCount = focusedPlayer.abilityCount;
     }
 
-    // ── Substitute Detection ────────────────────────────────────────────────
-    // Extract the actual 10 players from the GSI lobby and compare against
-    // matchSetup.pickPlayers. If a substitute is detected, patch the state.
+    // ── Auto-Detect Match Setup ─────────────────────────────────────────────
     const lobbyPlayers = extractGsiLobbyPlayers(payload);
-    if (lobbyPlayers && matchSetup) {
+    if (lobbyPlayers) {
       // Run async but don't block the main apply path
-      detectAndApplySubstitutes(lobbyPlayers, roster, matchSetup).then(async (newPickPlayers) => {
-        if (!newPickPlayers) return;
+      autoDetectMatchSetup(payload, lobbyPlayers, roster, matchSetup).then(async (result) => {
+        if (!result) return;
+        const { setup: newSetup, newRosterPlayers } = result;
+        if (!newSetup && (!newRosterPlayers || newRosterPlayers.length === 0)) return;
         try {
           const cur = await state.getState();
-          const currentSetup = cur.leagueConfig?.matchSetup;
-          if (!currentSetup) return;
-          await state.patchState({
-            leagueConfig: {
-              ...(cur.leagueConfig ?? {}),
-              matchSetup: {
-                ...currentSetup,
-                pickPlayers: newPickPlayers,
-              },
-            },
-          });
-          logger.info({ newPickPlayers }, "[GSI] Patched pickPlayers with substitute data");
+          const patch: any = {};
+          if (newSetup || (newRosterPlayers && newRosterPlayers.length > 0)) {
+            patch.leagueConfig = { ...(cur.leagueConfig ?? {}) };
+            if (newSetup) {
+              patch.leagueConfig.matchSetup = newSetup;
+            }
+            if (newRosterPlayers && newRosterPlayers.length > 0) {
+              patch.leagueConfig.roster = [...(cur.leagueConfig?.roster ?? []), ...newRosterPlayers];
+            }
+          }
+          await state.patchState(patch);
+          logger.info({ newSetup, newSubs: newRosterPlayers?.length }, "[GSI] Auto-detected and patched Match Setup/Roster from lobby");
         } catch (err) {
-          logger.warn({ err }, "[GSI] Failed to patch pickPlayers after substitute detection");
+          logger.warn({ err }, "[GSI] Failed to patch auto-detected Match Setup");
         }
       }).catch((err) => {
-        logger.warn({ err }, "[GSI] Substitute detection error");
+        logger.warn({ err }, "[GSI] Auto-detect Match Setup error");
       });
-    } else if (lobbyPlayers && !matchSetup) {
-      // No matchSetup: store lobby players as a best-effort pickPlayers
-      // This allows the draft overlay to show correct data even without a full match setup
-      const lobbyKey = [...[...lobbyPlayers.radiant, ...lobbyPlayers.dire].filter(Boolean)].sort().join(",");
-      if (lobbyKey !== globalLastLobbyKey && lobbyKey.length > 0) {
-        globalLastLobbyKey = lobbyKey;
-        // Don't auto-create a matchSetup, just log for now
-        logger.info({ radiant: lobbyPlayers.radiant, dire: lobbyPlayers.dire }, "[GSI] Lobby players detected (no matchSetup)");
-      }
     }
 
     const apply = async () => {
@@ -744,6 +881,7 @@ export function attachGsiRoutes(opts: {
         globalBountyEventsProcessedTotal = 0;
         globalBountyHistory.length = 0;
         globalPrevRunePickups.clear();
+        globalBountyMilestonesTriggered.clear();
 
         // Reset wisdom tracking
         globalWisdomRadiantCount = 0;
@@ -752,6 +890,8 @@ export function attachGsiRoutes(opts: {
         globalWisdomDireXp = 0;
         globalWisdomHistory.length = 0;
         globalPrevXp.clear();
+        globalWisdomMilestonesTriggered.clear();
+        globalStatMilestonesTriggered.clear();
       } else if (clockTime < prevClockTime || clockTime < (globalLastTormentorKillClockTime || 0)) {
         globalLastTormentorKillClockTime = null;
         globalLastProcessedEventTime = 0;
@@ -760,6 +900,8 @@ export function attachGsiRoutes(opts: {
         globalDireScanCharges = 2;
         globalLastRadiantScanCooldown = 0;
         globalLastDireScanCooldown = 0;
+        globalPendingAegisSearchUntil = 0;
+        globalPendingAegisKillInfo = null;
       }
 
 
@@ -836,25 +978,22 @@ export function attachGsiRoutes(opts: {
 
       // ── Bounty Rune Fallback: runes_activated delta ───────────────────────────
       // Used when bounty_rune_pickup events are not present in the events array.
-      // runes_activated (the real GSI field — NOT rune_pickups, which doesn't
-      // exist in the payload) tracks ALL rune types, so to reduce noise we
-      // only count a pickup as "bounty" if it's within 30s of a 4-min spawn
-      // boundary.
       if (!bountyDetectedViaEvents && clockTime > 0) {
-        const nearestSpawnDiff = clockTime % 240;
-        const nearBountyWindow = nearestSpawnDiff <= 30 || nearestSpawnDiff >= 210;
         const goldPerRune = bountyGoldAtConsumption(clockTime);
         for (const [teamKey, side] of [["team2", "radiant"], ["team3", "dire"]] as const) {
           const teamPlayers = (payload?.player as any)?.[teamKey];
           if (!teamPlayers) continue;
           for (let i = 0; i < 5; i++) {
-            const pKey = `player${i}`;
+            const pKey = side === "radiant" ? `player${i}` : `player${i + 5}`;
             const player = teamPlayers[pKey];
             if (!player) continue;
-            const currentPickups = Number(player.runes_activated ?? 0);
-            const cacheKey = `${teamKey}-${pKey}`;
+            
+            // Check bounty_runes_activated directly from the payload
+            const currentPickups = Number(player.bounty_runes_activated ?? 0);
+            const cacheKey = `bounty-${teamKey}-${pKey}`;
             const prevPickups = globalPrevRunePickups.get(cacheKey) ?? currentPickups;
-            if (currentPickups > prevPickups && nearBountyWindow) {
+            
+            if (currentPickups > prevPickups) {
               const delta = currentPickups - prevPickups;
               if (side === "radiant") {
                 globalBountyRadiantCount += delta;
@@ -865,9 +1004,9 @@ export function attachGsiRoutes(opts: {
                 globalBountyDireGold  += goldPerRune * delta;
                 globalBountyHistory.push({ time: clockTime, team: "dire", count: delta, gold: goldPerRune * delta });
               }
-              logger.debug(
-                { team: side, delta, goldPerRune, cacheKey },
-                "[bounty] Rune pickups delta fallback (near spawn window, 7.41d consumption-time)",
+              logger.info(
+                { team: side, delta, goldPerRune, cacheKey, currentPickups },
+                "[bounty] Bounty Rune activated (via bounty_runes_activated fallback)",
               );
             }
             globalPrevRunePickups.set(cacheKey, currentPickups);
@@ -887,48 +1026,62 @@ export function attachGsiRoutes(opts: {
         
         for (const [teamKey, side] of [["team2", "radiant"], ["team3", "dire"]] as const) {
           const teamPlayers = (payload?.player as any)?.[teamKey];
-          if (!teamPlayers) continue;
+          const teamHeroes = (payload?.hero as any)?.[teamKey];
+          if (!teamPlayers || !teamHeroes) continue;
           
-          let heroesGotSpike = 0;
-          
+          const heroes = [];
           for (let i = 0; i < 5; i++) {
-            const pKey = `player${i}`;
+            const pKey = side === "radiant" ? `player${i}` : `player${i + 5}`;
             const player = teamPlayers[pKey];
-            if (!player) continue;
+            const hero = teamHeroes[pKey];
+            if (!player || !hero) continue;
             
-            const currentXp = Number(player.experience ?? 0);
+            // In GSI, xp and level are fields under the 'hero' object, not 'player'
+            const currentXp = Number(hero.xp ?? hero.experience ?? 0);
+            const level = Number(hero.level ?? 1);
             const cacheKey = `${teamKey}-${pKey}`;
             const prevXp = globalPrevXp.get(cacheKey) ?? currentXp;
             
-            if (currentXp > prevXp) {
-              const delta = currentXp - prevXp;
-              // 0.85 tolerance because in rare edge cases XP might be slightly misreported or split across ticks
-              if (delta >= expectedXpPerHero * 0.85) {
-                heroesGotSpike += 1;
-              }
-            }
-            globalPrevXp.set(cacheKey, currentXp);
+            heroes.push({ pKey, currentXp, prevXp, level, cacheKey });
           }
           
-          // Wisdom rune hits 2 heroes (picker + lowest XP). 
-          if (heroesGotSpike >= 2) {
-            const runesPicked = Math.floor(heroesGotSpike / 2);
-            if (runesPicked > 0) {
-              const xpGained = expectedTeamXp * runesPicked;
-              if (side === "radiant") {
-                globalWisdomRadiantCount += runesPicked;
-                globalWisdomRadiantXp += xpGained;
-                globalWisdomHistory.push({ time: clockTime, team: "radiant", xp: xpGained });
-              } else {
-                globalWisdomDireCount += runesPicked;
-                globalWisdomDireXp += xpGained;
-                globalWisdomHistory.push({ time: clockTime, team: "dire", xp: xpGained });
+          // Sort by previous XP to find the two lowest XP players who are not max level
+          const eligibleHeroes = heroes.filter(h => h.level < 30).sort((a, b) => a.prevXp - b.prevXp);
+          const lowestTwo = eligibleHeroes.slice(0, 2);
+          
+          let spikeDetected = false;
+          for (const hero of lowestTwo) {
+            if (hero.currentXp > hero.prevXp) {
+              const delta = hero.currentXp - hero.prevXp;
+              // 0.85 tolerance because in rare edge cases XP might be slightly misreported or split across ticks
+              if (delta >= expectedXpPerHero * 0.85) {
+                spikeDetected = true;
+                break;
               }
-              logger.info(
-                { team: side, heroesGotSpike, runesPicked, expectedTeamXp },
-                "[wisdom] Wisdom Rune pickup detected via XP spike fallback"
-              );
             }
+          }
+          
+          if (spikeDetected) {
+            const runesPicked = 1;
+            const xpGained = expectedTeamXp;
+            if (side === "radiant") {
+              globalWisdomRadiantCount += runesPicked;
+              globalWisdomRadiantXp += xpGained;
+              globalWisdomHistory.push({ time: clockTime, team: "radiant", xp: xpGained });
+            } else {
+              globalWisdomDireCount += runesPicked;
+              globalWisdomDireXp += xpGained;
+              globalWisdomHistory.push({ time: clockTime, team: "dire", xp: xpGained });
+            }
+            logger.info(
+              { team: side, runesPicked, expectedTeamXp },
+              "[wisdom] Wisdom Shrine pickup detected via lowest XP spike"
+            );
+          }
+          
+          // Update global cache for ALL heroes
+          for (const hero of heroes) {
+            globalPrevXp.set(hero.cacheKey, hero.currentXp);
           }
         }
       }
@@ -1041,7 +1194,12 @@ export function attachGsiRoutes(opts: {
         finalRoshanRespawnTimer = 0;
       }
 
-      // ── Roshan Kill Detection ────────────────────────────────────────────────
+      // ── Roshan Kill Detection (event-driven) ─────────────────────────────────
+      // We detect a ROSHAN_KILLED event from the GSI events array. The
+      // roshan_killed event provides killed_by_team ("radiant" | "dire") and
+      // killer_player_id directly — no net-worth delta heuristics needed.
+      // The aegis_picked_up event provides player_id and snatched: true/false
+      // so we don't need to scan item inventories either.
       const prevRoshanState = globalLastRoshanState;
       if (
         finalRoshanState &&
@@ -1049,65 +1207,51 @@ export function attachGsiRoutes(opts: {
         finalRoshanState !== "alive" &&
         clockTime > 0
       ) {
-        // Roshan just died — increment kill count
         globalRoshanKillCount += 1;
         const killNumber = globalRoshanKillCount;
-        const killerTeam = detectRoshanKillerTeam(roshanPrevPayload, payload);
-        const drops = extractRoshanDrops(payload);
 
-        // Determine which team picked up aegis by scanning player items
-        let aegisTeam: "radiant" | "dire" | null = null;
-        let pickerPlayerName: string | undefined = undefined;
+        // Read killer info from the roshan_killed event
+        let killerTeam: "radiant" | "dire" | null = null;
+        let killerPlayerId: number | undefined;
 
-        for (const [gsiTeamKey, side] of [["team2", "radiant"], ["team3", "dire"]] as const) {
-          const teamItems = (payload?.items as any)?.[gsiTeamKey];
-          if (teamItems) {
-            for (const playerKey of Object.keys(teamItems)) {
-              const slots = teamItems[playerKey];
-              if (slots) {
-                for (const slotKey of Object.keys(slots)) {
-                  if (slots[slotKey]?.name === "item_aegis") {
-                    aegisTeam = side;
-                    pickerPlayerName = (payload?.player as any)?.[gsiTeamKey]?.[playerKey]?.name;
-                    break;
-                  }
-                }
-              }
-              if (aegisTeam) break;
-            }
+        if (Array.isArray(payload?.events)) {
+          const rkEvent = payload.events.find((e: any) => e.event_type === "roshan_killed");
+          if (rkEvent) {
+            if (rkEvent.killed_by_team === "radiant") killerTeam = "radiant";
+            else if (rkEvent.killed_by_team === "dire") killerTeam = "dire";
+            killerPlayerId = typeof rkEvent.killer_player_id === "number" ? rkEvent.killer_player_id : undefined;
           }
-          if (aegisTeam) break;
         }
 
-        // Resolve team name + logo from draft state or matchSetup
+        // Resolve killer player name from the player block (player_id 0-4 = team2, 5-9 = team3)
+        let killerPlayerName: string | undefined;
+        if (killerPlayerId !== undefined) {
+          const killerTeamKey = killerPlayerId < 5 ? "team2" : "team3";
+          killerPlayerName = (payload?.player as any)?.[killerTeamKey]?.[`player${killerPlayerId}`]?.name;
+        }
+
+        const drops = getRoshanDropsByKillNumber(killNumber);
+
         const draftSnap = current.draft;
         const matchSetupSnap = current.leagueConfig?.matchSetup;
         let teamName: string | undefined;
         let teamLogoUrl: string | undefined;
 
-        // Prefer the aegis holder's team (definitive), but aegis pickup often
-        // isn't reflected in inventory on the same tick the kill is detected.
-        // Fall back to killerTeam (net-worth-delta based, computed above) so
-        // the alert still shows a team instead of rendering blank.
-        const displayTeam = aegisTeam ?? killerTeam;
-
-        if (displayTeam) {
-          if (displayTeam === "radiant") {
-            teamName = draftSnap?.radiant?.name ?? matchSetupSnap?.radiantTeamKey ?? "Radiant";
-            teamLogoUrl = draftSnap?.radiant?.logoUrl ?? (matchSetupSnap?.radiantTeamKey ? `/teams/${matchSetupSnap.radiantTeamKey}.png` : undefined);
+        if (killerTeam) {
+          const roster = current.leagueConfig?.roster ?? [];
+          if (killerTeam === "radiant") {
+            const tk = matchSetupSnap?.radiantTeamKey;
+            teamName = draftSnap?.radiant?.name ?? (tk ? getTeamByKey(roster, tk)?.teamName : undefined) ?? tk ?? "Radiant";
+            teamLogoUrl = draftSnap?.radiant?.logoUrl ?? (tk ? `/teams/${tk}.png` : undefined);
           } else {
-            teamName = draftSnap?.dire?.name ?? matchSetupSnap?.direTeamKey ?? "Dire";
-            teamLogoUrl = draftSnap?.dire?.logoUrl ?? (matchSetupSnap?.direTeamKey ? `/teams/${matchSetupSnap.direTeamKey}.png` : undefined);
+            const tk = matchSetupSnap?.direTeamKey;
+            teamName = draftSnap?.dire?.name ?? (tk ? getTeamByKey(roster, tk)?.teamName : undefined) ?? tk ?? "Dire";
+            teamLogoUrl = draftSnap?.dire?.logoUrl ?? (tk ? `/teams/${tk}.png` : undefined);
           }
-        } else {
-          // Neither aegis holder nor a confident net-worth-delta winner yet —
-          // still fire the event without a team rather than guess.
-          teamName = undefined;
-          teamLogoUrl = undefined;
         }
 
         logger.info(
-          { killNumber, clockTime, aegisTeam, teamName, killerTeam, pickerPlayerName, drops },
+          { killNumber, clockTime, killerTeam, killerPlayerId, killerPlayerName, teamName, drops },
           "[roshan] Roshan killed — emitting ROSHAN_KILLED event",
         );
 
@@ -1117,10 +1261,88 @@ export function attachGsiRoutes(opts: {
           teamName,
           teamLogoUrl,
           killerTeam,
-          pickerTeam: aegisTeam,
-          pickerPlayerName,
+          killerPlayerName,
           drops,
         });
+
+        // Cache kill info for the aegis_picked_up handler below
+        globalPendingAegisKillInfo = {
+          killNumber,
+          clockTime,
+          teamName,
+          teamLogoUrl,
+          killerTeam,
+          drops,
+        };
+        globalPendingAegisSearchUntil = clockTime + 30;
+      }
+
+      // ── Aegis Pickup / Steal Detection (event-driven) ─────────────────────────
+      // aegis_picked_up fires with player_id and snatched: true if stolen.
+      if (Array.isArray(payload?.events) && globalPendingAegisKillInfo && globalPendingAegisSearchUntil > 0 && clockTime <= globalPendingAegisSearchUntil) {
+        const aegisEvent = payload.events.find((e: any) => e.event_type === "aegis_picked_up");
+        if (aegisEvent) {
+          const pickerPlayerId: number | undefined = typeof aegisEvent.player_id === "number" ? aegisEvent.player_id : undefined;
+          const isSteal: boolean = aegisEvent.snatched === true;
+
+          // Resolve picker's name and team from player_id
+          let pickerPlayerName: string | undefined;
+          let pickerTeam: "radiant" | "dire" | null = null;
+          if (pickerPlayerId !== undefined) {
+            const pickerTeamKey = pickerPlayerId < 5 ? "team2" : "team3";
+            pickerTeam = pickerPlayerId < 5 ? "radiant" : "dire";
+            pickerPlayerName = (payload?.player as any)?.[pickerTeamKey]?.[`player${pickerPlayerId}`]?.name;
+          }
+
+          if (isSteal) {
+            const draftSnap = current.draft;
+            const matchSetupSnap = current.leagueConfig?.matchSetup;
+            const roster = current.leagueConfig?.roster ?? [];
+            let thiefTeamName: string | undefined;
+            let thiefTeamLogoUrl: string | undefined;
+
+            if (pickerTeam === "radiant") {
+              const tk = matchSetupSnap?.radiantTeamKey;
+              thiefTeamName = draftSnap?.radiant?.name ?? (tk ? getTeamByKey(roster, tk)?.teamName : undefined) ?? tk ?? "Radiant";
+              thiefTeamLogoUrl = draftSnap?.radiant?.logoUrl ?? (tk ? `/teams/${tk}.png` : undefined);
+            } else if (pickerTeam === "dire") {
+              const tk = matchSetupSnap?.direTeamKey;
+              thiefTeamName = draftSnap?.dire?.name ?? (tk ? getTeamByKey(roster, tk)?.teamName : undefined) ?? tk ?? "Dire";
+              thiefTeamLogoUrl = draftSnap?.dire?.logoUrl ?? (tk ? `/teams/${tk}.png` : undefined);
+            }
+
+            const stealInfo = {
+              killNumber: globalPendingAegisKillInfo.killNumber,
+              clockTime,
+              teamName: thiefTeamName,
+              teamLogoUrl: thiefTeamLogoUrl,
+              killerTeam: globalPendingAegisKillInfo.killerTeam,
+              pickerTeam,
+              pickerPlayerName,
+              drops: globalPendingAegisKillInfo.drops,
+            };
+
+            logger.info(
+              { killNumber: stealInfo.killNumber, pickerTeam, pickerPlayerName },
+              "[roshan] Aegis snatched! Emitting AEGIS_STOLEN event",
+            );
+
+            io.of("/overlay").emit("AEGIS_STOLEN", stealInfo);
+          } else {
+            logger.info(
+              { killNumber: globalPendingAegisKillInfo.killNumber, pickerTeam, pickerPlayerName },
+              "[roshan] Aegis picked up normally",
+            );
+          }
+
+          // Clear pending state once aegis event is handled
+          globalPendingAegisSearchUntil = 0;
+          globalPendingAegisKillInfo = null;
+        }
+      } else if (clockTime > globalPendingAegisSearchUntil && globalPendingAegisSearchUntil > 0) {
+        // Timeout — aegis event never came (e.g. aegis expired)
+        globalPendingAegisSearchUntil = 0;
+        globalPendingAegisKillInfo = null;
       }
 
       // Update last known Roshan state
@@ -1259,7 +1481,11 @@ export function attachGsiRoutes(opts: {
       // Update known state after comparison
       lastKnownGameState = currentGameState;
 
-      if (enteredPostGame || currentGameState === "DOTA_GAMERULES_STATE_POST_GAME") {
+      const winTeam = (payload?.map as any)?.win_team;
+      const hasWinner = winTeam && winTeam.toLowerCase() !== "none";
+      const hasRadiantWinField = typeof (payload?.map as any)?.radiant_win !== "undefined";
+
+      if ((enteredPostGame || currentGameState === "DOTA_GAMERULES_STATE_POST_GAME") && (hasWinner || hasRadiantWinField)) {
         try {
           const postGame = parsePostGamePayload(payload);
 
@@ -1397,14 +1623,14 @@ export function attachGsiRoutes(opts: {
                 manualSteam32,
                 lp.heroId,
                 player.displayName,
-                current.tournamentHeroIndex ?? {},
+                current.lifetimeTournamentHeroIndex ?? {},
                 roster,
-                current.playerHeroIndex,
+                current.lifetimePlayerHeroIndex,
               )
             : await buildTournamentHeroCard(
                 opendota,
                 lp.heroId,
-                current.tournamentHeroIndex ?? {},
+                current.lifetimeTournamentHeroIndex ?? {},
               );
         const carousel = buildCarouselFromHeroCard(card);
         const until = Date.now() + 12000;
@@ -1424,16 +1650,87 @@ export function attachGsiRoutes(opts: {
       void apply().catch((err) => logger.error(err, "gsi apply failed"));
     }, 150);
 
-    const currentBountyCount = globalBountyRadiantCount + globalBountyDireCount;
-    if (currentBountyCount !== globalLastBountyCountForEmit) {
-      globalLastBountyCountForEmit = currentBountyCount;
-      emitBountyStats(io, state).catch(e => logger.error(e, "failed to emit bounty stats"));
-    }
+    const clockTime = (payload?.map as any)?.clock_time ?? 0;
+    if (clockTime > 0) {
+      // Bounties: 20 (1200), 35 (2100), 50 (3000), 60 (3600)
+      const bountyMilestones = [1200, 2100, 3000, 3600];
+      for (const m of bountyMilestones) {
+        if (clockTime >= m && clockTime < m + 30 && !globalBountyMilestonesTriggered.has(m)) {
+          globalBountyMilestonesTriggered.add(m);
+          emitBountyStats(io, state).catch(e => logger.error(e, "failed to emit bounty stats"));
+        }
+      }
 
-    const currentWisdomCount = globalWisdomRadiantCount + globalWisdomDireCount;
-    if (currentWisdomCount !== globalLastWisdomCountForEmit) {
-      globalLastWisdomCountForEmit = currentWisdomCount;
-      emitWisdomStats(io, state).catch(e => logger.error(e, "failed to emit wisdom stats"));
+      // Wisdoms: 21 (1260), 36 (2160), 51 (3060), 61 (3660)
+      const wisdomMilestones = [1260, 2160, 3060, 3660];
+      for (const m of wisdomMilestones) {
+        if (clockTime >= m && clockTime < m + 30 && !globalWisdomMilestonesTriggered.has(m)) {
+          globalWisdomMilestonesTriggered.add(m);
+          emitWisdomStats(io, state).catch(e => logger.error(e, "failed to emit wisdom stats"));
+        }
+      }
+
+      // Top Stats: 24 (1440) -> hero_damage, 42 (2520) -> tower_damage
+      const statMilestones = [1440, 2520];
+      for (const m of statMilestones) {
+        if (clockTime >= m && clockTime < m + 30 && !globalStatMilestonesTriggered.has(m)) {
+          globalStatMilestonesTriggered.add(m);
+          
+          const statType = m === 1440 ? "hero_damage" : "tower_damage";
+          const title = m === 1440 ? "Hero Damage" : "Tower Damage";
+          
+          let highestValue = -1;
+          let highestPlayerName = "";
+          let highestHeroName = "";
+
+          for (const teamKey of ["team2", "team3"]) {
+            const players = (payload?.player as any)?.[teamKey];
+            const heroes = (payload?.hero as any)?.[teamKey];
+            if (players && heroes) {
+              for (const pKey of Object.keys(players)) {
+                const p = players[pKey];
+                const h = heroes[pKey];
+                if (p && h) {
+                  const val = p[statType] ?? 0;
+                  if (val > highestValue) {
+                    highestValue = val;
+                    const roster = (await state.getState()).leagueConfig?.roster ?? [];
+                    const steam32 = p.accountid ? parseInt(p.accountid.toString(), 10) : undefined;
+                    const rosterPlayer = steam32 ? roster.find((rp: any) => rp.steam32 === steam32) : undefined;
+                    highestPlayerName = rosterPlayer?.displayName ?? p.name ?? "Unknown";
+                    highestHeroName = h.name ?? ""; // e.g. npc_dota_hero_antimage
+                    const heroId = h.id ? parseInt(h.id.toString(), 10) : undefined;
+                    
+                    if (heroId) {
+                      const portraitFields = heroPortraitFieldsForHero(heroId, highestHeroName);
+                      highestHeroName = heroDisplayName(heroId) || highestHeroName;
+                      // Provide portrait directly so frontend doesn't need to guess
+                      (highestPlayerName as any) = { 
+                        name: highestPlayerName, 
+                        portrait: portraitFields.heroPortraitUrl, 
+                        heroId 
+                      };
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (highestValue >= 0) {
+            const payload = {
+              title,
+              value: highestValue,
+              playerName: typeof highestPlayerName === "string" ? highestPlayerName : (highestPlayerName as any).name,
+              heroName: highestHeroName,
+              heroId: typeof highestPlayerName !== "string" ? (highestPlayerName as any).heroId : undefined,
+              portraitUrl: typeof highestPlayerName !== "string" ? (highestPlayerName as any).portrait : undefined
+            };
+            logger.info(payload, `[stats] Emitting TOP_STAT_ALERT for ${title}`);
+            io.of("/overlay").emit("TOP_STAT_ALERT", payload);
+          }
+        }
+      }
     }
 
     res.json({ ok: true, inDraft: parsed.inDraft });

@@ -28,11 +28,7 @@ export function useOverlayState(): Ctx {
   return useContext(OverlayContext);
 }
 
-function resolveOrigin(): string {
-  return (
-    import.meta.env.VITE_BROADCAST_API_ORIGIN ?? window.location.origin
-  );
-}
+import { resolveApiOrigin } from "./utils/resolve-origin";
 
 import { PlayerCardPreloader } from "./components/PlayerCardPreloader";
 
@@ -41,8 +37,9 @@ export default function OverlaySocketLayer({ children }: { children: ReactNode }
   const [state, setState] = useState<OverlayEnvelope>(createDefaultEnvelope());
 
   useEffect(() => {
-    const origin = resolveOrigin();
-    const token = import.meta.env.VITE_SOCKET_TOKEN ?? "";
+    const origin = resolveApiOrigin();
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token") || import.meta.env.VITE_SOCKET_TOKEN || "";
 
     // Fetch the latest state via REST — used on connect and reconnect
     // to catch up on any broadcasts missed while OBS had the source suspended.

@@ -1,7 +1,7 @@
 import type { OverlayEnvelope } from "@bpc/shared-types";
 import type { StateManager } from "@bpc/state-manager";
 import { logger } from "../logger.js";
-import { env } from "../env.js";
+import { env, parseLeagueIds } from "../env.js";
 import type { OpenDotaClient } from "../opendota-client.js";
 import type { BroadcastFns } from "../routes.js";
 import { tournamentAggregator } from "./tournament-aggregator.js";
@@ -11,6 +11,9 @@ import {
   saveLeagueStatsToDisk,
   buildPlayerHeroIndex,
 } from "./league-stats-store.js";
+import { fetchRosterFromBpcLeague } from "./bpcleague-sync.js";
+import { enrichRosterAvatars } from "./steam-profile.js";
+import { teamColorsFromRoster } from "./roster-parser.js";
 
 async function applyLeagueSnapshot(opts: {
   leagueId: number;
@@ -31,10 +34,12 @@ async function applyLeagueSnapshot(opts: {
     snapshot.meta.matchDone,
   );
 
+  const currentSnap = await state.getState();
   const next = await state.patchState({
     tournamentHeroIndex: snapshot.heroIndex,
     playerHeroIndex: buildPlayerHeroIndex(snapshot.playerHeroes),
     leagueConfig: {
+      ...currentSnap.leagueConfig,
       leagueId,
       aggregationStatus: "ready",
       aggregatedAt: snapshot.meta.aggregatedAt,
@@ -92,7 +97,8 @@ export async function runLeagueAggregation(opts: {
   await broadcast.broadcastFull(runningPatch);
 
   try {
-    const targetLeagueIds = leagueIds && leagueIds.length > 0 ? leagueIds : [leagueId];
+    const defaultIds = parseLeagueIds();
+    const targetLeagueIds = leagueIds && leagueIds.length > 0 ? leagueIds : (defaultIds ?? [leagueId]);
     const currentLeagueId = targetLeagueIds[targetLeagueIds.length - 1] ?? leagueId;
 
     const currentIndex = await tournamentAggregator.aggregateLeagues(
@@ -197,10 +203,8 @@ export async function bootstrapLeagueFromEnv(opts: {
   const leagueId = env.LEAGUE_ID;
 
   const snap = await state.getState();
-  const needsId =
-    snap.leagueConfig?.leagueId !== leagueId ||
-    snap.leagueConfig?.leagueId === null ||
-    snap.leagueConfig?.leagueId === undefined;
+  const stateLeagueId = snap.leagueConfig?.leagueId;
+  const needsId = stateLeagueId == null;
 
   if (needsId) {
     await state.patchState({
@@ -208,8 +212,29 @@ export async function bootstrapLeagueFromEnv(opts: {
     });
   }
 
+  const activeLeagueId = needsId ? leagueId : stateLeagueId!;
+
+  // Auto fetch roster
+  try {
+    logger.info("Auto-fetching roster from BPC League API...");
+    const rawRoster = await fetchRosterFromBpcLeague({
+      steamApiKey: env.STEAM_WEB_API_KEY,
+    });
+    const roster = await enrichRosterAvatars(rawRoster, opendota);
+    const teamColors = teamColorsFromRoster(roster);
+
+    const currentSnap = await state.getState();
+    const next = await state.patchState({
+      leagueConfig: { ...currentSnap.leagueConfig, roster, teamColors, leagueId: activeLeagueId },
+    });
+    await broadcast.broadcastFull(next);
+    logger.info({ count: roster.length }, "Auto-fetched and applied roster.");
+  } catch (err) {
+    logger.error({ err }, "Failed to auto-fetch roster");
+  }
+
   const csvLoaded = await loadLeagueStatsFromCsvFile({
-    leagueId,
+    leagueId: activeLeagueId,
     state,
     broadcast,
   });
@@ -225,11 +250,11 @@ export async function bootstrapLeagueFromEnv(opts: {
     tournamentAggregator.getProgress().status !== "running";
 
   if (shouldAggregate) {
-    logger.info({ leagueId }, "Starting league aggregation (Steam match list + OpenDota details)");
-    void runLeagueAggregation({ leagueId, state, opendota, broadcast });
+    logger.info({ leagueId: activeLeagueId }, "Starting league aggregation (Steam match list + OpenDota details)");
+    void runLeagueAggregation({ leagueId: activeLeagueId, state, opendota, broadcast });
   } else {
     logger.info(
-      { leagueId, dir: leagueStatsDir() },
+      { leagueId: activeLeagueId, dir: leagueStatsDir() },
       "No league CSV found — place stats CSV or run manual aggregate in admin",
     );
   }

@@ -78,9 +78,9 @@ export function LivePlayerCard() {
   const mmScale = mmLayout?.scale ?? 1
 
   const cardLayout = state.production?.layoutConfig?.livePlayerCard
-  const cardX = cardLayout?.x ?? 0
-  const cardY = cardLayout?.y ?? 0
-  const cardScale = cardLayout?.scale ?? 1
+  const cardX = cardLayout?.x ?? -15
+  const cardY = cardLayout?.y ?? 95
+  const cardScale = cardLayout?.scale ?? 0.8
   const useInwardCut = cardLayout?.inwardCut === true
 
   return (

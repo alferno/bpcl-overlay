@@ -7,9 +7,11 @@ import { RankMedalsHUD } from "../components/RankMedalsHUD";
 import { LivePlayerCard } from "./LivePlayerCardPage";
 import { LiveStatsHud } from "../components/LiveStatsHud";
 import { RoshanKillAlert } from "../components/RoshanKillAlert";
+import { AegisStolenAlert } from "../components/AegisStolenAlert";
 import { BountyRuneCard } from "../components/BountyRuneCard";
 import { WisdomRuneCard } from "../components/WisdomRuneCard";
 import { SponsorFlipWidget } from "../components/SponsorFlipWidget";
+import { TopStatAlert } from "../components/TopStatAlert";
 
 
 export default function GameCanvas() {
@@ -29,7 +31,11 @@ export default function GameCanvas() {
       <LivePlayerCard />
       <PowerSpikeAlert />
       <LiveStatsHud />
-      <RoshanKillAlert />
+      <div style={{ position: "absolute", right: 28, top: "50%", transform: "translateY(-50%)", display: "flex", flexDirection: "column", gap: 16, zIndex: 60 }}>
+        <RoshanKillAlert />
+        <AegisStolenAlert />
+      </div>
+      <TopStatAlert />
       <BountyRuneCard />
       <WisdomRuneCard />
     </HudCanvas>

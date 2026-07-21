@@ -39,69 +39,6 @@ function Btn({
 const selectClass =
   "w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white";
 
-const EMPTY_PICK_PLAYERS: (number | null)[] = [null, null, null, null, null];
-
-function normalizePickPlayers(
-  raw: (number | null)[] | undefined,
-): (number | null)[] {
-  const out = [...EMPTY_PICK_PLAYERS];
-  if (!raw) return out;
-  for (let i = 0; i < 5; i++) out[i] = raw[i] ?? null;
-  return out;
-}
-
-function PickSlotSelects({
-  label,
-  players,
-  values,
-  onChange,
-}: {
-  label: string;
-  players: TeamInfo["players"];
-  values: (number | null)[];
-  onChange: (next: (number | null)[]) => void;
-}) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-slate-950/60 p-4">
-      <p className="text-xs uppercase text-slate-500">{label}</p>
-      <p className="mb-3 text-xs text-slate-400">
-        Assign players to pick slots (shown on overlay after draft completes).
-      </p>
-      <div className="grid gap-2">
-        {values.map((val, i) => (
-          <select
-            key={i}
-            className={selectClass}
-            value={val ?? ""}
-            onChange={(e) => {
-              const next = [...values];
-              const v = e.target.value;
-              next[i] = v ? Number(v) : null;
-              onChange(next);
-            }}
-          >
-            <option value="">Pick slot {i + 1} — unassigned</option>
-            {players.map((p) => {
-              const takenElsewhere = values.some(
-                (v, j) => j !== i && v === p.steam32,
-              );
-              return (
-                <option
-                  key={p.steam32}
-                  value={p.steam32}
-                  disabled={takenElsewhere && val !== p.steam32}
-                >
-                  {p.displayName}
-                </option>
-              );
-            })}
-          </select>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function MatchSetupPanel({
   origin,
   token,
@@ -121,27 +58,15 @@ export function MatchSetupPanel({
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);
   const [stageLabel, setStageLabel] = useState("");
-  const [radiantPickPlayers, setRadiantPickPlayers] = useState<(number | null)[]>(
-    () => [...EMPTY_PICK_PLAYERS],
-  );
-  const [direPickPlayers, setDirePickPlayers] = useState<(number | null)[]>(
-    () => [...EMPTY_PICK_PLAYERS],
-  );
   const [busy, setBusy] = useState(false);
-  const [subFixSteam32, setSubFixSteam32] = useState("");
-  const [subFixName, setSubFixName] = useState("");
-  const [subFixTeamKey, setSubFixTeamKey] = useState("");
-  const [subFixBusy, setSubFixBusy] = useState(false);
-  const [subFixMsg, setSubFixMsg] = useState<string | null>(null);
+  
   const [selectedBpcMatchId, setSelectedBpcMatchId] = useState<string>("");
   const [bpcMatches, setBpcMatches] = useState<any[]>([]);
   const [matchSeason, setMatchSeason] = useState<string>("");
   const [availableSeasons, setAvailableSeasons] = useState<{slug: string, name: string}[]>([]);
   const [playerMemes, setPlayerMemes] = useState<Record<string, string>>({});
-  const [subDetectedBanner, setSubDetectedBanner] = useState<string | null>(null);
-  const pickPlayersDirtyRef = useRef(false);
+  
   const matchSetupDirtyRef = useRef(false);
-  const prevPickPlayersRef = useRef({ radiant: "", dire: "" });
 
   const matchSetup = state?.leagueConfig?.matchSetup;
   const roster = state?.leagueConfig?.roster ?? [];
@@ -186,7 +111,6 @@ export function MatchSetupPanel({
       return;
     }
     const currentSeason = matchSeason || state?.leagueConfig?.seasonSlug || "season-2";
-    // Fetch matches from bpcleague.in API
     void apiFetch(origin, token, `/api/league/bpc-matches?seasonSlug=${currentSeason}`)
       .then((r) => r.json())
       .then((list) => {
@@ -197,8 +121,6 @@ export function MatchSetupPanel({
       .catch(() => setBpcMatches([]));
   }, [origin, token, roster.length, matchSeason, state?.leagueConfig?.seasonSlug]);
 
-  // Sync teams/scores from server. Do not depend on pickPlayers arrays — live
-  // STATE_FULL snapshots clone them every tick and would reset unsaved edits.
   useEffect(() => {
     if (matchSetupDirtyRef.current) return;
     if (matchSetup?.radiantTeamKey) setRadiantKey(matchSetup.radiantTeamKey);
@@ -220,56 +142,6 @@ export function MatchSetupPanel({
     matchSetup?.playerMemes,
   ]);
 
-  const serverRadiantPickPlayers = JSON.stringify(
-    matchSetup?.pickPlayers?.radiant ?? EMPTY_PICK_PLAYERS,
-  );
-  const serverDirePickPlayers = JSON.stringify(
-    matchSetup?.pickPlayers?.dire ?? EMPTY_PICK_PLAYERS,
-  );
-
-  useEffect(() => {
-    const prevR = prevPickPlayersRef.current.radiant;
-    const prevD = prevPickPlayersRef.current.dire;
-    const changed = prevR !== "" && (prevR !== serverRadiantPickPlayers || prevD !== serverDirePickPlayers);
-
-    // Force-sync if the server changed pickPlayers (GSI substitute detection)
-    // even if the streamer had locally touched the dropdowns
-    if (changed) {
-      // Detect which slots changed to show banner
-      const oldR: (number | null)[] = prevR ? JSON.parse(prevR) : [];
-      const newR: (number | null)[] = matchSetup?.pickPlayers?.radiant ?? [];
-      const oldD: (number | null)[] = prevD ? JSON.parse(prevD) : [];
-      const newD: (number | null)[] = matchSetup?.pickPlayers?.dire ?? [];
-      const subSteam32s: number[] = [
-        ...newR.filter((id, i) => id && id !== oldR[i]),
-        ...newD.filter((id, i) => id && id !== oldD[i]),
-      ] as number[];
-      if (subSteam32s.length > 0) {
-        const rosterAll = state?.leagueConfig?.roster ?? [];
-        const names = subSteam32s.map(id => {
-          const p = rosterAll.find(r => r.steam32 === id);
-          return p ? p.displayName : `#${id}`;
-        });
-        setSubDetectedBanner(`⚡ GSI detected sub(s): ${names.join(", ")} — lineup auto-updated`);
-        setTimeout(() => setSubDetectedBanner(null), 15000);
-      }
-      // Force sync the local dropdowns from server
-      pickPlayersDirtyRef.current = false;
-    }
-
-    prevPickPlayersRef.current = { radiant: serverRadiantPickPlayers, dire: serverDirePickPlayers };
-
-    if (pickPlayersDirtyRef.current) return;
-    if (matchSetup?.pickPlayers?.radiant) {
-      setRadiantPickPlayers(
-        normalizePickPlayers(matchSetup.pickPlayers.radiant),
-      );
-    }
-    if (matchSetup?.pickPlayers?.dire) {
-      setDirePickPlayers(normalizePickPlayers(matchSetup.pickPlayers.dire));
-    }
-  }, [serverRadiantPickPlayers, serverDirePickPlayers]);
-
   const maxSeriesGame = seriesBestOf;
   const gameOptions = Array.from({ length: maxSeriesGame }, (_, i) => i + 1);
 
@@ -286,32 +158,6 @@ export function MatchSetupPanel({
     [teams, direKey],
   );
 
-  async function applyPlayerMapping() {
-    setBusy(true);
-    try {
-      const r = await apiFetch(origin, token, "/api/match/apply-player-mapping", {
-        method: "POST",
-        body: JSON.stringify({
-          pickPlayers: {
-            radiant: radiantPickPlayers,
-            dire: direPickPlayers,
-          },
-        }),
-      });
-      const t = await r.text();
-      if (!r.ok) {
-        setErr(formatApiErrorBody(t));
-        return;
-      }
-      pickPlayersDirtyRef.current = false;
-      setErr(null);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function applySetup() {
     if (!radiantKey || !direKey) return;
     setBusy(true);
@@ -326,10 +172,7 @@ export function MatchSetupPanel({
           scoreA,
           scoreB,
           stageLabel: stageLabel.trim() || undefined,
-          pickPlayers: {
-            radiant: radiantPickPlayers,
-            dire: direPickPlayers,
-          },
+          pickPlayers: matchSetup?.pickPlayers,
           playerMemes,
         }),
       });
@@ -338,7 +181,6 @@ export function MatchSetupPanel({
         setErr(formatApiErrorBody(t));
         return;
       }
-      pickPlayersDirtyRef.current = false;
       matchSetupDirtyRef.current = false;
       setErr(null);
     } catch (e) {
@@ -348,68 +190,13 @@ export function MatchSetupPanel({
     }
   }
 
-  async function submitSubFix() {
-    const steamInput = subFixSteam32.trim();
-    if (!steamInput) {
-      setSubFixMsg("Enter a steam32 ID or a steamcommunity.com profile URL.");
-      return;
-    }
-    if (!subFixName.trim() || !subFixTeamKey) {
-      setSubFixMsg("Name and team are required.");
-      return;
-    }
-    setSubFixBusy(true);
-    setSubFixMsg(null);
-    try {
-      const r = await apiFetch(origin, token, "/api/roster/upsert-player", {
-        method: "POST",
-        body: JSON.stringify({
-          steam32: steamInput,
-          displayName: subFixName.trim(),
-          teamKey: subFixTeamKey,
-        }),
-      });
-      const t = await r.text();
-      if (!r.ok) {
-        setSubFixMsg(formatApiErrorBody(t));
-        return;
-      }
-      const parsed = JSON.parse(t) as { player?: { steam32: number } };
-      setSubFixMsg(`Saved — #${parsed.player?.steam32 ?? "?"} is now "${subFixName.trim()}".`);
-      setSubFixSteam32("");
-      setSubFixName("");
-      setTimeout(() => setSubFixMsg(null), 6000);
-    } catch (e) {
-      setSubFixMsg(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSubFixBusy(false);
-    }
-  }
-
-
-  // Players currently in the live lineup that GSI couldn't resolve to a
-  // real name (auto substitute-detection falls back to "Sub#<steam32>").
-  const unresolvedSubs = useMemo(() => {
-    const ids = [...radiantPickPlayers, ...direPickPlayers].filter(
-      (id): id is number => id != null,
-    );
-    return ids
-      .map((id) => roster.find((r) => r.steam32 === id))
-      .filter(
-        (p): p is NonNullable<typeof p> =>
-          !!p && p.displayName.startsWith("Sub#"),
-      );
-  }, [radiantPickPlayers, direPickPlayers, roster]);
-
   return (
     <section className="rounded-2xl border border-violet-500/40 bg-violet-950/25 p-6">
       <h2 className="text-lg font-semibold text-violet-200">Match setup</h2>
       <p className="mt-2 text-xs text-slate-400">
         Upload roster first (include optional{" "}
-        <code className="text-violet-300">teamColor</code> hex per row), then
-        choose which two teams are playing and assign Radiant / Dire before the
-        draft starts. Logos use each team&apos;s{" "}
-        <code className="text-violet-300">teamKey</code> from the CSV.
+        <code className="text-violet-300">teamColor</code> hex per row).
+        Teams and draft slots are now fully automated based on the actual GSI lobby. You can override the series score below if needed.
       </p>
 
       {roster.length === 0 ? (
@@ -631,30 +418,9 @@ export function MatchSetupPanel({
               }
               onClick={() => void applySetup()}
             >
-              apply match setup
-            </Btn>
-            <Btn
-              variant="ghost"
-              disabled={
-                busy ||
-                !matchSetup ||
-                state?.draft?.phase !== "done"
-              }
-              onClick={() => void applyPlayerMapping()}
-            >
-              apply player mapping to overlay
+              apply match setup override
             </Btn>
           </div>
-
-          {state?.production?.playerMappingPublished ? (
-            <p className="mt-2 text-xs text-emerald-400">
-              Player names are live on the draft overlay.
-            </p>
-          ) : state?.draft?.phase === "done" ? (
-            <p className="mt-2 text-xs text-amber-400">
-              Draft complete — click “apply player mapping” when pick slots are final.
-            </p>
-          ) : null}
 
           {matchSetup ? (
             <div className="mt-3 flex flex-col gap-2">
@@ -691,106 +457,6 @@ export function MatchSetupPanel({
               </div>
             </div>
           ) : null}
-
-          {(radiantTeam || direTeam) && (
-            <>
-              {subDetectedBanner && (
-                <div className="mt-4 rounded-lg border border-amber-400/40 bg-amber-950/50 px-4 py-2 text-xs font-bold text-amber-300 flex items-center gap-2">
-                  <span>⚡</span>
-                  <span>{subDetectedBanner}</span>
-                </div>
-              )}
-
-              <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Fix substitute player
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  For a lobby player GSI couldn't resolve to a real name/team
-                  (shows up as "Sub#steamid"). Saves instantly, no need to
-                  re-upload the roster.
-                </p>
-
-                {unresolvedSubs.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {unresolvedSubs.map((p) => (
-                      <button
-                        key={p.steam32}
-                        type="button"
-                        className="rounded-full border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-[11px] font-semibold text-amber-300 hover:bg-amber-900/60"
-                        onClick={() => {
-                          setSubFixSteam32(String(p.steam32));
-                          setSubFixTeamKey(p.teamKey ?? "");
-                          setSubFixMsg(null);
-                        }}
-                      >
-                        {p.displayName} ({p.teamName ?? "no team"})
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1.5fr_1fr_auto]">
-                  <input
-                    className={selectClass}
-                    placeholder="Steam32 ID"
-                    inputMode="numeric"
-                    value={subFixSteam32}
-                    onChange={(e) => setSubFixSteam32(e.target.value)}
-                  />
-                  <input
-                    className={selectClass}
-                    placeholder="Display name"
-                    value={subFixName}
-                    onChange={(e) => setSubFixName(e.target.value)}
-                  />
-                  <select
-                    className={selectClass}
-                    value={subFixTeamKey}
-                    onChange={(e) => setSubFixTeamKey(e.target.value)}
-                  >
-                    <option value="">Team…</option>
-                    {teams.map((t) => (
-                      <option key={t.teamKey} value={t.teamKey}>
-                        {t.teamName}
-                      </option>
-                    ))}
-                  </select>
-                  <Btn onClick={submitSubFix} disabled={subFixBusy}>
-                    {subFixBusy ? "Saving…" : "Save"}
-                  </Btn>
-                </div>
-                {subFixMsg && (
-                  <p className="mt-2 text-xs text-slate-300">{subFixMsg}</p>
-                )}
-              </div>
-
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {radiantTeam ? (
-                  <PickSlotSelects
-                    label={`${radiantTeam.teamName} — Radiant pick slots`}
-                    players={radiantTeam.players}
-                    values={radiantPickPlayers}
-                    onChange={(next) => {
-                      pickPlayersDirtyRef.current = true;
-                      setRadiantPickPlayers(next);
-                    }}
-                  />
-                ) : null}
-                {direTeam ? (
-                  <PickSlotSelects
-                    label={`${direTeam.teamName} — Dire pick slots`}
-                    players={direTeam.players}
-                    values={direPickPlayers}
-                    onChange={(next) => {
-                      pickPlayersDirtyRef.current = true;
-                      setDirePickPlayers(next);
-                    }}
-                  />
-                ) : null}
-              </div>
-            </>
-          )}
 
           {(radiantTeam || direTeam) && (
             <div className="mt-6 grid gap-4 md:grid-cols-2">

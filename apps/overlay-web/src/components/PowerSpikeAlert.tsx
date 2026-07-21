@@ -79,6 +79,8 @@ export function PowerSpikeAlert() {
                     Acquired at <span className="text-white font-bold">{formatTime(spike.clockTime)}</span>
                   </div>
                   
+
+
                   {spike.timingDiff !== null && spike.timingDiff !== undefined && (
                     <div className={`text-[11px] font-bold mt-1 ${spike.timingDiff < 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {spike.timingDiff < 0 
@@ -86,6 +88,23 @@ export function PowerSpikeAlert() {
                         : `🐢 ${formatTime(Math.abs(spike.timingDiff))} slower than average`}
                     </div>
                   )}
+
+                  {spike.isLeagueData ? (
+                    <div className="text-[9px] text-yellow-500/70 uppercase font-bold tracking-wider mt-1.5 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                      BPC League Data
+                      {spike.timesBought && (
+                        <span className="text-slate-400 normal-case tracking-normal ml-1">
+                          ({spike.timesBought} {spike.timesBought === 1 ? 'purchase' : 'purchases'})
+                        </span>
+                      )}
+                    </div>
+                  ) : spike.averageTime !== null ? (
+                    <div className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mt-1.5 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                      Global Data
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>

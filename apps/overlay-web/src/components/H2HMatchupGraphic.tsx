@@ -121,10 +121,10 @@ export function H2HMatchupGraphic() {
                   </div>
                   
                   <div className="flex flex-col gap-4 w-full px-4">
-                    <StatRow label="Avg GPM" value={Math.round(data.player1.stats?.avgGpm || 0)} color="text-cyan-400" />
-                    <StatRow label="Avg Kills" value={(data.player1.stats?.avgKills || 0).toFixed(1)} color="text-cyan-400" />
-                    <StatRow label="Avg Assists" value={(data.player1.stats?.avgAssists || 0).toFixed(1)} color="text-cyan-400" />
-                    <StatRow label="Matches" value={data.player1.stats?.games || 0} color="text-cyan-400" />
+                    <StatRow label="GPM" value={data.player1.live?.gpm || 0} color="text-cyan-400" />
+                    <StatRow label="XPM" value={data.player1.live?.xpm || 0} color="text-cyan-400" />
+                    <StatRow label="Hero Damage" value={data.player1.live?.heroDamage || 0} color="text-cyan-400" />
+                    <StatRow label="LH / D" value={`${data.player1.live?.lastHits || 0} / ${data.player1.live?.denies || 0}`} color="text-cyan-400" />
                   </div>
                 </div>
               </motion.div>
@@ -208,10 +208,10 @@ export function H2HMatchupGraphic() {
                   </div>
                   
                   <div className="flex flex-col gap-4 w-full px-4">
-                    <StatRow label="Avg GPM" value={Math.round(data.player2.stats?.avgGpm || 0)} color="text-emerald-400" />
-                    <StatRow label="Avg Kills" value={(data.player2.stats?.avgKills || 0).toFixed(1)} color="text-emerald-400" />
-                    <StatRow label="Avg Assists" value={(data.player2.stats?.avgAssists || 0).toFixed(1)} color="text-emerald-400" />
-                    <StatRow label="Matches" value={data.player2.stats?.games || 0} color="text-emerald-400" />
+                    <StatRow label="GPM" value={data.player2.live?.gpm || 0} color="text-emerald-400" />
+                    <StatRow label="XPM" value={data.player2.live?.xpm || 0} color="text-emerald-400" />
+                    <StatRow label="Hero Damage" value={data.player2.live?.heroDamage || 0} color="text-emerald-400" />
+                    <StatRow label="LH / D" value={`${data.player2.live?.lastHits || 0} / ${data.player2.live?.denies || 0}`} color="text-emerald-400" />
                   </div>
                 </div>
               </motion.div>

@@ -23,13 +23,6 @@ function itemIconUrl(itemName: string): string {
 }
 
 function itemDisplayName(itemName: string): string {
-  const DISPLAY_NAMES: Record<string, string> = {
-    item_aegis:           "Aegis of the Immortal",
-    item_banner:          "Aghanim's Banner",
-    item_cheese:          "Cheese",
-    item_refresher_shard: "Refresher Shard",
-  };
-  if (DISPLAY_NAMES[itemName]) return DISPLAY_NAMES[itemName];
   return itemName
     .replace("item_", "")
     .split("_")
@@ -90,7 +83,7 @@ function RoshanSkull({ theme }: { theme: any }) {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-export function RoshanKillAlert() {
+export function AegisStolenAlert() {
   const { socket } = useOverlayState();
   const [event, setEvent] = useState<RoshanKillEvent | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -108,9 +101,9 @@ export function RoshanKillAlert() {
       hideTimerRef.current = setTimeout(() => setEvent(null), 10000);
     };
 
-    socket.on("ROSHAN_KILLED", handler);
+    socket.on("AEGIS_STOLEN", handler);
     return () => {
-      socket.off("ROSHAN_KILLED", handler);
+      socket.off("AEGIS_STOLEN", handler);
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
   }, [socket]);
@@ -118,15 +111,15 @@ export function RoshanKillAlert() {
   const ordinal = event ? ordinalLabel(event.killNumber) : "";
 
   const theme = {
-    primary: "#22c55e", // Green-500
-    glow: "34,197,94",
-    gradientStart: "#22c55e",
-    gradientMid: "#4ade80",
-    gradientEnd: "#86efac",
-    bgStart: "rgba(8,18,10,0.97)",
-    bgMid: "rgba(10,30,15,0.97)",
-    bgEnd: "rgba(10,20,10,0.97)",
-    skullFill: "rgba(34,197,94,0.18)"
+    primary: "#eab308", // Yellow-500
+    glow: "234,179,8",
+    gradientStart: "#eab308",
+    gradientMid: "#facc15",
+    gradientEnd: "#fef08a",
+    bgStart: "rgba(18,15,8,0.97)",
+    bgMid: "rgba(30,25,10,0.97)",
+    bgEnd: "rgba(20,10,10,0.97)",
+    skullFill: "rgba(234,179,8,0.18)"
   };
 
   return (
@@ -222,7 +215,7 @@ export function RoshanKillAlert() {
                     filter: `drop-shadow(0 0 6px rgba(${theme.glow},0.6))`,
                   }}
                 >
-                  {ordinal} ROSH
+                  AEGIS STOLEN
                 </div>
                 {/* Kill count indicator */}
                 <div
@@ -237,7 +230,7 @@ export function RoshanKillAlert() {
                     marginTop: 2,
                   }}
                 >
-                  ☠ Roshan Slain #{event.killNumber}
+                  Stolen from {event.killerTeam === 'radiant' ? 'Radiant' : event.killerTeam === 'dire' ? 'Dire' : 'enemy'}
                 </div>
               </div>
             </div>
@@ -329,11 +322,11 @@ export function RoshanKillAlert() {
                       fontWeight: 600,
                       letterSpacing: "0.12em",
                       textTransform: "uppercase",
-                      color: "rgba(148,163,184,0.6)",
+                      color: theme.primary,
                       lineHeight: 1,
                     }}
                   >
-                    Killed by
+                    Stolen by
                   </div>
                   <div
                     style={{
@@ -349,7 +342,7 @@ export function RoshanKillAlert() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {event.teamName}
+                    {event.pickerPlayerName ? event.pickerPlayerName : event.teamName}
                   </div>
                 </div>
 

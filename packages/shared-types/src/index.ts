@@ -684,7 +684,7 @@ export function defaultLeagueConfig(): LeagueConfig {
   return {
     leagueId: null,
     leagueIds: [],
-    overlayStatsMode: "lifetime",
+    overlayStatsMode: "current_season",
     roster: [],
     matchSetup: null,
     teamColors: {},

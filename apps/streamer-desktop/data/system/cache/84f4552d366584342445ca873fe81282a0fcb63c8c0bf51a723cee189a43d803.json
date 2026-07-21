@@ -1,5 +1,5 @@
 {
-  "timestamp": 1784412454654,
+  "timestamp": 1784576994531,
   "data": {
     "season": {
       "id": "5f814f1e-f1e9-412f-974a-6514a270b57a",
@@ -378,8 +378,8 @@
                 "Hard support"
               ],
               "mmr": 3500,
-              "steamName": "Bhai Got No Chill",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198337915793/",
+              "steamName": "Bhai Got No Chill !!!",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198344214965/",
               "discordHandle": "9pasha#1894",
               "location": "",
               "isCaptain": false,
@@ -553,26 +553,6 @@
               "bpcId": "BPC-066"
             },
             {
-              "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
-              "sourcePlayerId": null,
-              "registrationId": "5e0457fc-507f-4434-89a6-3e08b15253b8",
-              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
-              "name": "Vaishil",
-              "displayName": "Raiden",
-              "role": "Offlane",
-              "roles": [
-                "Offlane"
-              ],
-              "mmr": 3300,
-              "steamName": "Ruler of Time ♡",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582/",
-              "discordHandle": "vaishil_cr7",
-              "location": "Ahmedabad",
-              "isCaptain": false,
-              "slug": "raiden",
-              "bpcId": "BPC-074"
-            },
-            {
               "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
               "sourcePlayerId": null,
               "registrationId": "7b1a045c-174d-4582-a0b1-c7ad250e2a16",
@@ -593,6 +573,26 @@
               "isCaptain": false,
               "slug": "shiro",
               "bpcId": "BPC-071"
+            },
+            {
+              "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
+              "sourcePlayerId": null,
+              "registrationId": "5e0457fc-507f-4434-89a6-3e08b15253b8",
+              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
+              "name": "Vaishil",
+              "displayName": "Raiden",
+              "role": "Offlane",
+              "roles": [
+                "Offlane"
+              ],
+              "mmr": 3300,
+              "steamName": "Ruler of Time ♡",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582/",
+              "discordHandle": "vaishil_cr7",
+              "location": "Ahmedabad",
+              "isCaptain": false,
+              "slug": "raiden",
+              "bpcId": "BPC-074"
             }
           ],
           "groupKey": "B",
@@ -640,7 +640,7 @@
                 "Offlane"
               ],
               "mmr": 3080,
-              "steamName": "Dotu 💜",
+              "steamName": "Dotu x Love & Chaos",
               "steamProfile": "https://steamcommunity.com/profiles/76561198517315998/",
               "discordHandle": "dotu19",
               "location": "Thane",
@@ -1204,6 +1204,27 @@
           "logoUrl": "/images/teams/obsidiancore.png",
           "players": [
             {
+              "id": "12a14895-42f5-4c00-834c-656e3f4e36a3",
+              "sourcePlayerId": "8b72be51-b201-4408-a821-a3770a484b01",
+              "registrationId": "6309fc82-e247-403e-b4ca-966fda4acbff",
+              "playerAccountId": "876f67df-5e46-4785-8381-55c3dc12792f",
+              "name": "Rat",
+              "displayName": "Rat",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Soft support"
+              ],
+              "mmr": 5900,
+              "steamName": "Rat",
+              "steamProfile": "https://steamcommunity.com/id/magicrules/",
+              "discordHandle": "556730416703209472",
+              "location": "Greater thane",
+              "isCaptain": true,
+              "slug": "rat",
+              "bpcId": "BPC-064"
+            },
+            {
               "id": "9354b85c-4c6a-42ee-9358-c8e7313b5bb4",
               "sourcePlayerId": "40e66d63-407f-4341-b378-83b83b612399",
               "registrationId": "089f6a5d-161e-418c-b97d-6d9fec4e48c0",
@@ -1266,27 +1287,6 @@
               "isCaptain": false,
               "slug": "4pos5",
               "bpcId": "BPC-009"
-            },
-            {
-              "id": "12a14895-42f5-4c00-834c-656e3f4e36a3",
-              "sourcePlayerId": "8b72be51-b201-4408-a821-a3770a484b01",
-              "registrationId": "6309fc82-e247-403e-b4ca-966fda4acbff",
-              "playerAccountId": "876f67df-5e46-4785-8381-55c3dc12792f",
-              "name": "Rat",
-              "displayName": "Rat",
-              "role": "Mid",
-              "roles": [
-                "Mid",
-                "Soft support"
-              ],
-              "mmr": 5900,
-              "steamName": "Rat",
-              "steamProfile": "https://steamcommunity.com/id/magicrules/",
-              "discordHandle": "556730416703209472",
-              "location": "Greater thane",
-              "isCaptain": true,
-              "slug": "rat",
-              "bpcId": "BPC-064"
             },
             {
               "id": "0cc6a550-e053-426c-bd2b-600361489e4c",
@@ -1443,27 +1443,6 @@
           "logoUrl": "/images/teams/arcaneorder.png",
           "players": [
             {
-              "id": "bc558e5f-e943-453f-9bce-0a0939d4eb23",
-              "sourcePlayerId": "56bbb12e-ff42-42ce-989b-2ddafb4aa766",
-              "registrationId": "3377257c-e78a-4731-a75d-11ac15dd24df",
-              "playerAccountId": "679ec250-38a2-4527-840a-a39a1a274f40",
-              "name": "Master Instinct",
-              "displayName": "Master Instinct",
-              "role": "Mid",
-              "roles": [
-                "Mid",
-                "Carry"
-              ],
-              "mmr": 7174,
-              "steamName": "MASTER INSTINCT",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198124876950/",
-              "discordHandle": "master_instinct",
-              "location": "Kolkata",
-              "isCaptain": true,
-              "slug": "master-instinct",
-              "bpcId": "BPC-035"
-            },
-            {
               "id": "2531eab6-d779-4d8b-bdc0-04b5dee515af",
               "sourcePlayerId": "44eec640-7091-4f69-89a0-9cb9b980cfd3",
               "registrationId": "c496bb16-a4a9-417b-9826-eba30b294ac6",
@@ -1483,6 +1462,27 @@
               "isCaptain": false,
               "slug": "sss",
               "bpcId": "BPC-051"
+            },
+            {
+              "id": "bc558e5f-e943-453f-9bce-0a0939d4eb23",
+              "sourcePlayerId": "56bbb12e-ff42-42ce-989b-2ddafb4aa766",
+              "registrationId": "3377257c-e78a-4731-a75d-11ac15dd24df",
+              "playerAccountId": "679ec250-38a2-4527-840a-a39a1a274f40",
+              "name": "Master Instinct",
+              "displayName": "Master Instinct",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Carry"
+              ],
+              "mmr": 7174,
+              "steamName": "MASTER INSTINCT",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198124876950/",
+              "discordHandle": "master_instinct",
+              "location": "Kolkata",
+              "isCaptain": true,
+              "slug": "master-instinct",
+              "bpcId": "BPC-035"
             },
             {
               "id": "230fb06c-a108-4494-b8f4-09864fa5ebe5",
@@ -3308,8 +3308,8 @@
                 "Hard support"
               ],
               "mmr": 3500,
-              "steamName": "Bhai Got No Chill",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198337915793/",
+              "steamName": "Bhai Got No Chill !!!",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198344214965/",
               "discordHandle": "9pasha#1894",
               "location": "",
               "isCaptain": false,
@@ -3483,26 +3483,6 @@
               "bpcId": "BPC-066"
             },
             {
-              "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
-              "sourcePlayerId": null,
-              "registrationId": "5e0457fc-507f-4434-89a6-3e08b15253b8",
-              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
-              "name": "Vaishil",
-              "displayName": "Raiden",
-              "role": "Offlane",
-              "roles": [
-                "Offlane"
-              ],
-              "mmr": 3300,
-              "steamName": "Ruler of Time ♡",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582/",
-              "discordHandle": "vaishil_cr7",
-              "location": "Ahmedabad",
-              "isCaptain": false,
-              "slug": "raiden",
-              "bpcId": "BPC-074"
-            },
-            {
               "id": "c0aff628-f38c-4f48-9420-c5f49f216239",
               "sourcePlayerId": null,
               "registrationId": "7b1a045c-174d-4582-a0b1-c7ad250e2a16",
@@ -3523,6 +3503,26 @@
               "isCaptain": false,
               "slug": "shiro",
               "bpcId": "BPC-071"
+            },
+            {
+              "id": "954a9798-786f-4bd6-95bf-b717ced0e1fc",
+              "sourcePlayerId": null,
+              "registrationId": "5e0457fc-507f-4434-89a6-3e08b15253b8",
+              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
+              "name": "Vaishil",
+              "displayName": "Raiden",
+              "role": "Offlane",
+              "roles": [
+                "Offlane"
+              ],
+              "mmr": 3300,
+              "steamName": "Ruler of Time ♡",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582/",
+              "discordHandle": "vaishil_cr7",
+              "location": "Ahmedabad",
+              "isCaptain": false,
+              "slug": "raiden",
+              "bpcId": "BPC-074"
             }
           ],
           "groupKey": "B",
@@ -3570,7 +3570,7 @@
                 "Offlane"
               ],
               "mmr": 3080,
-              "steamName": "Dotu 💜",
+              "steamName": "Dotu x Love & Chaos",
               "steamProfile": "https://steamcommunity.com/profiles/76561198517315998/",
               "discordHandle": "dotu19",
               "location": "Thane",
@@ -4134,6 +4134,27 @@
           "logoUrl": "/images/teams/obsidiancore.png",
           "players": [
             {
+              "id": "12a14895-42f5-4c00-834c-656e3f4e36a3",
+              "sourcePlayerId": "8b72be51-b201-4408-a821-a3770a484b01",
+              "registrationId": "6309fc82-e247-403e-b4ca-966fda4acbff",
+              "playerAccountId": "876f67df-5e46-4785-8381-55c3dc12792f",
+              "name": "Rat",
+              "displayName": "Rat",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Soft support"
+              ],
+              "mmr": 5900,
+              "steamName": "Rat",
+              "steamProfile": "https://steamcommunity.com/id/magicrules/",
+              "discordHandle": "556730416703209472",
+              "location": "Greater thane",
+              "isCaptain": true,
+              "slug": "rat",
+              "bpcId": "BPC-064"
+            },
+            {
               "id": "9354b85c-4c6a-42ee-9358-c8e7313b5bb4",
               "sourcePlayerId": "40e66d63-407f-4341-b378-83b83b612399",
               "registrationId": "089f6a5d-161e-418c-b97d-6d9fec4e48c0",
@@ -4196,27 +4217,6 @@
               "isCaptain": false,
               "slug": "4pos5",
               "bpcId": "BPC-009"
-            },
-            {
-              "id": "12a14895-42f5-4c00-834c-656e3f4e36a3",
-              "sourcePlayerId": "8b72be51-b201-4408-a821-a3770a484b01",
-              "registrationId": "6309fc82-e247-403e-b4ca-966fda4acbff",
-              "playerAccountId": "876f67df-5e46-4785-8381-55c3dc12792f",
-              "name": "Rat",
-              "displayName": "Rat",
-              "role": "Mid",
-              "roles": [
-                "Mid",
-                "Soft support"
-              ],
-              "mmr": 5900,
-              "steamName": "Rat",
-              "steamProfile": "https://steamcommunity.com/id/magicrules/",
-              "discordHandle": "556730416703209472",
-              "location": "Greater thane",
-              "isCaptain": true,
-              "slug": "rat",
-              "bpcId": "BPC-064"
             },
             {
               "id": "0cc6a550-e053-426c-bd2b-600361489e4c",
@@ -4373,27 +4373,6 @@
           "logoUrl": "/images/teams/arcaneorder.png",
           "players": [
             {
-              "id": "bc558e5f-e943-453f-9bce-0a0939d4eb23",
-              "sourcePlayerId": "56bbb12e-ff42-42ce-989b-2ddafb4aa766",
-              "registrationId": "3377257c-e78a-4731-a75d-11ac15dd24df",
-              "playerAccountId": "679ec250-38a2-4527-840a-a39a1a274f40",
-              "name": "Master Instinct",
-              "displayName": "Master Instinct",
-              "role": "Mid",
-              "roles": [
-                "Mid",
-                "Carry"
-              ],
-              "mmr": 7174,
-              "steamName": "MASTER INSTINCT",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198124876950/",
-              "discordHandle": "master_instinct",
-              "location": "Kolkata",
-              "isCaptain": true,
-              "slug": "master-instinct",
-              "bpcId": "BPC-035"
-            },
-            {
               "id": "2531eab6-d779-4d8b-bdc0-04b5dee515af",
               "sourcePlayerId": "44eec640-7091-4f69-89a0-9cb9b980cfd3",
               "registrationId": "c496bb16-a4a9-417b-9826-eba30b294ac6",
@@ -4413,6 +4392,27 @@
               "isCaptain": false,
               "slug": "sss",
               "bpcId": "BPC-051"
+            },
+            {
+              "id": "bc558e5f-e943-453f-9bce-0a0939d4eb23",
+              "sourcePlayerId": "56bbb12e-ff42-42ce-989b-2ddafb4aa766",
+              "registrationId": "3377257c-e78a-4731-a75d-11ac15dd24df",
+              "playerAccountId": "679ec250-38a2-4527-840a-a39a1a274f40",
+              "name": "Master Instinct",
+              "displayName": "Master Instinct",
+              "role": "Mid",
+              "roles": [
+                "Mid",
+                "Carry"
+              ],
+              "mmr": 7174,
+              "steamName": "MASTER INSTINCT",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198124876950/",
+              "discordHandle": "master_instinct",
+              "location": "Kolkata",
+              "isCaptain": true,
+              "slug": "master-instinct",
+              "bpcId": "BPC-035"
             },
             {
               "id": "230fb06c-a108-4494-b8f4-09864fa5ebe5",

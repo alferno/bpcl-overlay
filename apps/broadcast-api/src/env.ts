@@ -23,6 +23,8 @@ const envSchema = z.object({
   GSI_TOKEN: z.string().optional(),
   /** OpenDota league ID — required; all player stats are league-scoped only */
   LEAGUE_ID: z.coerce.number().int().positive(),
+  /** Optional comma separated list of league IDs for lifetime stats */
+  LEAGUE_IDS: z.string().optional(),
   /** Re-fetch league stats from Steam when API starts (if CSV missing). Prefer CSV + manual refresh. */
   LEAGUE_AUTO_AGGREGATE: z.coerce.boolean().default(false),
   /** Directory for league_{id}_heroes.csv and league_{id}_player_heroes.csv */
@@ -47,4 +49,11 @@ export function parseCorsOrigins(): string[] {
   return env.CORS_ORIGINS.split(",")
     .map((v) => v.trim())
     .filter(Boolean);
+}
+
+export function parseLeagueIds(): number[] | undefined {
+  if (!env.LEAGUE_IDS) return undefined;
+  return env.LEAGUE_IDS.split(",")
+    .map((v) => Number(v.trim()))
+    .filter((n) => !isNaN(n));
 }

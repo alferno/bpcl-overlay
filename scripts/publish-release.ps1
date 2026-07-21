@@ -108,9 +108,8 @@ Write-Host "      Created Full Zip: $ZipFullOutPath" -ForegroundColor Green
 
 # Create Delta Zip (only resources — for existing installs)
 $TempDelta = Join-Path $Env:TEMP "BPCL-Delta-$Version"
-$TempDeltaApp = Join-Path $TempDelta "BPCL Streamer Desktop-win32-x64"
-New-Item -ItemType Directory -Path $TempDeltaApp -Force | Out-Null
-Copy-Item -Path "$ReleaseApp\resources" -Destination $TempDeltaApp -Recurse
+New-Item -ItemType Directory -Path $TempDelta -Force | Out-Null
+Copy-Item -Path "$ReleaseApp\resources" -Destination $TempDelta -Recurse
 Compress-Archive -Path "$TempDelta\*" -DestinationPath $ZipUpdateOutPath -CompressionLevel Optimal
 Remove-Item $TempDelta -Recurse -Force
 Write-Host "      Created Delta Zip: $ZipUpdateOutPath" -ForegroundColor Green

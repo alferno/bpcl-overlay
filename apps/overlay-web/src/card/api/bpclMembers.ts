@@ -14,6 +14,8 @@
  * Refreshes every 5 minutes while the page is open.
  */
 
+import { resolveApiOrigin } from '../../utils/resolve-origin';
+
 export interface BpclCardStat {
   id: string;
   label: string;
@@ -83,8 +85,8 @@ function normalizeMember(member: CommunityMemberPayload): BpclMember {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 function getCommunityApiUrl(): string {
-  const origin = import.meta.env.VITE_BROADCAST_API_ORIGIN ?? window.location.origin;
-  return `${origin.replace(/\/$/, "")}/api/community`;
+  const origin = resolveApiOrigin();
+  return `${origin}/api/community`;
 }
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const CSV_STORAGE_KEY = 'bpcl_community_csv';
@@ -204,7 +206,10 @@ function loadCsvFromStorage(): number {
 
 async function fetchMembers(): Promise<void> {
   try {
-    const res = await fetch(getCommunityApiUrl());
+    const baseUrl = getCommunityApiUrl();
+    const next = new Map<number, BpclMember>();
+    
+    const res = await fetch(baseUrl);
     if (!res.ok) {
       console.warn(`[BPCL Card] Community API returned ${res.status}`);
       return;
@@ -223,12 +228,17 @@ async function fetchMembers(): Promise<void> {
       return;
     }
 
-    const next = new Map<number, BpclMember>();
     for (const p of players) {
-      if (p.steam32Id) {
-        const member = normalizeMember(p);
-        next.set(member.steam32Id, member);
+      const steam32 = p.steam32Id ? Number(p.steam32Id) : (p.steam32 ? Number(p.steam32) : undefined);
+      if (steam32 && !isNaN(steam32)) {
+        const member = normalizeMember({ ...p, steam32Id: steam32 });
+        next.set(steam32, member);
       }
+    }
+
+    if (next.size === 0) {
+      console.warn('[BPCL Card] Community API returned 0 players');
+      return;
     }
 
     memberMap = next;
@@ -313,4 +323,9 @@ export function getMemberCount(): number {
 /** When was the cache last successfully populated (0 = never). */
 export function getLastFetchTime(): number {
   return lastFetchAt;
+}
+
+/** True while a fetch is currently in-flight. */
+export function isFetchInFlight(): boolean {
+  return fetchInFlight !== null;
 }

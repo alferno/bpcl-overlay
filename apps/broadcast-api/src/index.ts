@@ -6,7 +6,7 @@ import { createBroadcastServer } from "./server.js";
 import { createAppState } from "./state-setup.js";
 import { ensureHeroRegistry } from "./services/hero-registry.js";
 import { bootstrapLeagueFromEnv } from "./services/league-bootstrap.js";
-import { preloadItemTimings } from "./services/item-timings.js";
+import { loadTimingsFromCsv, preloadItemTimings, fetchAndSaveLeagueTimingsCsv } from "./services/item-timings.js";
 
 export async function bootstrapBroadcastServer() {
   const state = await createAppState();
@@ -18,6 +18,11 @@ export async function bootstrapBroadcastServer() {
     logger.warn(err, "hero registry preload deferred"),
   );
 
+  // Load timings from disk immediately (instant), then refresh in background
+  void loadTimingsFromCsv().catch((err) =>
+    logger.warn(err, "item timings CSV load deferred"),
+  );
+  // Background network refresh of global averages — runs every startup
   void preloadItemTimings().catch((err) =>
     logger.warn(err, "item timings preload deferred"),
   );
@@ -29,6 +34,21 @@ export async function bootstrapBroadcastServer() {
     opendota,
     broadcast: ctx.broadcast,
   });
+
+  // Refresh league-specific item timings once league config is resolved
+  void (async () => {
+    try {
+      const snap = await state.getState();
+      const leagueIds = snap.leagueConfig?.leagueIds ?? (snap.leagueConfig?.leagueId ? [snap.leagueConfig.leagueId] : []);
+      if (leagueIds.length > 0) {
+        void fetchAndSaveLeagueTimingsCsv(leagueIds).catch((err) =>
+          logger.warn(err, "league timings refresh deferred"),
+        );
+      }
+    } catch (err) {
+      logger.warn(err, "league timings bootstrap deferred");
+    }
+  })();
 
   ctx.httpServer.listen(env.PORT, () => {
     logger.info(

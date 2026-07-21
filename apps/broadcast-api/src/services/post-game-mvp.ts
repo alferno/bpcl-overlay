@@ -44,6 +44,7 @@ function asNum(v: unknown, fallback = 0): number {
     const n = Number(v);
     if (Number.isFinite(n)) return n;
   }
+  if (typeof v === "boolean") return v ? 1 : 0;
   return fallback;
 }
 
@@ -88,9 +89,9 @@ function extractGsiPlayer(
   const item_4 = itemId(itemData?.slot4 ?? itemData?.item4);
   const item_5 = itemId(itemData?.slot5 ?? itemData?.item5);
   const item_neutral = itemId(itemData?.neutral0 ?? itemData?.neutral);
-  const backpack_0 = itemId(itemData?.backpack0);
-  const backpack_1 = itemId(itemData?.backpack1);
-  const backpack_2 = itemId(itemData?.backpack2);
+  const backpack_0 = itemId(itemData?.backpack0 ?? itemData?.slot6);
+  const backpack_1 = itemId(itemData?.backpack1 ?? itemData?.slot7);
+  const backpack_2 = itemId(itemData?.backpack2 ?? itemData?.slot8);
 
   // Aghanims detection via item IDs (108 = scepter, 271 = blessing, 609 = shard)
   const allItemIds = [item_0, item_1, item_2, item_3, item_4, item_5];
@@ -135,12 +136,13 @@ function extractTeam(
   heroTeam:   Record<string, unknown> | null,
   itemTeam:   Record<string, unknown> | null,
   slotBase:   number,                 // 0 for radiant, 128 for dire
+  playerIndexBase: number,            // 0 for radiant, 5 for dire (GSI uses player0-9)
   radiantWin: boolean,
   durationSecs: number,
 ): RawMatchPlayer[] {
   const players: RawMatchPlayer[] = [];
   for (let i = 0; i < 5; i++) {
-    const key = `player${i}`;
+    const key = `player${playerIndexBase + i}`;
     const playerData = asRecord(playerTeam?.[key]);
     if (!playerData) continue;
 
@@ -183,7 +185,13 @@ export function parsePostGamePayload(payload: GsiPayload): GsiPostGameData {
     };
   }
 
-  const radiantWin = map?.radiant_win === true || map?.radiant_win === "true" || map?.radiant_win === 1;
+  const winTeam = typeof map?.win_team === "string" ? map.win_team.toLowerCase() : "";
+  let radiantWin = false;
+  if (winTeam === "radiant") radiantWin = true;
+  else if (winTeam === "dire") radiantWin = false;
+  else if (map?.radiant_win !== undefined) {
+    radiantWin = map?.radiant_win === true || map?.radiant_win === "true" || map?.radiant_win === 1;
+  }
   // clock_time at end of game is the match duration
   const durationSecs = Math.max(1, asNum(map?.clock_time ?? map?.game_time, 0));
   const matchId = asNum(map?.matchid ?? map?.match_id, 0);
@@ -197,6 +205,7 @@ export function parsePostGamePayload(payload: GsiPayload): GsiPostGameData {
     asRecord(heroRoot?.team2 ?? heroRoot?.radiant),
     asRecord(itemRoot?.team2 ?? itemRoot?.radiant),
     0,
+    0, // playerIndexBase
     radiantWin,
     durationSecs,
   );
@@ -206,6 +215,7 @@ export function parsePostGamePayload(payload: GsiPayload): GsiPostGameData {
     asRecord(heroRoot?.team3 ?? heroRoot?.dire),
     asRecord(itemRoot?.team3 ?? itemRoot?.dire),
     128,
+    5, // playerIndexBase
     radiantWin,
     durationSecs,
   );

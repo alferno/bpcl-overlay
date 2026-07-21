@@ -59,8 +59,8 @@ export function OverlayLayoutControls({ state, busy, onPatch }: Props) {
 
   const DEFAULTS = {
     minimapIcons: { x: 1, y: 280, scale: 1.0 },
-    livePlayerCard: { x: 0, y: 0, scale: 1.0 },
-    kdaCard: { x: 16, y: 8, scale: 1.0 }
+    livePlayerCard: { x: -15, y: 95, scale: 0.8 },
+    kdaCard: { x: 1, y: 1, scale: 1.0 }
   };
 
   const renderControls = (

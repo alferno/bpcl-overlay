@@ -171,7 +171,13 @@ const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
 export default function VersusPage() {
   const { state } = useOverlayState();
-  const visible = useRouteVisible("versus", state);
+  const routeVisible = useRouteVisible("versus", state);
+  
+  // If the game has already started (clock >= 0), never show the Versus screen.
+  // This prevents it from popping up when seeking back in a replay.
+  const clockTime = state?.map?.clock_time;
+  const battleStarted = clockTime !== undefined && clockTime >= 0;
+  const visible = routeVisible && !battleStarted;
   const matchSetup = state?.leagueConfig?.matchSetup;
   const roster = state?.leagueConfig?.roster ?? [];
 

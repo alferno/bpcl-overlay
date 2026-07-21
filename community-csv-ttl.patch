@@ -1,0 +1,55 @@
+diff --git a/apps/broadcast-api/src/services/community-csv.ts b/apps/broadcast-api/src/services/community-csv.ts
+index 87cb75d..b8d983c 100644
+--- a/apps/broadcast-api/src/services/community-csv.ts
++++ b/apps/broadcast-api/src/services/community-csv.ts
+@@ -1,5 +1,5 @@
+ import { existsSync } from "node:fs";
+-import { readFile, writeFile, mkdir } from "node:fs/promises";
++import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
+ import path from "node:path";
+ import axios from "axios";
+ import { logger } from "../logger.js";
+@@ -179,17 +179,37 @@ export async function fetchAndWriteCommunityCsv(): Promise<BpclMember[]> {
+   return membersList;
+ }
+ 
+-/** Get community data, loading from CSV if it exists, otherwise fetching and saving. */
++// How long to trust the on-disk cache before re-fetching from bpcleague.in
++// automatically. Previously this cache never expired on its own — it only
++// refreshed via a manual POST /api/community/refresh call, so a player's
++// updated cardTier (e.g. newly granted "holo") could silently never show up
++// until someone remembered to hit that endpoint by hand.
++const COMMUNITY_CSV_TTL_MS = 10 * 60 * 1000; // 10 minutes
++
++/** Get community data, loading from CSV if it exists and is still fresh,
++ * otherwise fetching and saving. Falls back to the stale file (rather than
++ * failing the request) if a refresh attempt errors out. */
+ export async function getCommunityData(): Promise<BpclMember[]> {
+   const csvPath = path.resolve(env.COMMUNITY_CSV_PATH);
+   if (existsSync(csvPath)) {
+     try {
+-      const data = await loadCommunityCsv();
+-      logger.info({ count: data.length }, "[Community] Loaded community members from CSV first.");
+-      return data;
++      const stats = await stat(csvPath);
++      const age = Date.now() - stats.mtimeMs;
++      if (age < COMMUNITY_CSV_TTL_MS) {
++        const data = await loadCommunityCsv();
++        logger.info({ count: data.length, ageMs: age }, "[Community] Loaded community members from fresh-enough CSV cache.");
++        return data;
++      }
++      logger.info({ ageMs: age }, "[Community] Cache expired — refreshing from bpcleague.in.");
+     } catch (err) {
+-      logger.warn({ err }, "[Community] Failed reading existing CSV, falling back to fetch.");
++      logger.warn({ err }, "[Community] Failed checking CSV cache age, falling back to fetch.");
+     }
+   }
+-  return fetchAndWriteCommunityCsv();
++  try {
++    return await fetchAndWriteCommunityCsv();
++  } catch (err) {
++    logger.warn({ err }, "[Community] Refresh fetch failed — serving stale CSV if we have one.");
++    if (existsSync(csvPath)) return loadCommunityCsv();
++    throw err;
++  }
+ }

@@ -300,6 +300,45 @@ export class ReplayManager {
     }
   }
 
+  async removeReplaysFromDb(filesToRemove: string[]): Promise<boolean> {
+    try {
+      if (!fs.existsSync(this.dbFile) || filesToRemove.length === 0) {
+        return false;
+      }
+
+      const content = fs.readFileSync(this.dbFile, "utf-8");
+      const lines = content.split(/\r?\n/);
+      const newLines: string[] = [];
+
+      if (lines.length > 0) {
+        newLines.push(lines[0]); // Header
+      }
+
+      let updated = false;
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const match = line.match(/^(\d+),(\d+),"([^"]+)",(\d+),(\d+)$/);
+        if (match && filesToRemove.includes(match[3])) {
+          updated = true;
+          // Skip adding this line to newLines
+        } else {
+          newLines.push(line);
+        }
+      }
+
+      if (updated) {
+        fs.writeFileSync(this.dbFile, newLines.join("\n") + "\n", "utf-8");
+      }
+      return updated;
+    } catch (err) {
+      logger.error(err, "Failed to remove replays from DB");
+      return false;
+    }
+  }
+
   async playReplay(file: string, obs: OBSController): Promise<{ ok: boolean; error?: string }> {
     try {
       if (!fs.existsSync(file)) {
@@ -327,7 +366,7 @@ export class ReplayManager {
         }
         playbackFile = path.join(this.playbackDir, "current_replay.mp4");
         
-        const ffmpegCmd = `"${ffmpegStatic}" -y -ss ${offset} -i "${file}" -t ${duration} -c copy "${playbackFile}"`;
+        const ffmpegCmd = `"${ffmpegStatic}" -y -loglevel error -ss ${offset} -i "${file}" -t ${duration} -c copy "${playbackFile}"`;
         logger.info({ cmd: ffmpegCmd }, "Running ffmpeg slice command");
         await execAsync(ffmpegCmd);
       }
@@ -384,6 +423,28 @@ export class ReplayManager {
       const state = await this.getReplayState();
       const current = state.currentMatch;
       
+      // Find non-favorites for the current match to delete
+      const nonFavorites = state.replays.filter(r => r.match === current && !r.favorite);
+      const filesToDelete: string[] = [];
+
+      for (const rep of nonFavorites) {
+        if (fs.existsSync(rep.file)) {
+          try {
+            fs.unlinkSync(rep.file);
+            filesToDelete.push(rep.file);
+            logger.info({ file: rep.file }, "Deleted non-favorite replay");
+          } catch (err) {
+            logger.error({ file: rep.file, err }, "Failed to delete non-favorite replay");
+          }
+        } else {
+          filesToDelete.push(rep.file); // Still remove from DB
+        }
+      }
+
+      if (filesToDelete.length > 0) {
+        await this.removeReplaysFromDb(filesToDelete);
+      }
+      
       if (!fs.existsSync(path.dirname(this.lastCompletedFile))) {
         fs.mkdirSync(path.dirname(this.lastCompletedFile), { recursive: true });
       }
@@ -429,12 +490,33 @@ export class ReplayManager {
       
       const outputFile = path.join(this.highlightsDir, slug ? `${slug}.mp4` : `Match_${matchId}_Highlights.mp4`);
       
-      const cmd = `"${ffmpegStatic}" -y -f concat -safe 0 -i "${concatFile}" -c copy "${outputFile}"`;
+      const cmd = `"${ffmpegStatic}" -y -loglevel error -f concat -safe 0 -i "${concatFile}" -c copy "${outputFile}"`;
       logger.info({ cmd }, "Generating highlights");
       
       await execAsync(cmd);
       
       logger.info(`Generated highlights: ${outputFile}`);
+
+      // Delete the favorite replays used for highlights
+      const favFilesToDelete: string[] = [];
+      for (const rep of favorites) {
+        if (fs.existsSync(rep.file)) {
+          try {
+            fs.unlinkSync(rep.file);
+            favFilesToDelete.push(rep.file);
+            logger.info({ file: rep.file }, "Deleted favorite replay after highlight generation");
+          } catch (err) {
+            logger.error({ file: rep.file, err }, "Failed to delete favorite replay");
+          }
+        } else {
+          favFilesToDelete.push(rep.file);
+        }
+      }
+
+      if (favFilesToDelete.length > 0) {
+        await this.removeReplaysFromDb(favFilesToDelete);
+      }
+
       return { ok: true, file: outputFile };
     } catch (err) {
       logger.error(err, "Failed to generate highlights");

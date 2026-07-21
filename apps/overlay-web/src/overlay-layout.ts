@@ -6,7 +6,7 @@
 export const DRAFT_BOTTOM_SAFE_PX = 532;
 
 export const STATS_PANEL_SHELL_CLASS =
-  "rounded-2xl bg-gradient-to-br from-slate-900/95 to-purple-950/90 p-6 ring-2 ring-purple-400/60 shadow-xl backdrop-blur";
+  "rounded-3xl bg-gradient-to-br from-slate-900 to-emerald-950 p-6 border-[3px] border-emerald-500/80 shadow-[0_0_40px_rgba(16,185,129,0.25)] backdrop-blur-md";
 
 export const PLAYER_STATS_SHELL_CLASS =
   "rounded-2xl bg-black/85 p-6 ring-2 ring-cyan-400/60 shadow-xl backdrop-blur-xl";

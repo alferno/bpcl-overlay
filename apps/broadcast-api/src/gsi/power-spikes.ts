@@ -1,11 +1,14 @@
 import type { Server as IOServer } from "socket.io";
+import type { StateManager } from "@bpc/state-manager";
 import { logger } from "../logger.js";
 import { heroDisplayName } from "../services/hero-registry.js";
-import { getAverageItemTiming } from "../services/item-timings.js";
+import { getAverageItemTiming, getLeagueItemTiming } from "../services/item-timings.js";
 
 // Keep track of which items each player has seen so we only trigger on NEW purchases
 // Map<steamId or playerName, Set<string>>
 const seenItems = new Map<string, Set<string>>();
+let currentMatchId: string | number | null = null;
+const globalSeenDroppables = new Set<string>();
 
 export const HYPE_ITEMS: Record<string, { name: string, category: string }> = {
   "item_blink": { name: "Blink Dagger", category: "CRITICAL MOBILITY" },
@@ -52,15 +55,35 @@ function getPlayerName(payload: any, teamKey: "team2" | "team3", playerKey: stri
   }
 }
 
-export function detectPowerSpikes(payload: any, io: IOServer) {
+function getPlayerSteam32(payload: any, teamKey: "team2" | "team3", playerKey: string) {
+  try {
+    const raw = payload?.player?.[teamKey]?.[playerKey];
+    if (!raw) return null;
+    const accountId = Number(raw.accountid);
+    return isNaN(accountId) ? null : accountId;
+  } catch {
+    return null;
+  }
+}
+
+export async function detectPowerSpikes(payload: any, io: IOServer, state: StateManager) {
   if (!payload?.items) return;
 
   const clockTime = payload?.map?.clock_time || 0;
   // Don't trigger hype alerts before the game starts (e.g. strategy time items)
   if (clockTime < 0) return;
+  
+  const matchId = payload?.map?.matchid;
+  if (matchId && matchId !== currentMatchId) {
+    currentMatchId = matchId;
+    seenItems.clear();
+    globalSeenDroppables.clear();
+  }
 
-  const checkTeam = (teamKey: "team2" | "team3") => {
-    for (let i = 0; i <= 9; i++) {
+  const snap = await state.getState();
+
+  const checkTeam = (teamKey: "team2" | "team3", startIdx: number, endIdx: number) => {
+    for (let i = startIdx; i <= endIdx; i++) {
       const playerKey = `player${i}`;
       const items = getPlayerItems(payload, teamKey, playerKey);
       
@@ -75,6 +98,9 @@ export function detectPowerSpikes(payload: any, io: IOServer) {
       // Extract all current items in inventory
       const currentItems = new Set<string>();
       for (const slotKey in items) {
+        // Only trigger for items in main inventory (slot0-slot5) and backpack (slot6-8)
+        // This avoids triggering when item is in stash or on courier
+        if (!slotKey.startsWith("slot")) continue;
         const itemName = items[slotKey]?.name;
         if (itemName && itemName !== "empty") {
           currentItems.add(itemName);
@@ -87,17 +113,37 @@ export function detectPowerSpikes(payload: any, io: IOServer) {
           playerSeenItems.add(item);
           
           if (HYPE_ITEMS[item]) {
+            // Check droppable items
+            if (item === "item_rapier" || item === "item_gem") {
+              if (globalSeenDroppables.has(item)) continue;
+              globalSeenDroppables.add(item);
+            }
+            
             const heroData = getPlayerHeroData(payload, teamKey, playerKey);
             const cleanHeroName = heroData.id > 0 ? heroDisplayName(heroData.id) : heroData.name;
             const hypeData = HYPE_ITEMS[item];
             
-            const averageTime = getAverageItemTiming(heroData.id, item);
+            const steam32 = getPlayerSteam32(payload, teamKey, playerKey);
+            let isFirstTime = false;
+            
+            if (steam32 && heroData.id > 0) {
+              const playerHeroStats = snap.lifetimePlayerHeroIndex?.[`${steam32}:${heroData.id}`];
+              if (!playerHeroStats || playerHeroStats.games === 0) {
+                isFirstTime = true;
+              }
+            }
+            
+            const leagueTimingObj = getLeagueItemTiming(heroData.id, item);
+            const averageTime = leagueTimingObj !== null ? leagueTimingObj.time : getAverageItemTiming(heroData.id, item);
+            const timesBought = leagueTimingObj !== null ? leagueTimingObj.count : null;
+            const isLeagueData = leagueTimingObj !== null;
+            
             let timingDiff = null;
             if (averageTime !== null && clockTime > 0) {
               timingDiff = clockTime - averageTime; // negative means faster, positive means slower
             }
             
-            logger.info({ playerName, cleanHeroName, item, hypeData, clockTime, averageTime, timingDiff }, "Power Spike Detected!");
+            logger.info({ playerName, cleanHeroName, item, hypeData, clockTime, averageTime, timingDiff, isLeagueData, isFirstTime, timesBought }, "Power Spike Detected!");
             
             // Emit to overlays
             io.of("/overlay").emit("POWER_SPIKE", {
@@ -108,7 +154,10 @@ export function detectPowerSpikes(payload: any, io: IOServer) {
               categoryText: hypeData.category,
               clockTime,
               averageTime,
-              timingDiff
+              timingDiff,
+              isLeagueData,
+              isFirstTime,
+              timesBought
             });
           }
         }
@@ -116,6 +165,6 @@ export function detectPowerSpikes(payload: any, io: IOServer) {
     }
   };
 
-  checkTeam("team2");
-  checkTeam("team3");
+  checkTeam("team2", 0, 4);
+  checkTeam("team3", 5, 9);
 }
