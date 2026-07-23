@@ -19,10 +19,22 @@ interface RoshanKillEvent {
 const ITEM_ICON_BASE = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items";
 
 function itemIconUrl(itemName: string): string {
-  return `${ITEM_ICON_BASE}/${itemName.replace("item_", "")}.png`;
+  let cleanName = itemName.replace("item_", "");
+  if (cleanName === "banner" || cleanName === "aghanims_banner") {
+    cleanName = "roshans_banner";
+  }
+  return `${ITEM_ICON_BASE}/${cleanName}.png`;
 }
 
 function itemDisplayName(itemName: string): string {
+  const DISPLAY_NAMES: Record<string, string> = {
+    item_aegis:           "Aegis of the Immortal",
+    item_banner:          "Aghanim's Banner",
+    item_roshans_banner:  "Aghanim's Banner",
+    item_cheese:          "Cheese",
+    item_refresher_shard: "Refresher Shard",
+  };
+  if (DISPLAY_NAMES[itemName]) return DISPLAY_NAMES[itemName];
   return itemName
     .replace("item_", "")
     .split("_")

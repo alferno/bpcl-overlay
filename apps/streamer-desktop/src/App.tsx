@@ -58,15 +58,33 @@ export default function App() {
 
   const [obsPort, setObsPort] = useState('4455')
   const [obsPassword, setObsPassword] = useState('bpcls2')
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
 
   useEffect(() => {
-    if (apiStatus !== 'Local API ready' || !window.ipcRenderer) return;
+    if (window.ipcRenderer) {
+      window.ipcRenderer.invoke('get-settings').then((settings) => {
+        if (settings) {
+          if (settings.port) setObsPort(settings.port)
+          if (settings.password) setObsPassword(settings.password)
+        }
+        setSettingsLoaded(true)
+      }).catch(err => {
+        console.error("Failed to load settings", err)
+        setSettingsLoaded(true)
+      })
+    } else {
+      setSettingsLoaded(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (apiStatus !== 'Local API ready' || !window.ipcRenderer || !settingsLoaded) return;
 
     let cancelled = false;
 
     const attemptConnect = async () => {
       if (cancelled) return;
-      const res = await window.ipcRenderer!.invoke('obs-connect', '127.0.0.1', 4455, 'bpcls2');
+      const res = await window.ipcRenderer!.invoke('obs-connect', '127.0.0.1', Number(obsPort), obsPassword);
       if (res.ok) {
         setLogs(prev => [...prev, "Auto-connected to OBS successfully!"]);
       } else {
@@ -82,7 +100,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [apiStatus]);
+  }, [apiStatus, settingsLoaded, obsPort, obsPassword]);
 
   const handleObsConnect = async () => {
     if (!window.ipcRenderer) {
@@ -151,14 +169,20 @@ export default function App() {
           <input
             placeholder="Port (e.g. 4455)"
             value={obsPort}
-            onChange={(e) => setObsPort(e.target.value)}
+            onChange={(e) => {
+              setObsPort(e.target.value)
+              window.ipcRenderer?.invoke('save-settings', { port: e.target.value, password: obsPassword })
+            }}
             style={{ padding: '0.5rem' }}
           />
           <input
             placeholder="Password"
             type="password"
             value={obsPassword}
-            onChange={(e) => setObsPassword(e.target.value)}
+            onChange={(e) => {
+              setObsPassword(e.target.value)
+              window.ipcRenderer?.invoke('save-settings', { port: obsPort, password: e.target.value })
+            }}
             style={{ padding: '0.5rem' }}
           />
           <button onClick={handleObsConnect} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Connect</button>

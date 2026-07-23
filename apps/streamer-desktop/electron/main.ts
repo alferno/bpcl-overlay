@@ -9,6 +9,7 @@ import fs from 'node:fs'
 import { bpclBase } from './env-setup.js'
 import { bootstrapBroadcastServer } from 'broadcast-api/src/index.js'
 import { logEmitter } from 'broadcast-api/src/logger.js'
+import { settingsManager } from 'broadcast-api/src/services/settings-manager.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 process.env.APP_ROOT = path.join(__dirname, '..')
@@ -149,6 +150,11 @@ app.whenReady().then(async () => {
 ipcMain.handle('get-tunnel-url', () => tunnelUrl)
 ipcMain.handle('get-broadcast-secret', () => process.env.BROADCAST_SECRET)
 ipcMain.handle('get-broadcast-data-dir', () => bpclBase)
+ipcMain.handle('get-settings', () => settingsManager.getSettings().obs)
+ipcMain.handle('save-settings', async (_, obsSettings) => {
+  await settingsManager.updateSettings({ obs: obsSettings })
+  return { ok: true }
+})
 ipcMain.handle('get-api-status', () => {
   if (apiInstances) return { ok: true }
   if (apiStartupError) return { ok: false, error: apiStartupError }

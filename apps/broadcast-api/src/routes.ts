@@ -35,6 +35,7 @@ import {
 import { getBountyStats } from "./gsi/routes.js";
 import { leagueTitleFromSlug } from "@bpc/shared-types";
 import { fetchCachedJson } from "./services/bpcleague-cache.js";
+import { settingsManager } from "./services/settings-manager.js";
 
 
 export type BroadcastFns = {
@@ -151,6 +152,13 @@ export function attachRestRoutes(opts: {
       const patch = parseOverlayPatch(req.body) as OverlayPatch;
       const next = await state.patchState(patch);
       await broadcast.broadcastFull(next);
+
+      if (patch.production?.layoutConfig) {
+        await settingsManager.updateSettings({
+          layoutConfig: next.production.layoutConfig
+        });
+      }
+
       res.json(next);
     } catch (err) {
       logger.error(err, "state patch failed");

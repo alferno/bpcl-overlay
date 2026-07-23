@@ -3,7 +3,7 @@ import "node:path";
 import "node:url";
 import "node:child_process";
 import "node:fs";
-import { M, R, V } from "./main-CqYWrL9G.js";
+import { M, R, V } from "./main-BsbbCLwa.js";
 export {
   M as MAIN_DIST,
   R as RENDERER_DIST,

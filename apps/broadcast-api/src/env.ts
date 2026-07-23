@@ -41,6 +41,7 @@ const envSchema = z.object({
   HIGHLIGHTS_FOLDER: z.string().default(path.resolve(process.cwd(), "../../data/highlights")),
   ROSTER_CSV_PATH: z.string().default("data/roster/players_roster_prepared.csv"),
   COMMUNITY_CSV_PATH: z.string().default("data/roster/community_members.csv"),
+  SETTINGS_FILE: z.string().default(path.resolve(process.cwd(), "../../data/system/settings.json")),
 });
 
 export const env = envSchema.parse(process.env);

@@ -11,6 +11,8 @@ interface TopStatPayload {
   portraitUrl?: string;
 }
 
+import { resolveOverlayPortraitForHero } from "../hero-portrait";
+
 export function TopStatAlert() {
   const { socket } = useOverlayState();
   const [alert, setAlert] = useState<TopStatPayload | null>(null);
@@ -32,7 +34,13 @@ export function TopStatAlert() {
 
   // Clean the hero name, e.g., "npc_dota_hero_antimage" -> "antimage"
   const cleanHeroName = alert?.heroName?.replace("npc_dota_hero_", "") ?? "";
-  const imageUrl = alert?.portraitUrl || (cleanHeroName ? `/heroes/portraits/${cleanHeroName}.png` : "");
+  
+  // Try to use the robust resolver that understands the local file manifest
+  const resolvedUrl = resolveOverlayPortraitForHero(alert?.heroId, alert?.heroName, { 
+    heroPortraitUrl: alert?.portraitUrl 
+  });
+  
+  const imageUrl = resolvedUrl || alert?.portraitUrl || (cleanHeroName ? `/heroes/portraits/${cleanHeroName}.png` : "");
 
   return (
     <AnimatePresence>

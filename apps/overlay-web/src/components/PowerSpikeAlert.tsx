@@ -53,7 +53,11 @@ export function PowerSpikeAlert() {
             <div className="flex items-center gap-3 z-10">
               <div className="w-16 h-12 bg-slate-900 border border-yellow-500/30 rounded flex items-center justify-center overflow-hidden shadow-inner">
                 <img 
-                  src={`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${spike.item.replace('item_', '')}.png`} 
+                  src={`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${
+                    spike.item.replace('item_', '') === 'banner' || spike.item.replace('item_', '') === 'aghanims_banner'
+                      ? 'roshans_banner'
+                      : spike.item.replace('item_', '')
+                  }.png`} 
                   alt={spike.item}
                   className="w-full h-full object-cover"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}

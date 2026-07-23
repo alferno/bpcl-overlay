@@ -11,9 +11,15 @@ import {
 import { Redis } from "ioredis";
 import { env } from "./env.js";
 import { logger } from "./logger.js";
+import { settingsManager } from "./services/settings-manager.js";
 
 export async function createAppState(): Promise<StateManager> {
   const seed = createDefaultEnvelope();
+  const settings = await settingsManager.load();
+  if (settings.layoutConfig) {
+    if (!seed.production) seed.production = {} as any;
+    seed.production.layoutConfig = settings.layoutConfig as any;
+  }
 
   if (env.STATE_BACKEND === "memory") {
     logger.info("State backend: memory");

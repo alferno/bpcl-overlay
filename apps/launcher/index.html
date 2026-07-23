@@ -640,9 +640,17 @@
   })
 
   // ── Boot ───────────────────────────────────────────────────────────────────
-  window.addEventListener('DOMContentLoaded', checkForUpdate)
-  // Also run immediately (DOMContentLoaded may already have fired)
-  checkForUpdate()
+  let hasBooted = false
+  function boot () {
+    if (hasBooted) return
+    hasBooted = true
+    checkForUpdate()
+  }
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', boot)
+  } else {
+    boot()
+  }
 </script>
 </body>
 </html>

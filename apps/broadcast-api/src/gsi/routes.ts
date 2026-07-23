@@ -469,10 +469,10 @@ function detectRoshanKillerTeam(
 //   Kill 4+: Aegis + Cheese + Aghanim's Banner + Refresher Shard
 function getRoshanDropsByKillNumber(killNumber: number): string[] {
   if (killNumber <= 1)  return ["item_aegis"];
-  if (killNumber === 2) return ["item_aegis", "item_banner"];
-  if (killNumber === 3) return ["item_aegis", "item_banner", "item_cheese"];
+  if (killNumber === 2) return ["item_aegis", "item_roshans_banner"];
+  if (killNumber === 3) return ["item_aegis", "item_roshans_banner", "item_cheese"];
   // Kill 4 and beyond
-  return ["item_aegis", "item_cheese", "item_banner", "item_refresher_shard"];
+  return ["item_aegis", "item_cheese", "item_roshans_banner", "item_refresher_shard"];
 }
 
 function getLowestNetWorthCandidates(payload: any, teamKey: "team2" | "team3") {
