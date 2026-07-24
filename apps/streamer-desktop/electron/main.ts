@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, clipboard, shell, globalShortcut } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn, execSync, type ChildProcess } from 'node:child_process'
@@ -83,10 +83,42 @@ app.on('window-all-closed', () => {
   }
 })
 
-let apiInstances: { obs: any; opendota: any; state: any; shutdown: any } | null = null
+let apiInstances: { obs: any; opendota: any; state: any; broadcast?: any; shutdown: any } | null = null
 let apiStartupError: string | null = null
 
 app.whenReady().then(async () => {
+  // Cleanup legacy installation folders
+  try {
+    const installDir = path.join(app.getPath('appData'), 'BPCLStreamer')
+    if (fs.existsSync(installDir)) {
+      const items = fs.readdirSync(installDir, { withFileTypes: true })
+      for (const item of items) {
+        if (item.isDirectory() && (item.name.toLowerCase().includes('bpcl') || item.name.toLowerCase().includes('streamer'))) {
+          const fullPath = path.join(installDir, item.name)
+          if (!process.execPath.startsWith(fullPath)) {
+            console.log(`Cleaning up old installation folder: ${fullPath}`)
+            fs.rmSync(fullPath, { recursive: true, force: true })
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to cleanup old installation folders:', err)
+  }
+
+  // Register hotkey to toggle draft score
+  globalShortcut.register('CommandOrControl+Shift+H', async () => {
+    if (apiInstances?.state && apiInstances?.broadcast) {
+      const currentState = await apiInstances.state.getState();
+      const isHidden = currentState.production?.hideDraftScore || false;
+      const next = await apiInstances.state.patchState({
+        production: { hideDraftScore: !isHidden }
+      });
+      await apiInstances.broadcast.broadcastFull(next);
+      win?.webContents.send('log', `Toggled draft score visibility: ${!isHidden ? 'Hidden' : 'Visible'}`);
+    }
+  })
+
   createWindow()
 
   if (logEmitter) {

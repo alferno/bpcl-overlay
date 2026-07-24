@@ -511,7 +511,7 @@ export function LivePlayerCard() {
                     <div className='absolute inset-0 flex items-center justify-center transform scale-[0.7611] origin-center z-10 w-[240px] h-[360px] top-[40px] left-[35px]'>
                       <Card
                         data={buildFallbackCardData(
-                          card.steamName || card.playerLabel || 'UNKNOWN',
+                          card.playerLabel || 'UNKNOWN',
                           card.playerAvatarUrl,
                         )}
                       />

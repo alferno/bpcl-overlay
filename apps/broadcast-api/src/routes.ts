@@ -155,7 +155,7 @@ export function attachRestRoutes(opts: {
 
       if (patch.production?.layoutConfig) {
         await settingsManager.updateSettings({
-          layoutConfig: next.production.layoutConfig
+          layoutConfig: next.production?.layoutConfig
         });
       }
 

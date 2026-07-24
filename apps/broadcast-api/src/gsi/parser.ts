@@ -642,6 +642,7 @@ export function parseGsiToDraft(
   prev: DraftState | null,
   roster: RosterPlayer[],
   matchSetup: MatchSetup | null | undefined,
+  seriesContext?: import("../services/series-history.js").SeriesContext | null,
 ): GsiParseResult {
   const map = asRecord(payload.map);
   const gameState = typeof map?.game_state === "string" ? map.game_state : "";
@@ -775,6 +776,56 @@ export function parseGsiToDraft(
     }
   }
 
+  // ── Apply Series Context Draft Insights ──────────────────────────────────
+  if (seriesContext?.lastDraft) {
+    const { lastDraft } = seriesContext;
+    
+    // Determine which previous picks belong to the team currently playing Radiant/Dire
+    let currentRadiantPreviousPicks: number[] = [];
+    let currentRadiantPreviousOtherPicks: number[] = [];
+    let currentDirePreviousPicks: number[] = [];
+    let currentDirePreviousOtherPicks: number[] = [];
+
+    // Map Radiant Side's team to their previous picks
+    if (radiantSide.name === seriesContext.radiantTeam) {
+      currentRadiantPreviousPicks = lastDraft.radiantPicks;
+      currentRadiantPreviousOtherPicks = lastDraft.direPicks;
+    } else if (radiantSide.name === seriesContext.direTeam) {
+      currentRadiantPreviousPicks = lastDraft.direPicks;
+      currentRadiantPreviousOtherPicks = lastDraft.radiantPicks;
+    }
+
+    // Map Dire Side's team to their previous picks
+    if (direSide.name === seriesContext.direTeam) {
+      currentDirePreviousPicks = lastDraft.direPicks;
+      currentDirePreviousOtherPicks = lastDraft.radiantPicks;
+    } else if (direSide.name === seriesContext.radiantTeam) {
+      currentDirePreviousPicks = lastDraft.radiantPicks;
+      currentDirePreviousOtherPicks = lastDraft.direPicks;
+    }
+
+    const processSlots = (slots: DraftSlot[], isRadiant: boolean) => {
+      const teamPreviousPicks = isRadiant ? currentRadiantPreviousPicks : currentDirePreviousPicks;
+      const otherTeamPreviousPicks = isRadiant ? currentRadiantPreviousOtherPicks : currentDirePreviousOtherPicks;
+
+      for (const slot of slots) {
+        if (!slot.heroId) continue;
+        if (slot.type === "pick") {
+          // Stolen: Picked by the other team in the previous game
+          if (otherTeamPreviousPicks.includes(slot.heroId)) slot.stolen = true;
+          
+          // Same Pick: Picked by the same team in the previous game
+          if (teamPreviousPicks.includes(slot.heroId)) slot.samePick = true;
+
+          // Prior Ban: Banned in the previous game
+          if (lastDraft.bans.includes(slot.heroId)) slot.priorBan = true;
+        }
+      }
+    };
+    processSlots(radiantSlots, true);
+    processSlots(direSlots, false);
+  }
+
   const draftPatch: Partial<DraftState> = {
     source: "gsi",
     phase,
@@ -800,10 +851,10 @@ export function parseGsiToDraft(
     series: {
       teamA: radiantSide.name,
       teamB: direSide.name,
-      scoreA: prev?.series.scoreA ?? 0,
-      scoreB: prev?.series.scoreB ?? 0,
+      scoreA: seriesContext ? seriesContext.radiantWins : (prev?.series.scoreA ?? 0),
+      scoreB: seriesContext ? seriesContext.direWins : (prev?.series.scoreB ?? 0),
       bestOf: prev?.series.bestOf,
-      gameNumber: prev?.series.gameNumber,
+      gameNumber: seriesContext ? seriesContext.gameNumber : (prev?.series.gameNumber),
       logoUrlA: radiantSide.logoUrl ?? prev?.series.logoUrlA,
       logoUrlB: direSide.logoUrl ?? prev?.series.logoUrlB,
     },

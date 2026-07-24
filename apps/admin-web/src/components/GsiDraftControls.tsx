@@ -82,6 +82,20 @@ export function GsiDraftControls({
           Auto-show stats cards on pick
         </label>
         
+        <label className="flex items-center gap-2 select-none text-slate-300">
+          <input
+            type="checkbox"
+            checked={prod?.hideDraftScore ?? false}
+            className="rounded accent-orange-500"
+            onChange={(e) =>
+              void post("/api/production/settings", {
+                hideDraftScore: e.target.checked,
+              })
+            }
+          />
+          Hide score during draft (Ctrl+Shift+H)
+        </label>
+        
         <Btn
           variant="ghost"
           disabled={busy}

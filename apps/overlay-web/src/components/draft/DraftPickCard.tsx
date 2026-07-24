@@ -38,7 +38,6 @@ export function DraftPickCard({
   leagueConfig,
   production,
   teamSide,
-  previousDrafts,
 }: {
   slot: DraftSlot | null;
   teamLogoUrl?: string;
@@ -48,7 +47,6 @@ export function DraftPickCard({
   leagueConfig?: LeagueConfig;
   production?: ProductionSettings | null;
   teamSide: "radiant" | "dire";
-  previousDrafts?: DraftState[];
 }) {
   const media = slot ? resolveSlotMedia(slot) : {};
   const hasPick = Boolean(
@@ -134,7 +132,7 @@ export function DraftPickCard({
           {slot && media.static ? (
             <>
               <div className="pointer-events-none absolute inset-0 bg-black" />
-              <DraftHistoryTags currentSlot={slot} currentTeamSide={teamSide} previousDrafts={previousDrafts} />
+              <DraftHistoryTags currentSlot={slot} />
               <div
                 className="pointer-events-none absolute inset-0 z-[1] mix-blend-soft-light opacity-[0.42]"
                 style={{ background: heroCardInnerGlow(accent, active) }}

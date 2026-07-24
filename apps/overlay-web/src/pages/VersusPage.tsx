@@ -175,7 +175,7 @@ export default function VersusPage() {
   
   // If the game has already started (clock >= 0), never show the Versus screen.
   // This prevents it from popping up when seeking back in a replay.
-  const clockTime = state?.map?.clock_time;
+  const clockTime = (state as any)?.map?.clock_time;
   const battleStarted = clockTime !== undefined && clockTime >= 0;
   const visible = routeVisible && !battleStarted;
   const matchSetup = state?.leagueConfig?.matchSetup;

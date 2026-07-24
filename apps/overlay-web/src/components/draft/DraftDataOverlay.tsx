@@ -1,35 +1,43 @@
-import type { LeagueConfig, PlayerHeroLeagueStats } from "@bpc/shared-types";
+import type { LeagueConfig, PlayerHeroLeagueStats, DraftState, ProductionSettings } from "@bpc/shared-types";
 import { colorAlpha } from "../../draft/team-colors";
 import { withBaseUrl } from "../../asset-paths";
 
 export function DraftDataOverlay({
+  draft,
   leagueConfig,
   teamColors,
   playerHeroIndex,
+  production,
 }: {
+  draft?: DraftState;
   leagueConfig?: LeagueConfig;
   teamColors: { radiant: string; dire: string };
   playerHeroIndex?: Record<string, PlayerHeroLeagueStats>;
+  production?: ProductionSettings | null;
 }) {
   return (
     <DraftStatsView
+      draft={draft}
       leagueConfig={leagueConfig}
       teamColors={teamColors}
       playerHeroIndex={playerHeroIndex}
+      production={production}
     />
   );
 }
 
-
-
 function DraftStatsView({
+  draft,
   leagueConfig,
   teamColors,
   playerHeroIndex,
+  production,
 }: {
+  draft?: DraftState;
   leagueConfig?: LeagueConfig;
   teamColors: { radiant: string; dire: string };
   playerHeroIndex?: Record<string, PlayerHeroLeagueStats>;
+  production?: ProductionSettings | null;
 }) {
   const matchSetup = leagueConfig?.matchSetup;
   const roster = leagueConfig?.roster ?? [];
@@ -49,8 +57,8 @@ function DraftStatsView({
       .filter((p): p is typeof roster[0] => Boolean(p));
   };
 
-  const radiantPlayers = getOrderedPlayers(radiantRaw, matchSetup?.pickPlayers?.radiant);
-  const direPlayers = getOrderedPlayers(direRaw, matchSetup?.pickPlayers?.dire);
+  const radiantPlayers = getOrderedPlayers(radiantRaw, matchSetup?.pickPlayers?.radiant as number[] | undefined);
+  const direPlayers = getOrderedPlayers(direRaw, matchSetup?.pickPlayers?.dire as number[] | undefined);
 
   const getPlayerStats = (steam32: number) => {
     if (!playerHeroIndex) return null;
@@ -73,9 +81,11 @@ function DraftStatsView({
     if (games === 0) return null;
     const losses = games - wins;
     const winRate = Math.round((wins / games) * 100);
-    const kda = totalDeaths > 0 ? ((totalKills + totalAssists) / totalDeaths).toFixed(2) : (totalKills + totalAssists).toFixed(2);
-    
-    return `${wins}W - ${losses}L • ${kda} KDA • ${winRate}% WIN`;
+    const avgKills = (totalKills / games).toFixed(1);
+    const avgDeaths = (totalDeaths / games).toFixed(1);
+    const avgAssists = (totalAssists / games).toFixed(1);
+
+    return { games, wins, losses, winRate, avgKills, avgDeaths, avgAssists };
   };
 
   const renderTeamStats = (players: typeof roster, color: string, isRight: boolean) => {
@@ -103,7 +113,9 @@ function DraftStatsView({
                     {p.roles.join(" / ")}
                   </div>
                 ) : stats ? (
-                  <div className="text-slate-400 text-[11px] mt-1 font-mono uppercase tracking-widest">{stats}</div>
+                  <div className="text-slate-400 text-[11px] mt-1 font-mono uppercase tracking-widest">
+                    {stats.games}G {stats.winRate}% WR | {stats.avgKills}-{stats.avgDeaths}-{stats.avgAssists}
+                  </div>
                 ) : (
                   <div className="text-slate-600 text-[11px] mt-1 font-mono uppercase tracking-widest">Awaiting Stats...</div>
                 )}
@@ -115,12 +127,41 @@ function DraftStatsView({
     );
   };
 
+  const scoreA = draft?.series?.scoreA ?? leagueConfig?.matchSetup?.scoreA ?? 0;
+  const scoreB = draft?.series?.scoreB ?? leagueConfig?.matchSetup?.scoreB ?? 0;
+  const showScore = !production?.hideDraftScore;
+
   return (
     <div className="absolute inset-x-0 top-10 left-0 right-0 w-full max-w-[1700px] mx-auto px-4 z-10 pointer-events-none">
       <div className="flex justify-between items-start w-full relative">
         {/* Radiant Stats */}
         {renderTeamStats(radiantPlayers, teamColors.radiant, false)}
 
+        {/* Series Score (Absolute Center) */}
+        {showScore && (
+          <div className="absolute inset-0 flex justify-center items-start mt-6 pointer-events-none">
+            <div className="flex items-center gap-10 px-12 py-5 rounded-3xl bg-gradient-to-b from-slate-900/90 to-black/90 backdrop-blur-xl border border-emerald-500/40 shadow-[0_0_50px_rgba(16,185,129,0.25),inset_0_2px_20px_rgba(16,185,129,0.15)] relative overflow-hidden">
+              {/* Emerald glow background behind the box */}
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-500/0 pointer-events-none"></div>
+              
+              <span 
+                className="text-6xl font-heading font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] relative z-10"
+                style={{ textShadow: "0 2px 10px rgba(0,0,0,0.5), 0 0 20px rgba(16,185,129,0.5)" }}
+              >
+                {scoreA}
+              </span>
+              <span className="text-4xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)] relative z-10">
+                —
+              </span>
+              <span 
+                className="text-6xl font-heading font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] relative z-10"
+                style={{ textShadow: "0 2px 10px rgba(0,0,0,0.5), 0 0 20px rgba(16,185,129,0.5)" }}
+              >
+                {scoreB}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Dire Stats */}
         {renderTeamStats(direPlayers, teamColors.dire, true)}

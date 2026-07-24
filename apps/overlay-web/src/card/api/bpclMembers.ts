@@ -229,7 +229,7 @@ async function fetchMembers(): Promise<void> {
     }
 
     for (const p of players) {
-      const steam32 = p.steam32Id ? Number(p.steam32Id) : (p.steam32 ? Number(p.steam32) : undefined);
+      const steam32 = p.steam32Id ? Number(p.steam32Id) : ((p as any).steam32 ? Number((p as any).steam32) : undefined);
       if (steam32 && !isNaN(steam32)) {
         const member = normalizeMember({ ...p, steam32Id: steam32 });
         next.set(steam32, member);

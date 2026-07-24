@@ -1,5 +1,5 @@
 {
-  "timestamp": 1784661016226,
+  "timestamp": 1784883923886,
   "data": {
     "season": {
       "id": "9927b1aa-4579-4b14-8b4a-71a7472d3e2a",
@@ -465,7 +465,50 @@
           "logoUrl": "/images/teams/arrisecorp.png",
           "accentColor": "#b364e8",
           "groupKey": "D",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
+            {
+              "id": "49b5d8de-3fa0-47c8-ba0d-1170871bac02",
+              "sourcePlayerId": "c2291e3f-f7c6-409b-adf2-2ca109deb325",
+              "registrationId": "87436e4e-d7ec-44d3-b96f-c7340f4cf9be",
+              "playerAccountId": "17f40d8f-1dc0-4484-bc10-15a30f1925d1",
+              "name": "Marlboro",
+              "displayName": "Marlboro",
+              "role": "Carry",
+              "roles": [
+                "Carry"
+              ],
+              "mmr": 3371,
+              "steamName": "Marlboro Hard",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198118865177/",
+              "discordHandle": "Yug",
+              "location": "Panjab",
+              "isCaptain": false,
+              "slug": "marlboro",
+              "bpcId": "BPC-050"
+            },
+            {
+              "id": "bea765eb-437a-47b1-a6d2-87868d917dfc",
+              "sourcePlayerId": "af17e182-d8e6-4ca0-b4f3-ac1e71907c94",
+              "registrationId": "4cffd38a-845a-4949-b3ad-e1e81d65ddf8",
+              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
+              "name": "Raiden",
+              "displayName": "Raiden",
+              "role": "Offlane",
+              "roles": [
+                "Offlane"
+              ],
+              "mmr": 3300,
+              "steamName": "Ruler of Time ♡",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582/",
+              "discordHandle": "Raiden ♡",
+              "location": "Ahmedabad",
+              "isCaptain": false,
+              "slug": "raiden",
+              "bpcId": "BPC-074"
+            },
             {
               "id": "5c6f2cc3-e426-4b88-bff2-fca60334b089",
               "sourcePlayerId": "028b864a-581e-4376-ba91-5ae618ff9754",
@@ -529,46 +572,6 @@
               "isCaptain": false,
               "slug": "sugimoto",
               "bpcId": "BPC-018"
-            },
-            {
-              "id": "49b5d8de-3fa0-47c8-ba0d-1170871bac02",
-              "sourcePlayerId": "c2291e3f-f7c6-409b-adf2-2ca109deb325",
-              "registrationId": "87436e4e-d7ec-44d3-b96f-c7340f4cf9be",
-              "playerAccountId": "17f40d8f-1dc0-4484-bc10-15a30f1925d1",
-              "name": "Marlboro",
-              "displayName": "Marlboro",
-              "role": "Carry",
-              "roles": [
-                "Carry"
-              ],
-              "mmr": 3371,
-              "steamName": "Marlboro Hard",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198118865177/",
-              "discordHandle": "Yug",
-              "location": "Panjab",
-              "isCaptain": false,
-              "slug": "marlboro",
-              "bpcId": "BPC-050"
-            },
-            {
-              "id": "bea765eb-437a-47b1-a6d2-87868d917dfc",
-              "sourcePlayerId": "af17e182-d8e6-4ca0-b4f3-ac1e71907c94",
-              "registrationId": "4cffd38a-845a-4949-b3ad-e1e81d65ddf8",
-              "playerAccountId": "2f3a26ff-a548-41f9-8679-2842f0e4473a",
-              "name": "Raiden",
-              "displayName": "Raiden",
-              "role": "Offlane",
-              "roles": [
-                "Offlane"
-              ],
-              "mmr": 3300,
-              "steamName": "Ruler of Time ♡",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198153514582/",
-              "discordHandle": "Raiden ♡",
-              "location": "Ahmedabad",
-              "isCaptain": false,
-              "slug": "raiden",
-              "bpcId": "BPC-074"
             }
           ]
         },
@@ -582,7 +585,31 @@
           "logoUrl": "/images/teams/phantomdivision.png",
           "accentColor": "#49e9c9",
           "groupKey": "A",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
+            {
+              "id": "c1ca2b01-2c93-4a58-b13f-98247d6d56ea",
+              "sourcePlayerId": "3e11bafa-7277-4e63-b23f-4039417a9c6a",
+              "registrationId": "7e57da48-90f1-41cd-9f8e-cdb465a09679",
+              "playerAccountId": "c9eb1259-809a-470b-aa3a-2d0c2692e66b",
+              "name": "Roronoa Zoro",
+              "displayName": "Roronoa Zoro",
+              "role": "Soft support",
+              "roles": [
+                "Soft support",
+                "Hard support"
+              ],
+              "mmr": 1999,
+              "steamName": "Roronoa Zoro",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198338169972/",
+              "discordHandle": "RORONOA ZORO",
+              "location": "",
+              "isCaptain": false,
+              "slug": "roronoa-zoro",
+              "bpcId": "BPC-033"
+            },
             {
               "id": "ebe412f2-61d3-4cba-a711-8a96d2811c46",
               "sourcePlayerId": "c68b42cb-6147-45d2-a217-d4d5806019c4",
@@ -646,46 +673,27 @@
               "bpcId": "BPC-060"
             },
             {
-              "id": "78fa9f22-2a13-4e41-acfc-0a4670f2011b",
-              "sourcePlayerId": "43b9f30b-0b4b-485e-82a1-21d0d7b4fc3c",
-              "registrationId": "6c03a4f2-af1f-4071-98cb-b355496a255f",
-              "playerAccountId": "3e5834b0-11bf-47c0-a089-2a3aaf1b9fd0",
-              "name": "GodX カール",
-              "displayName": "GodX カール",
-              "role": "Soft support",
+              "id": "93eef4e2-b1b6-4f79-9d91-da1c1274b5c6",
+              "sourcePlayerId": "0afde6b4-aca1-430f-a02a-38ebd6532be2",
+              "registrationId": "7096e843-3dec-4e3f-a282-e5507bb62238",
+              "playerAccountId": "cad47b54-2939-40cc-a0dc-70c35f6cb4dd",
+              "name": "shaidota",
+              "displayName": "shaidota",
+              "role": "Carry",
               "roles": [
-                "Soft support",
-                "Offlane"
+                "Carry",
+                "Mid",
+                "Hard support",
+                "Soft support"
               ],
-              "mmr": 3000,
-              "steamName": "GodX カール",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198193880361/",
-              "discordHandle": "Banner",
+              "mmr": 3300,
+              "steamName": "Sha1-",
+              "steamProfile": "https://steamcommunity.com/id/shaidota/",
+              "discordHandle": "Shaidota",
               "location": "Mumbai",
               "isCaptain": false,
-              "slug": "godx",
-              "bpcId": "BPC-052"
-            },
-            {
-              "id": "6abec6df-a796-4bc6-a977-b4e47623d6bc",
-              "sourcePlayerId": "c1165626-ed46-4e83-92cd-c598a52f4016",
-              "registrationId": "0cfa66be-4fd0-4abb-a1e5-243ccb3ce4dc",
-              "playerAccountId": "b6b0ebf5-9614-42b0-8cc3-53a93a3d5ce0",
-              "name": "L!NU$. 4 ^ JpR",
-              "displayName": "L!NU$. 4 ^ JpR",
-              "role": "Soft support",
-              "roles": [
-                "Soft support",
-                "Hard support"
-              ],
-              "mmr": 1800,
-              "steamName": "L!NU$. 4 ^ JpR",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198034030852/",
-              "discordHandle": "Linus",
-              "location": "Jaipur",
-              "isCaptain": false,
-              "slug": "l-nu-4-jpr",
-              "bpcId": "BPC-030"
+              "slug": "shaidota",
+              "bpcId": "BPC-021"
             }
           ]
         },
@@ -699,6 +707,9 @@
           "logoUrl": "/images/teams/emberfall.png",
           "accentColor": "#ee823a",
           "groupKey": "B",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "c10f895a-1223-4010-ab3b-2dcac4aa5b72",
@@ -818,6 +829,9 @@
           "logoUrl": "/images/teams/warpath.png",
           "accentColor": "",
           "groupKey": "A",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "597ebe97-cea6-420f-9b51-33ff11491f9a",
@@ -930,12 +944,15 @@
           "id": "44abaa67-88d6-46ca-a89c-bd6db14e92c1",
           "sourceTeamId": "17c61c55-eb9d-4a10-a47d-d63867c7003d",
           "name": "Godsent",
-          "captain": "SUBVERSION",
+          "captain": "",
           "abbr": "G",
           "seed": 5,
           "logoUrl": "/images/teams/godsent.png",
           "accentColor": "#aba7a0",
           "groupKey": "B",
+          "eliminatedAt": "2026-07-24T07:28:04.743Z",
+          "eliminatedBy": "2ff9b0e4-3898-4522-9a31-6970f1792aa1",
+          "eliminationSource": "manual",
           "players": [
             {
               "id": "2796708d-8b74-4b81-a15d-c039a8af43b0",
@@ -953,7 +970,7 @@
               "steamProfile": "https://steamcommunity.com/profiles/76561198353666149/",
               "discordHandle": "Shub ( SUBVERSION )",
               "location": "kolhapur",
-              "isCaptain": true,
+              "isCaptain": false,
               "slug": "subversion",
               "bpcId": "BPC-032"
             },
@@ -978,6 +995,26 @@
               "bpcId": "BPC-016"
             },
             {
+              "id": "78e3896d-e198-42a1-8f1c-38a784df241a",
+              "sourcePlayerId": "5fd7dead-933f-4812-81f8-a5126b894a98",
+              "registrationId": "50e3a4fe-133d-4529-a215-b7c6f9237345",
+              "playerAccountId": "6cb10644-6093-46ef-8dfb-d1d05c0fd546",
+              "name": "MYM | LUCKY13",
+              "displayName": "MYM | LUCKY13",
+              "role": "Soft support",
+              "roles": [
+                "Soft support"
+              ],
+              "mmr": 3432,
+              "steamName": "MYM | Lucky13",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198111784982/",
+              "discordHandle": "Lucky13 (Mohit Mandrekar)",
+              "location": "Thane",
+              "isCaptain": false,
+              "slug": "mym-lucky13",
+              "bpcId": "BPC-044"
+            },
+            {
               "id": "93eef4e2-b1b6-4f79-9d91-da1c1274b5c6",
               "sourcePlayerId": "0afde6b4-aca1-430f-a02a-38ebd6532be2",
               "registrationId": "7096e843-3dec-4e3f-a282-e5507bb62238",
@@ -999,26 +1036,6 @@
               "isCaptain": false,
               "slug": "shaidota",
               "bpcId": "BPC-021"
-            },
-            {
-              "id": "78e3896d-e198-42a1-8f1c-38a784df241a",
-              "sourcePlayerId": "5fd7dead-933f-4812-81f8-a5126b894a98",
-              "registrationId": "50e3a4fe-133d-4529-a215-b7c6f9237345",
-              "playerAccountId": "6cb10644-6093-46ef-8dfb-d1d05c0fd546",
-              "name": "MYM | LUCKY13",
-              "displayName": "MYM | LUCKY13",
-              "role": "Soft support",
-              "roles": [
-                "Soft support"
-              ],
-              "mmr": 3432,
-              "steamName": "MYM | Lucky13",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198111784982/",
-              "discordHandle": "Lucky13 (Mohit Mandrekar)",
-              "location": "Thane",
-              "isCaptain": false,
-              "slug": "mym-lucky13",
-              "bpcId": "BPC-044"
             },
             {
               "id": "bdfe343f-6c4c-45ff-b96f-6add7af2232d",
@@ -1053,6 +1070,9 @@
           "logoUrl": "/images/teams/frostreign.png",
           "accentColor": "#4fd2e3",
           "groupKey": "A",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "01becd5d-6b29-491f-b676-bb444a931b67",
@@ -1171,6 +1191,9 @@
           "logoUrl": "/images/teams/darkhorse.png",
           "accentColor": "#a48b74",
           "groupKey": "B",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "14ed2d27-ab5d-4a16-b643-27ad7e23e859",
@@ -1290,7 +1313,30 @@
           "logoUrl": "/images/teams/ashborn.png",
           "accentColor": "#f5b56b",
           "groupKey": "C",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
+            {
+              "id": "7e127878-7e2b-4e3d-923e-c6d2aead7f8d",
+              "sourcePlayerId": "24a30d8e-af4c-4c66-acbd-f151b607c38a",
+              "registrationId": "0671143d-1898-49d3-98d0-d1f0c7577b18",
+              "playerAccountId": "70c4dea5-579b-4301-b3ca-dade3524383b",
+              "name": "Chinya",
+              "displayName": "Chinya",
+              "role": "Carry",
+              "roles": [
+                "Carry"
+              ],
+              "mmr": 4576,
+              "steamName": "Ez Chinese",
+              "steamProfile": "https://steamcommunity.com/id/cmh1233/",
+              "discordHandle": "chinya",
+              "location": "",
+              "isCaptain": false,
+              "slug": "chinya",
+              "bpcId": "BPC-037"
+            },
             {
               "id": "95e62b0d-6a37-4f64-9320-8d760ae0577f",
               "sourcePlayerId": "b4aa62ff-fb5d-4e15-aa0d-2ee74ae6856a",
@@ -1331,26 +1377,6 @@
               "isCaptain": true,
               "slug": "icarus",
               "bpcId": "BPC-031"
-            },
-            {
-              "id": "7e127878-7e2b-4e3d-923e-c6d2aead7f8d",
-              "sourcePlayerId": "24a30d8e-af4c-4c66-acbd-f151b607c38a",
-              "registrationId": "0671143d-1898-49d3-98d0-d1f0c7577b18",
-              "playerAccountId": "70c4dea5-579b-4301-b3ca-dade3524383b",
-              "name": "Chinya",
-              "displayName": "Chinya",
-              "role": "Carry",
-              "roles": [
-                "Carry"
-              ],
-              "mmr": 4576,
-              "steamName": "Ez Chinese",
-              "steamProfile": "https://steamcommunity.com/id/cmh1233/",
-              "discordHandle": "chinya",
-              "location": "",
-              "isCaptain": false,
-              "slug": "chinya",
-              "bpcId": "BPC-037"
             },
             {
               "id": "af560c84-4d42-449c-8071-acf2588dbf64",
@@ -1407,6 +1433,9 @@
           "logoUrl": "/images/teams/crimsonveil.png",
           "accentColor": "#db4d4d",
           "groupKey": "D",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "4634e789-ec26-48f2-9598-3d74facfb3c4",
@@ -1526,6 +1555,9 @@
           "logoUrl": "/images/teams/arcaneorder.png",
           "accentColor": "#7dd572",
           "groupKey": "A",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "488a3e77-73af-4e9b-806f-653aabe0240f",
@@ -1644,6 +1676,9 @@
           "logoUrl": "/images/teams/chaosrift.png",
           "accentColor": "#63a5e3",
           "groupKey": "D",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "a3c88e27-d7c5-4259-8e7b-83dfb97ccf05",
@@ -1764,6 +1799,9 @@
           "logoUrl": "/images/teams/mortaloath.png",
           "accentColor": "#f37cef",
           "groupKey": "C",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "5ac9795e-585b-4098-aa0b-9fd84d064c8a",
@@ -1885,6 +1923,9 @@
           "logoUrl": "/images/teams/vanguard.png",
           "accentColor": "#ddcd64",
           "groupKey": "D",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "884c3b87-8cef-4a03-a518-71ba0279df8b",
@@ -2004,27 +2045,10 @@
           "logoUrl": "/images/teams/nemesis.png",
           "accentColor": "#49e9ac",
           "groupKey": "B",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
-            {
-              "id": "cc35c523-af41-4bca-8071-6ecd93f9ab3b",
-              "sourcePlayerId": "5f1ae301-0f38-4063-8a9a-e30affb258b1",
-              "registrationId": "6d92c061-c1a2-4774-a2b0-90cd5dbe125c",
-              "playerAccountId": "1ae49100-47fe-46e9-aaf9-d7b66516d28a",
-              "name": "Her Eyes",
-              "displayName": "Her Eyes",
-              "role": "Soft support",
-              "roles": [
-                "Soft support"
-              ],
-              "mmr": 2360,
-              "steamName": "Her Eyes",
-              "steamProfile": "https://steamcommunity.com/profiles/76561198135958954/",
-              "discordHandle": "Quinn Dog",
-              "location": "KOLKATA",
-              "isCaptain": false,
-              "slug": "her-eyes",
-              "bpcId": "BPC-061"
-            },
             {
               "id": "673929b9-58ea-430d-b867-8b0e285cf925",
               "sourcePlayerId": "dc2634e5-c5c8-4420-ad1e-64a4ce78e22a",
@@ -2066,6 +2090,26 @@
               "isCaptain": false,
               "slug": "l2k",
               "bpcId": "BPC-110"
+            },
+            {
+              "id": "cc35c523-af41-4bca-8071-6ecd93f9ab3b",
+              "sourcePlayerId": "5f1ae301-0f38-4063-8a9a-e30affb258b1",
+              "registrationId": "6d92c061-c1a2-4774-a2b0-90cd5dbe125c",
+              "playerAccountId": "1ae49100-47fe-46e9-aaf9-d7b66516d28a",
+              "name": "Her Eyes",
+              "displayName": "Her Eyes",
+              "role": "Soft support",
+              "roles": [
+                "Soft support"
+              ],
+              "mmr": 2360,
+              "steamName": "Her Eyes",
+              "steamProfile": "https://steamcommunity.com/profiles/76561198135958954/",
+              "discordHandle": "Quinn Dog",
+              "location": "KOLKATA",
+              "isCaptain": false,
+              "slug": "her-eyes",
+              "bpcId": "BPC-061"
             },
             {
               "id": "01ed8670-b981-4e6e-8fbb-ee55d521d931",
@@ -2115,12 +2159,15 @@
           "id": "929c96b2-2693-48bf-a226-992e9cdc43f6",
           "sourceTeamId": "2d3426d3-aa22-4f91-ac99-41b6239c73a4",
           "name": "Invictus",
-          "captain": "Rockrobin",
+          "captain": "",
           "abbr": "I",
           "seed": 15,
           "logoUrl": "/images/teams/invictus.png",
           "accentColor": "#f04c4c",
           "groupKey": "C",
+          "eliminatedAt": "2026-07-24T07:27:39.009Z",
+          "eliminatedBy": "2ff9b0e4-3898-4522-9a31-6970f1792aa1",
+          "eliminationSource": "manual",
           "players": [
             {
               "id": "55eb1b6e-b5a8-45c5-a2c2-e87770413b0f",
@@ -2139,7 +2186,7 @@
               "steamProfile": "https://steamcommunity.com/profiles/76561198158529135/",
               "discordHandle": "Robin",
               "location": "Pune",
-              "isCaptain": true,
+              "isCaptain": false,
               "slug": "rockrobin",
               "bpcId": "BPC-036"
             },
@@ -2239,6 +2286,9 @@
           "logoUrl": "/images/teams/kingsguard.png",
           "accentColor": "#cac7c4",
           "groupKey": "C",
+          "eliminatedAt": null,
+          "eliminatedBy": null,
+          "eliminationSource": null,
           "players": [
             {
               "id": "86556a43-83bf-451e-9c37-083ecba5bde1",

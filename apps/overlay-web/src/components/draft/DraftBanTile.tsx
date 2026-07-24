@@ -5,6 +5,8 @@ import { neonSlotShadow } from "../../draft/neon-effects";
 import { resolveSlotFlatPortraitUrl } from "../../hero-portrait";
 import { colorAlpha } from "../../draft/team-colors";
 
+import { DraftHistoryTags } from "./DraftHistoryTags";
+
 const BAN_TILE_CLASS = "mx-auto w-full h-full aspect-square rounded-sm bg-black";
 
 export function DraftBanTile({
@@ -43,6 +45,7 @@ export function DraftBanTile({
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
     >
+      <DraftHistoryTags currentSlot={slot} />
       <img
         src={portraitUrl}
         alt={slot?.heroName ?? "banned hero"}

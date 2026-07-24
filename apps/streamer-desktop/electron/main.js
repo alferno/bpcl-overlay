@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, execSync } from 'node:child_process';
@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import { bpclBase } from './env-setup.js';
 import { bootstrapBroadcastServer } from 'broadcast-api/src/index.js';
 import { logEmitter } from 'broadcast-api/src/logger.js';
+import { settingsManager } from 'broadcast-api/src/services/settings-manager.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, '..');
 process.on('uncaughtException', (error) => {
@@ -68,6 +69,37 @@ app.on('window-all-closed', () => {
 let apiInstances = null;
 let apiStartupError = null;
 app.whenReady().then(async () => {
+    // Cleanup legacy installation folders
+    try {
+        const installDir = path.join(app.getPath('appData'), 'BPCLStreamer');
+        if (fs.existsSync(installDir)) {
+            const items = fs.readdirSync(installDir, { withFileTypes: true });
+            for (const item of items) {
+                if (item.isDirectory() && (item.name.toLowerCase().includes('bpcl') || item.name.toLowerCase().includes('streamer'))) {
+                    const fullPath = path.join(installDir, item.name);
+                    if (!process.execPath.startsWith(fullPath)) {
+                        console.log(`Cleaning up old installation folder: ${fullPath}`);
+                        fs.rmSync(fullPath, { recursive: true, force: true });
+                    }
+                }
+            }
+        }
+    }
+    catch (err) {
+        console.error('Failed to cleanup old installation folders:', err);
+    }
+    // Register hotkey to toggle draft score
+    globalShortcut.register('CommandOrControl+Shift+H', async () => {
+        if (apiInstances?.state && apiInstances?.broadcast) {
+            const currentState = await apiInstances.state.getState();
+            const isHidden = currentState.production?.hideDraftScore || false;
+            const next = await apiInstances.state.patchState({
+                production: { hideDraftScore: !isHidden }
+            });
+            await apiInstances.broadcast.broadcastFull(next);
+            win?.webContents.send('log', `Toggled draft score visibility: ${!isHidden ? 'Hidden' : 'Visible'}`);
+        }
+    });
     createWindow();
     if (logEmitter) {
         logEmitter.on('log', (msg) => {
@@ -124,6 +156,11 @@ app.whenReady().then(async () => {
 ipcMain.handle('get-tunnel-url', () => tunnelUrl);
 ipcMain.handle('get-broadcast-secret', () => process.env.BROADCAST_SECRET);
 ipcMain.handle('get-broadcast-data-dir', () => bpclBase);
+ipcMain.handle('get-settings', () => settingsManager.getSettings().obs);
+ipcMain.handle('save-settings', async (_, obsSettings) => {
+    await settingsManager.updateSettings({ obs: obsSettings });
+    return { ok: true };
+});
 ipcMain.handle('get-api-status', () => {
     if (apiInstances)
         return { ok: true };

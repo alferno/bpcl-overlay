@@ -305,6 +305,7 @@ export function ProducerDashboard() {
                 <ReplayManagerPanel
                   origin={origin}
                   token={token}
+                  state={state}
                 />
               )}
 

@@ -14,7 +14,6 @@ import type { StandoutPlayerCard } from "@bpc/shared-types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-import { EASE } from "../animations";
 import { FallbackPlayerCard } from "../components/FallbackPlayerCard";
 import { NativeBpclCard } from "../components/NativeBpclCard";
 
@@ -258,10 +257,6 @@ export default function StandoutPlayerPage() {
       ) ?? card.heroPortraitUrl
     : undefined;
 
-  // Preload all BPC IDs from the roster so changing hero focus is instant
-  const rosterBpcIds = Array.from(
-    new Set((state?.leagueConfig?.roster || []).map((p: any) => p.bpcId).filter(Boolean))
-  ) as string[];
   if (portraitUrl && !portraitUrl.startsWith("http")) {
     portraitUrl = withBaseUrl(portraitUrl);
   }
@@ -445,6 +440,33 @@ export default function StandoutPlayerPage() {
                       />
                       )}
                     />
+                    
+                    {/* WINNING TEAM LOGO */}
+                    {card.winningTeamLogoUrl && (
+                      <motion.div
+                        className="absolute top-4 left-4 drop-shadow-xl"
+                        initial={{ opacity: 0, scale: 0.5, rotate: -15 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
+                        style={{
+                          width: 64,
+                          height: 64,
+                          background: "rgba(0,0,0,0.4)",
+                          borderRadius: "50%",
+                          padding: 6,
+                          border: `1px solid rgba(16,185,129,0.5)`,
+                          boxShadow: `0 0 20px ${EMERALD_GLOW}`,
+                          backdropFilter: "blur(4px)"
+                        }}
+                      >
+                        <img 
+                          src={withBaseUrl(card.winningTeamLogoUrl)} 
+                          alt={card.winningTeamName || "Winner"}
+                          className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+                          onError={(e) => (e.currentTarget.style.display = "none")}
+                        />
+                      </motion.div>
+                    )}
                   </div>
 
                   {/* KDA */}

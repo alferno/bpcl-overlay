@@ -47,14 +47,34 @@ export default function App() {
     }, []);
     const [obsPort, setObsPort] = useState('4455');
     const [obsPassword, setObsPassword] = useState('bpcls2');
+    const [settingsLoaded, setSettingsLoaded] = useState(false);
     useEffect(() => {
-        if (apiStatus !== 'Local API ready' || !window.ipcRenderer)
+        if (window.ipcRenderer) {
+            window.ipcRenderer.invoke('get-settings').then((settings) => {
+                if (settings) {
+                    if (settings.port)
+                        setObsPort(settings.port);
+                    if (settings.password)
+                        setObsPassword(settings.password);
+                }
+                setSettingsLoaded(true);
+            }).catch(err => {
+                console.error("Failed to load settings", err);
+                setSettingsLoaded(true);
+            });
+        }
+        else {
+            setSettingsLoaded(true);
+        }
+    }, []);
+    useEffect(() => {
+        if (apiStatus !== 'Local API ready' || !window.ipcRenderer || !settingsLoaded)
             return;
         let cancelled = false;
         const attemptConnect = async () => {
             if (cancelled)
                 return;
-            const res = await window.ipcRenderer.invoke('obs-connect', '127.0.0.1', 4455, 'bpcls2');
+            const res = await window.ipcRenderer.invoke('obs-connect', '127.0.0.1', Number(obsPort), obsPassword);
             if (res.ok) {
                 setLogs(prev => [...prev, "Auto-connected to OBS successfully!"]);
             }
@@ -69,7 +89,7 @@ export default function App() {
         return () => {
             cancelled = true;
         };
-    }, [apiStatus]);
+    }, [apiStatus, settingsLoaded, obsPort, obsPassword]);
     const handleObsConnect = async () => {
         if (!window.ipcRenderer) {
             alert('IPC not available (Preload failed)');
@@ -133,5 +153,11 @@ export default function App() {
         }
         setTimeout(() => setOpenFolderStatus(null), 3000);
     };
-    return (_jsxs("div", { style: { padding: '2rem', fontFamily: 'sans-serif' }, children: [_jsx("h1", { children: "BPCL Streamer Hub" }), _jsx("p", { children: "Your local broadcast API and overlay host." }), _jsxs("div", { style: { marginTop: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }, children: [_jsx("h2", { children: "OBS WebSocket Setup" }), _jsxs("div", { style: { display: 'flex', gap: '1rem', marginBottom: '1rem' }, children: [_jsx("input", { placeholder: "Port (e.g. 4455)", value: obsPort, onChange: (e) => setObsPort(e.target.value), style: { padding: '0.5rem' } }), _jsx("input", { placeholder: "Password", type: "password", value: obsPassword, onChange: (e) => setObsPassword(e.target.value), style: { padding: '0.5rem' } }), _jsx("button", { onClick: handleObsConnect, style: { padding: '0.5rem 1rem', cursor: 'pointer' }, children: "Connect" })] })] }), _jsxs("div", { style: { marginTop: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }, children: [_jsx("h2", { children: "Remote Control URL & Secret" }), tunnelUrl ? (_jsxs("div", { children: [_jsx("p", { children: "Send this link to your admin:" }), _jsxs("div", { style: { display: 'flex', gap: '1rem', marginBottom: '1rem' }, children: [_jsx("input", { readOnly: true, value: tunnelUrl + '/admin', style: { flex: 1, padding: '0.5rem' } }), _jsx("button", { onClick: handleCopyLink, style: { padding: '0.5rem 1rem', cursor: 'pointer' }, children: "Copy Link" })] }), _jsx("p", { children: "Admin Login Secret:" }), _jsxs("div", { style: { display: 'flex', gap: '1rem', marginBottom: '1rem' }, children: [_jsx("input", { readOnly: true, value: broadcastSecret || 'Loading...', style: { flex: 1, padding: '0.5rem', fontFamily: 'monospace', color: '#ff4444' } }), _jsx("button", { onClick: handleCopySecret, style: { padding: '0.5rem 1rem', cursor: 'pointer' }, children: "Copy Secret" })] })] })) : (_jsx("p", { children: "Starting tunnel..." }))] }), _jsxs("div", { style: { marginTop: '2rem', padding: '1rem', border: '1px solid #4a9d6e', borderRadius: '8px', background: '#f0fff4' }, children: [_jsx("h2", { style: { marginTop: 0, color: '#2d6a4f' }, children: "\uD83D\uDCC1 Broadcast Data Folder" }), _jsx("p", { style: { fontSize: '13px', color: '#555', marginBottom: '0.5rem' }, children: "Rosters, match logs, and season data are stored here. Share this folder with other casters so everyone can see what's been cast." }), dataDir && (_jsxs("div", { style: { display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }, children: [_jsx("input", { readOnly: true, value: dataDir, style: { flex: 1, padding: '0.4rem 0.6rem', fontFamily: 'monospace', fontSize: '12px', background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: '4px' } }), _jsx("button", { onClick: handleOpenDataFolder, style: { padding: '0.4rem 0.8rem', cursor: 'pointer', background: '#388e3c', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }, children: "Open Folder" })] })), openFolderStatus && (_jsx("p", { style: { fontSize: '12px', color: '#2d6a4f', margin: 0 }, children: openFolderStatus })), _jsxs("p", { style: { fontSize: '12px', color: '#777', margin: '0.5rem 0 0' }, children: ["Tip: To hand off to another caster, share the ", _jsx("strong", { children: "BPCLBroadcast" }), " folder via OneDrive or Google Drive. Replays stay on your local PC \u2014 only their filenames are recorded in the log."] })] }), _jsxs("div", { style: { marginTop: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px', maxHeight: '200px', overflowY: 'auto' }, children: [_jsx("h2", { children: "System Logs" }), logs.map((log, i) => _jsx("div", { style: { fontSize: '12px', color: '#666', marginBottom: '4px' }, children: log }, i))] })] }));
+    return (_jsxs("div", { style: { padding: '2rem', fontFamily: 'sans-serif' }, children: [_jsx("h1", { children: "BPCL Streamer Hub" }), _jsx("p", { children: "Your local broadcast API and overlay host." }), _jsxs("div", { style: { marginTop: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }, children: [_jsx("h2", { children: "OBS WebSocket Setup" }), _jsxs("div", { style: { display: 'flex', gap: '1rem', marginBottom: '1rem' }, children: [_jsx("input", { placeholder: "Port (e.g. 4455)", value: obsPort, onChange: (e) => {
+                                    setObsPort(e.target.value);
+                                    window.ipcRenderer?.invoke('save-settings', { port: e.target.value, password: obsPassword });
+                                }, style: { padding: '0.5rem' } }), _jsx("input", { placeholder: "Password", type: "password", value: obsPassword, onChange: (e) => {
+                                    setObsPassword(e.target.value);
+                                    window.ipcRenderer?.invoke('save-settings', { port: obsPort, password: e.target.value });
+                                }, style: { padding: '0.5rem' } }), _jsx("button", { onClick: handleObsConnect, style: { padding: '0.5rem 1rem', cursor: 'pointer' }, children: "Connect" })] })] }), _jsxs("div", { style: { marginTop: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }, children: [_jsx("h2", { children: "Remote Control URL & Secret" }), tunnelUrl ? (_jsxs("div", { children: [_jsx("p", { children: "Send this link to your admin:" }), _jsxs("div", { style: { display: 'flex', gap: '1rem', marginBottom: '1rem' }, children: [_jsx("input", { readOnly: true, value: tunnelUrl + '/admin', style: { flex: 1, padding: '0.5rem' } }), _jsx("button", { onClick: handleCopyLink, style: { padding: '0.5rem 1rem', cursor: 'pointer' }, children: "Copy Link" })] }), _jsx("p", { children: "Admin Login Secret:" }), _jsxs("div", { style: { display: 'flex', gap: '1rem', marginBottom: '1rem' }, children: [_jsx("input", { readOnly: true, value: broadcastSecret || 'Loading...', style: { flex: 1, padding: '0.5rem', fontFamily: 'monospace', color: '#ff4444' } }), _jsx("button", { onClick: handleCopySecret, style: { padding: '0.5rem 1rem', cursor: 'pointer' }, children: "Copy Secret" })] })] })) : (_jsx("p", { children: "Starting tunnel..." }))] }), _jsxs("div", { style: { marginTop: '2rem', padding: '1rem', border: '1px solid #4a9d6e', borderRadius: '8px', background: '#f0fff4' }, children: [_jsx("h2", { style: { marginTop: 0, color: '#2d6a4f' }, children: "\uD83D\uDCC1 Broadcast Data Folder" }), _jsx("p", { style: { fontSize: '13px', color: '#555', marginBottom: '0.5rem' }, children: "Rosters, match logs, and season data are stored here. Share this folder with other casters so everyone can see what's been cast." }), dataDir && (_jsxs("div", { style: { display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }, children: [_jsx("input", { readOnly: true, value: dataDir, style: { flex: 1, padding: '0.4rem 0.6rem', fontFamily: 'monospace', fontSize: '12px', background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: '4px' } }), _jsx("button", { onClick: handleOpenDataFolder, style: { padding: '0.4rem 0.8rem', cursor: 'pointer', background: '#388e3c', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }, children: "Open Folder" })] })), openFolderStatus && (_jsx("p", { style: { fontSize: '12px', color: '#2d6a4f', margin: 0 }, children: openFolderStatus })), _jsxs("p", { style: { fontSize: '12px', color: '#777', margin: '0.5rem 0 0' }, children: ["Tip: To hand off to another caster, share the ", _jsx("strong", { children: "BPCLBroadcast" }), " folder via OneDrive or Google Drive. Replays stay on your local PC \u2014 only their filenames are recorded in the log."] })] }), _jsxs("div", { style: { marginTop: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px', maxHeight: '200px', overflowY: 'auto' }, children: [_jsx("h2", { children: "System Logs" }), logs.map((log, i) => _jsx("div", { style: { fontSize: '12px', color: '#666', marginBottom: '4px' }, children: log }, i))] })] }));
 }

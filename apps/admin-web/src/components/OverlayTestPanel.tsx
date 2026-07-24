@@ -126,7 +126,7 @@ export function OverlayTestPanel({
   };
 
   const isVersusVisible = state?.overlayVisibility?.versus === "visible" || 
-                          (typeof state?.overlayVisibility?.versus === "object" && state?.overlayVisibility?.versus?.mode !== "hidden");
+                          (typeof state?.overlayVisibility?.versus === "object" && state?.overlayVisibility?.versus?.mode === "timed");
   
   const handleMockLiveCard = async () => {
     setBusy(true);

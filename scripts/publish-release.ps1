@@ -139,7 +139,9 @@ $UpdateDownloadUrl = "https://github.com/$GithubOrg/$GithubRepo/releases/downloa
 $VersionJson = [ordered]@{
     version     = $Version
     url         = $FullDownloadUrl
-    updateUrl   = $UpdateDownloadUrl
+    # Temporarily force full update for everyone to fix the nested folder issue 
+    # where old launchers load the wrong executable
+    updateUrl   = $FullDownloadUrl
     notes       = $ReleaseNotes
     publishedAt = (Get-Date -Format 'o')
 } | ConvertTo-Json -Depth 3

@@ -57,6 +57,7 @@ export function MatchSetupPanel({
   const [seriesGame, setSeriesGame] = useState(1);
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);
+  const [forceManualScore, setForceManualScore] = useState(false);
   const [stageLabel, setStageLabel] = useState("");
   const [busy, setBusy] = useState(false);
   
@@ -129,6 +130,7 @@ export function MatchSetupPanel({
     if (matchSetup?.seriesGame) setSeriesGame(matchSetup.seriesGame);
     if (matchSetup?.scoreA !== undefined) setScoreA(matchSetup.scoreA);
     if (matchSetup?.scoreB !== undefined) setScoreB(matchSetup.scoreB);
+    if (matchSetup?.forceManualScore !== undefined) setForceManualScore(matchSetup.forceManualScore);
     if (matchSetup?.stageLabel !== undefined) setStageLabel(matchSetup.stageLabel);
     if (matchSetup?.playerMemes) setPlayerMemes(matchSetup.playerMemes);
   }, [
@@ -138,6 +140,7 @@ export function MatchSetupPanel({
     matchSetup?.seriesGame,
     matchSetup?.scoreA,
     matchSetup?.scoreB,
+    matchSetup?.forceManualScore,
     matchSetup?.stageLabel,
     matchSetup?.playerMemes,
   ]);
@@ -171,6 +174,7 @@ export function MatchSetupPanel({
           seriesGame,
           scoreA,
           scoreB,
+          forceManualScore,
           stageLabel: stageLabel.trim() || undefined,
           pickPlayers: matchSetup?.pickPlayers,
           playerMemes,
@@ -390,6 +394,22 @@ export function MatchSetupPanel({
                 }}
               />
             </div>
+          </div>
+          
+          <div className="flex items-center gap-2 mt-4 ml-1">
+            <input
+              type="checkbox"
+              id="forceManualScore"
+              checked={forceManualScore}
+              onChange={(e) => {
+                matchSetupDirtyRef.current = true;
+                setForceManualScore(e.target.checked);
+              }}
+              className="accent-emerald-500 rounded bg-slate-900 border-white/10"
+            />
+            <label htmlFor="forceManualScore" className="text-xs text-slate-400 cursor-pointer select-none">
+              Force override GSI series score with manual score
+            </label>
           </div>
 
           <div className="mt-4">

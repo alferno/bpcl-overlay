@@ -910,10 +910,8 @@ export const HERO_ABILITIES: Record<string, string[]> = {
     "monkey_king_mischief",
     "monkey_king_wukongs_command",
     "monkey_king_primal_spring_early",
-    [
-      "monkey_king_untransform",
-      "monkey_king_transfiguration"
-    ]
+    "monkey_king_untransform",
+    "monkey_king_transfiguration"
   ],
   "pangolier": [
     "pangolier_swashbuckle",

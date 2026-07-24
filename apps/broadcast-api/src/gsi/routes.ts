@@ -25,6 +25,8 @@ import { assertLeagueStatsReady } from "../services/league-stats-guard.js";
 import { parsePostGamePayload } from "../services/post-game-mvp.js";
 import { getTeamByKey } from "../services/roster-teams.js";
 import { rankMvpCandidates } from "../services/mvp-scorer.js";
+import { recordMatchEnd, getCurrentSeriesContext } from "../services/series-history.js";
+import { reportMatchResult } from "../services/bpcl-api.js";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -231,10 +233,15 @@ async function autoDetectMatchSetup(
     else if (mapData.match_series_type === 1) seriesBestOf = 3;
     else if (mapData.match_series_type === 2) seriesBestOf = 5;
   }
+  const draftData = payload.draft as Record<string, any> | undefined;
   
-  const scoreA = mapData?.radiant_series_wins ?? currentMatchSetup?.scoreA ?? 0;
-  const scoreB = mapData?.dire_series_wins ?? currentMatchSetup?.scoreB ?? 0;
-  
+  const scoreA = currentMatchSetup?.forceManualScore 
+    ? (currentMatchSetup?.scoreA ?? 0) 
+    : (draftData?.radiant?.series_wins ?? mapData?.radiant_series_wins ?? currentMatchSetup?.scoreA ?? 0);
+    
+  const scoreB = currentMatchSetup?.forceManualScore 
+    ? (currentMatchSetup?.scoreB ?? 0) 
+    : (draftData?.dire?.series_wins ?? mapData?.dire_series_wins ?? currentMatchSetup?.scoreB ?? 0);
   // 3. Smart Swap for Pick Players
   const existingRadiant: (number | null)[] = currentMatchSetup?.pickPlayers?.radiant ?? [null, null, null, null, null];
   const existingDire: (number | null)[] = currentMatchSetup?.pickPlayers?.dire ?? [null, null, null, null, null];
@@ -319,6 +326,7 @@ async function autoDetectMatchSetup(
       seriesGame: currentMatchSetup?.seriesGame ?? 1,
       scoreA,
       scoreB,
+      forceManualScore: currentMatchSetup?.forceManualScore ?? false,
       stageLabel: currentMatchSetup?.stageLabel,
       pickPlayers: { radiant: newRadiant, dire: newDire },
       playerMemes: currentMatchSetup?.playerMemes,
@@ -641,6 +649,7 @@ export function attachGsiRoutes(opts: {
       snap.draft ?? null,
       roster,
       matchSetup,
+      getCurrentSeriesContext(),
     );
 
     const focusedPlayer = detectFocusedPlayer(payload);
@@ -1489,6 +1498,17 @@ export function attachGsiRoutes(opts: {
         try {
           const postGame = parsePostGamePayload(payload);
 
+          // Track Series History exactly once at the edge
+          if (enteredPostGame && postGame.matchId && postGame.isPostGame) {
+            const radName = snap.draft?.radiant?.name || "Radiant";
+            const direName = snap.draft?.dire?.name || "Dire";
+            const actualWinner = winTeam?.toLowerCase() === "radiant" || winTeam?.toLowerCase() === "dire" 
+              ? winTeam.toLowerCase() as "radiant" | "dire"
+              : (payload?.map as any)?.radiant_win ? "radiant" : "dire";
+            
+            void recordMatchEnd(postGame.matchId, radName, direName, actualWinner, snap.draft);
+          }
+
           // Fire exactly once per match (key by matchId or by the transition)
           const fireKey = postGame.matchId || "post_game_transition";
           const alreadyFired = postGameMvpFiredForMatchId === fireKey && !enteredPostGame;
@@ -1521,6 +1541,22 @@ export function attachGsiRoutes(opts: {
                 ? heroPortraitFieldsForHero(winner.heroId, winner.heroName)
                 : {};
 
+              let winningTeamName: string | undefined;
+              let winningTeamLogoUrl: string | undefined;
+              const actualWinnerSide = winTeam?.toLowerCase() === "radiant" || winTeam?.toLowerCase() === "dire"
+                ? winTeam.toLowerCase() as "radiant" | "dire"
+                : (payload?.map as any)?.radiant_win ? "radiant" : "dire";
+              
+              if (mvpSnap.leagueConfig?.matchSetup) {
+                const ms = mvpSnap.leagueConfig.matchSetup;
+                const tk = actualWinnerSide === "radiant" ? ms.radiantTeamKey : ms.direTeamKey;
+                if (tk) {
+                  const teamData = getTeamByKey(mvpRoster, tk);
+                  winningTeamName = teamData?.teamName;
+                  winningTeamLogoUrl = `/teams/${tk}.png`;
+                }
+              }
+
               const standoutCard = {
                 playerLabel:
                   rosterPlayer?.displayName ??
@@ -1543,6 +1579,8 @@ export function attachGsiRoutes(opts: {
                 items: winner.raw.items,
                 hasScepter: winner.raw.hasScepter,
                 hasShard: winner.raw.hasShard,
+                winningTeamName,
+                winningTeamLogoUrl,
               };
 
               // Resolve player label from GSI player name if roster match failed
@@ -1565,6 +1603,24 @@ export function attachGsiRoutes(opts: {
                 logger.info(
                   { mvpScore: winner.mvpScore, heroId: winner.heroId, accountId: winner.accountId },
                   "[post-game] Standout Player auto-selected and pushed to overlay after 5s delay",
+                );
+
+                // Report match result to API only on auto standout player show
+                const team1Name = mvpSnap.leagueConfig?.matchSetup?.radiantTeamKey 
+                  ? getTeamByKey(mvpRoster, mvpSnap.leagueConfig.matchSetup.radiantTeamKey)?.teamName || "Radiant"
+                  : "Radiant";
+                const team2Name = mvpSnap.leagueConfig?.matchSetup?.direTeamKey
+                  ? getTeamByKey(mvpRoster, mvpSnap.leagueConfig.matchSetup.direTeamKey)?.teamName || "Dire"
+                  : "Dire";
+                
+                const seriesCtx = getCurrentSeriesContext();
+                const gameNum = seriesCtx?.gameNumber;
+
+                void reportMatchResult(
+                  team1Name,
+                  team2Name,
+                  winningTeamName || (actualWinnerSide === "radiant" ? team1Name : team2Name),
+                  gameNum
                 );
               }, 5000);
             }

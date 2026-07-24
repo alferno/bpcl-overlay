@@ -191,6 +191,18 @@ ipcMain.handle('download-and-install', async (_event, { downloadUrl, version }) 
       }
     })
 
+    // Clean up old files in the install directory to avoid conflicting versions
+    try {
+      const items = fs.readdirSync(INSTALL_DIR)
+      for (const item of items) {
+        if (item === 'version.txt') continue
+        const itemPath = path.join(INSTALL_DIR, item)
+        fs.rmSync(itemPath, { recursive: true, force: true })
+      }
+    } catch (e) {
+      console.error('Failed to clean up install directory:', e)
+    }
+
     // Extract over existing install dir
     await execPromise(`powershell -command "Expand-Archive -Force -Path '${zipPath}' -DestinationPath '${INSTALL_DIR}'"`, { windowsHide: true })
 

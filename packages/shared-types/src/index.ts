@@ -117,6 +117,7 @@ export const matchSetupSchema = z.object({
   seriesGame: z.number().int().min(1).max(5).default(1),
   scoreA: z.number().int().min(0).default(0),
   scoreB: z.number().int().min(0).default(0),
+  forceManualScore: z.boolean().default(false),
   /** Right side of draft title bar (e.g. "Quarter finals 1") */
   stageLabel: z.string().optional(),
   /** Manual steam32 assignment per CM pick slot (0–4), set in admin */
@@ -269,6 +270,8 @@ export const productionSettingsSchema = z.object({
   playerMappingPublished: z.boolean().default(false),
   /** Increment to clear overlay draft reveal queue (OBS cache reset) */
   overlayDraftEpoch: z.number().optional(),
+  /** Toggle visibility of the score during drafting phase */
+  hideDraftScore: z.boolean().default(false),
   layoutConfig: z.object({
     minimapIcons: overlayLayoutSchema.optional(),
     livePlayerCard: overlayLayoutSchema.optional(),
@@ -301,6 +304,10 @@ export const draftSlotSchema = z.object({
   playerName: z.string().optional(),
   /** Steam account id (32-bit) for roster CSV lookup */
   steam32: z.number().optional(),
+  /** Draft analysis flags */
+  priorBan: z.boolean().optional(),
+  stolen: z.boolean().optional(),
+  samePick: z.boolean().optional(),
 });
 
 export type DraftSlot = z.infer<typeof draftSlotSchema>;
@@ -401,6 +408,8 @@ export const standoutPlayerCardSchema = z.object({
   items: z.array(z.number()).length(10).optional(),
   hasScepter: z.boolean().optional(),
   hasShard: z.boolean().optional(),
+  winningTeamName: z.string().optional(),
+  winningTeamLogoUrl: z.string().optional(),
 });
 
 export type StandoutPlayerCard = z.infer<typeof standoutPlayerCardSchema>;
@@ -412,6 +421,7 @@ export const playerStatsCardSchema = z.object({
   heroName: z.string().optional(),
   heroPortraitSlug: z.string().optional(),
   heroPortraitUrl: z.string().optional(),
+  teamColor: z.string().optional(),
   statLines: z
     .array(
       z.object({
@@ -712,6 +722,7 @@ export function createDefaultEnvelope(): OverlayEnvelope {
       gsiConnected: false,
       playerMappingPublished: false,
       overlayDraftEpoch: 0,
+      hideDraftScore: false,
     },
     statCarousel: null,
     draft: null,

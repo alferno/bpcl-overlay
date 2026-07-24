@@ -48,9 +48,11 @@ export default function DraftPage() {
 
           {draft && draft.phase !== "starting" && (
             <DraftDataOverlay 
+              draft={draft}
               leagueConfig={state.leagueConfig} 
               teamColors={teamColors} 
               playerHeroIndex={state.playerHeroIndex}
+              production={state.production}
             />
           )}
           
@@ -59,6 +61,7 @@ export default function DraftPage() {
               <DraftStartingPanel
                 draft={draft}
                 leagueConfig={state.leagueConfig}
+                production={state.production}
               />
             ) : (
               <DraftBlastBar

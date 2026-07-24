@@ -43,9 +43,16 @@ export function DraftCenterHub({
         boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
       }}
     >
+      {/* Top: Game Number */}
+      <div className="absolute top-4 left-0 right-0 flex justify-center">
+        <div className="text-xs font-bold tracking-[0.2em] text-emerald-500 uppercase whitespace-nowrap">
+          Game {(draft.series?.scoreA ?? 0) + (draft.series?.scoreB ?? 0) + 1}
+        </div>
+      </div>
+
       {/* Middle: Team Logos & Priority */}
-      <div className="flex items-center justify-between px-2 mb-6 mt-2">
-        <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center justify-between px-2 mb-6 mt-6">
+        <div className="flex flex-col items-center gap-2 z-10">
           <TeamLogo src={logoA} color={teamColors.radiant} />
           <span className="text-[10px] font-bold tracking-widest text-slate-300 uppercase truncate w-24 text-center">
             {teamNameA}
@@ -68,7 +75,7 @@ export function DraftCenterHub({
           )}
         </div>
 
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2 z-10">
           <TeamLogo src={logoB} color={teamColors.dire} />
           <span className="text-[10px] font-bold tracking-widest text-slate-300 uppercase truncate w-24 text-center">
             {teamNameB}

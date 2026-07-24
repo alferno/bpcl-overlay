@@ -70,7 +70,7 @@ export async function bootstrapBroadcastServer() {
   process.on("SIGINT", () => void shutdown());
   process.on("SIGTERM", () => void shutdown());
 
-  return { obs, opendota, state, shutdown };
+  return { obs, opendota, state, broadcast: ctx.broadcast, shutdown };
 }
 
 import { fileURLToPath } from "node:url";

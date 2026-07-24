@@ -18,9 +18,11 @@ const STARTING_LOGO = "h-[168px] w-[168px]";
 export function DraftStartingPanel({
   draft,
   leagueConfig,
+  production,
 }: {
   draft: DraftState;
   leagueConfig?: LeagueConfig;
+  production?: import("@bpc/shared-types").ProductionSettings | null;
 }) {
   const serverStart = draft.startSecondsRemaining;
   const seconds = useDraftCountdown(serverStart, "draft-starting");
@@ -54,7 +56,7 @@ export function DraftStartingPanel({
             <p className="font-heading text-sm font-semibold tracking-[0.22em] text-zinc-400">
               {seriesLabel}
             </p>
-            {sides.scoreLabel ? (
+            {!production?.hideDraftScore && sides.scoreLabel ? (
               <p className="mt-1 font-heading text-xs font-bold tracking-[0.2em] text-slate-500">
                 SERIES {sides.scoreLabel}
               </p>

@@ -1,59 +1,79 @@
-import type { DraftSlot, DraftState } from "@bpc/shared-types";
+import type { DraftSlot } from "@bpc/shared-types";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function DraftHistoryTags({
   currentSlot,
-  currentTeamSide,
-  previousDrafts,
 }: {
   currentSlot: DraftSlot | null;
-  currentTeamSide: "radiant" | "dire";
-  previousDrafts?: DraftState[];
 }) {
-  if (!currentSlot?.heroId || !previousDrafts || previousDrafts.length === 0) {
-    return null;
-  }
+  const [show, setShow] = useState(false);
 
-  const lastDraft = previousDrafts[previousDrafts.length - 1];
-  if (!lastDraft) return null;
+  useEffect(() => {
+    if (currentSlot?.heroId && (currentSlot.priorBan || currentSlot.stolen || currentSlot.samePick)) {
+      setShow(true);
+      const t = setTimeout(() => {
+        setShow(false);
+      }, 10000); // 10 seconds
+      return () => clearTimeout(t);
+    } else {
+      setShow(false);
+    }
+  }, [currentSlot?.heroId, currentSlot?.priorBan, currentSlot?.stolen, currentSlot?.samePick]);
 
-  const opponentSide = currentTeamSide === "radiant" ? "dire" : "radiant";
-
-  // Check last game picks
-  const lastGameOurPicks = lastDraft[currentTeamSide]?.slots?.filter(s => s.type === "pick") || [];
-  const lastGameOpponentPicks = lastDraft[opponentSide]?.slots?.filter(s => s.type === "pick") || [];
-  
-  // Check last game bans
-  const lastGameAllBans = [
-    ...(lastDraft.radiant?.slots?.filter(s => s.type === "ban") || []),
-    ...(lastDraft.dire?.slots?.filter(s => s.type === "ban") || [])
-  ];
+  if (!currentSlot?.heroId) return null;
 
   let tagText = "";
   let tagColor = "";
+  let borderColor = "";
   
   // Logic priority based on user request:
-  // 1. PRIO BANNED: if banned then picked
-  // 2. STOLEN: if picked and then picked (by other)
-  // 3. SAME: if picked and then picked (by same)
-
-  if (lastGameAllBans.some(s => s.heroId === currentSlot.heroId)) {
-    tagText = "PRIO BANNED";
-    tagColor = "bg-rose-950/80 text-rose-400 border-rose-500/30 shadow-[0_0_8px_rgba(244,63,94,0.4)]";
-  } else if (lastGameOpponentPicks.some(s => s.heroId === currentSlot.heroId)) {
+  if (currentSlot.priorBan) {
+    tagText = "PRIOR BAN";
+    tagColor = "bg-red-600/90 text-white border-red-500 shadow-[0_0_12px_rgba(220,38,38,0.8)]";
+    borderColor = "border-red-500 shadow-[inset_0_0_20px_rgba(220,38,38,0.5)]";
+  } else if (currentSlot.stolen) {
     tagText = "STOLEN";
-    tagColor = "bg-amber-950/80 text-amber-400 border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.4)]";
-  } else if (lastGameOurPicks.some(s => s.heroId === currentSlot.heroId)) {
+    tagColor = "bg-yellow-500/90 text-black border-yellow-400 shadow-[0_0_12px_rgba(234,179,8,0.8)]";
+    borderColor = "border-yellow-400 shadow-[inset_0_0_20px_rgba(234,179,8,0.5)]";
+  } else if (currentSlot.samePick) {
     tagText = "SAME";
-    tagColor = "bg-emerald-950/80 text-emerald-400 border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.4)]";
+    tagColor = "bg-green-600/90 text-white border-green-500 shadow-[0_0_12px_rgba(22,163,74,0.8)]";
+    borderColor = "border-green-500 shadow-[inset_0_0_20px_rgba(22,163,74,0.5)]";
   }
 
-  if (!tagText) return null;
-
   return (
-    <div className="absolute top-1 left-1 z-[10] pointer-events-none">
-      <span className={`inline-block px-1.5 py-0.5 rounded border text-[9px] font-black tracking-widest uppercase shadow-lg backdrop-blur-sm ${tagColor}`}>
-        {tagText}
-      </span>
-    </div>
+    <AnimatePresence>
+      {show && tagText ? (
+        <motion.div
+          key="history-tags"
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          className="absolute inset-0 z-[14] pointer-events-none"
+        >
+          <motion.div 
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1 }
+            }}
+            transition={{ duration: 0.4 }}
+            className={`absolute inset-0 border-2 rounded-md ${borderColor}`}
+          />
+          <motion.div 
+            variants={{
+              hidden: { opacity: 0, y: 10, scale: 0.9, filter: "blur(4px)" },
+              visible: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+            }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="absolute inset-x-0 bottom-[22%] flex justify-center"
+          >
+            <span className={`w-full text-center py-1 border-y text-xs md:text-sm font-black tracking-widest uppercase shadow-lg backdrop-blur-md ${tagColor}`}>
+              {tagText}
+            </span>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }

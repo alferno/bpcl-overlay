@@ -128,14 +128,18 @@ export async function fetchAndWriteCommunityCsv(): Promise<BpclMember[]> {
   while (true) {
     const url = `https://api.bpcleague.in/api/public/community?limit=${PAGE_SIZE}&offset=${offset}`;
     try {
-      const res = await axios.get<any>(url);
+      const res = await axios.get<any>(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+      });
       const players = res.data?.players || [];
       if (players.length === 0) break;
       rawMerged.push(...players);
       if (players.length < PAGE_SIZE) break;
       offset += PAGE_SIZE;
-    } catch (err) {
-      logger.error({ err, url }, "[Community] Failed to fetch community players page");
+    } catch (err: any) {
+      logger.error({ err, url }, `[Community] Network request failed for offset ${offset}: ${err.message}`);
       break;
     }
   }

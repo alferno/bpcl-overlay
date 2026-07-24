@@ -52,7 +52,10 @@ export async function fetchCachedJson<T>(url: string, ttlMs: number): Promise<T>
   logger.info({ url }, "[Cache] Miss or expired — fetching from network");
   try {
     const res = await fetch(url, {
-      headers: { Accept: "application/json" },
+      headers: { 
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
     });
 
     if (!res.ok) {
@@ -70,8 +73,8 @@ export async function fetchCachedJson<T>(url: string, ttlMs: number): Promise<T>
     }
 
     return data;
-  } catch (err) {
-    logger.error({ err, url }, "[Cache] Network request failed");
+  } catch (err: any) {
+    logger.error({ err, url }, `[Cache] Network request failed: ${err.message}`);
     
     // Fall back to expired cache if we have one (to prevent the app from breaking if hostinger bans us)
     if (cachedEntry) {

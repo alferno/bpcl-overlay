@@ -5,9 +5,11 @@ import { Btn, ErrBox, apiFetch } from "./Common";
 export function ReplayManagerPanel({
   origin,
   token,
+  state,
 }: {
   origin: string;
   token: string;
+  state: any;
 }) {
   const [replays, setReplays] = useState<Replay[]>([]);
   const [currentMatch, setCurrentMatch] = useState(1);

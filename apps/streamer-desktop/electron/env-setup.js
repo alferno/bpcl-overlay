@@ -44,4 +44,6 @@ if (!process.env.COMMUNITY_CSV_PATH)
     process.env.COMMUNITY_CSV_PATH = path.join(bpclBase, 'System', 'Rosters', 'community_members.csv');
 if (!process.env.LEAGUE_STATS_DIR)
     process.env.LEAGUE_STATS_DIR = path.join(bpclBase, 'System', 'Stats');
+if (!process.env.SETTINGS_FILE)
+    process.env.SETTINGS_FILE = path.join(bpclBase, 'System', 'settings.json');
 export { bpclBase };

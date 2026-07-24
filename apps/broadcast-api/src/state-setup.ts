@@ -18,7 +18,7 @@ export async function createAppState(): Promise<StateManager> {
   const settings = await settingsManager.load();
   if (settings.layoutConfig) {
     if (!seed.production) seed.production = {} as any;
-    seed.production.layoutConfig = settings.layoutConfig as any;
+    seed.production!.layoutConfig = settings.layoutConfig as any;
   }
 
   if (env.STATE_BACKEND === "memory") {
