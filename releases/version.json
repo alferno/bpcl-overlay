@@ -1,7 +1,7 @@
 {
-    "version":  "1.2.2",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.2.2/BPCL-Streamer-v1.2.2-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.2.2/BPCL-Streamer-v1.2.2-Full.zip",
-    "notes":  "Fix HeroesPlayedRow portrait import",
-    "publishedAt":  "2026-08-21T22:38:46.3638203+05:30"
+    "version":  "1.3.2",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.2/BPCL-Streamer-v1.3.2-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.2/BPCL-Streamer-v1.3.2-Full.zip",
+    "notes":  "Automated overlay and API update",
+    "publishedAt":  "2026-08-25T11:26:15.5711734+05:30"
 }
