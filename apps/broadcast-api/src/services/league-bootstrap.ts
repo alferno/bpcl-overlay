@@ -24,6 +24,8 @@ async function applyLeagueSnapshot(opts: {
   const { leagueId, state, broadcast, source } = opts;
   const snapshot =
     source === "csv" ? await loadLeagueStatsFromDisk(leagueId) : null;
+  const lifetimeSnapshot =
+    source === "csv" ? await loadLeagueStatsFromDisk("lifetime") : null;
 
   if (!snapshot) return false;
 
@@ -38,6 +40,10 @@ async function applyLeagueSnapshot(opts: {
   const next = await state.patchState({
     tournamentHeroIndex: snapshot.heroIndex,
     playerHeroIndex: buildPlayerHeroIndex(snapshot.playerHeroes),
+    ...(lifetimeSnapshot && {
+      lifetimeTournamentHeroIndex: lifetimeSnapshot.heroIndex,
+      lifetimePlayerHeroIndex: buildPlayerHeroIndex(lifetimeSnapshot.playerHeroes),
+    }),
     leagueConfig: {
       ...currentSnap.leagueConfig,
       leagueId,
@@ -102,7 +108,7 @@ export async function runLeagueAggregation(opts: {
     const currentLeagueId = targetLeagueIds[targetLeagueIds.length - 1] ?? leagueId;
 
     const currentIndex = await tournamentAggregator.aggregateLeagues(
-      [currentLeagueId],
+      targetLeagueIds,
       opendota,
       80,
       async (prog) => {
@@ -123,6 +129,7 @@ export async function runLeagueAggregation(opts: {
 
     let lifetimeIndex = currentIndex;
     let lifetimePlayerHeroes = currentPlayerHeroes;
+    const aggregatedAt = new Date().toISOString();
 
     if (targetLeagueIds.length > 1) {
       lifetimeIndex = await tournamentAggregator.aggregateLeagues(
@@ -142,8 +149,19 @@ export async function runLeagueAggregation(opts: {
         },
       );
       lifetimePlayerHeroes = tournamentAggregator.exportPlayerHeroRows();
+      
+      await saveLeagueStatsToDisk({
+        heroIndex: lifetimeIndex,
+        playerHeroes: lifetimePlayerHeroes,
+        meta: {
+          leagueId: "lifetime",
+          matchTotal: tournamentAggregator.getProgress().matchTotal,
+          matchDone: tournamentAggregator.getProgress().matchDone,
+          aggregatedAt,
+          source: "api",
+        },
+      });
     }
-    const aggregatedAt = new Date().toISOString();
 
     await saveLeagueStatsToDisk({
       heroIndex: currentIndex,
@@ -156,6 +174,20 @@ export async function runLeagueAggregation(opts: {
         source: "api",
       },
     });
+
+    // ── Save extracted item timings from match purchase_log data ──────────────
+    try {
+      const timingRows = tournamentAggregator.exportItemTimingRows();
+      if (timingRows.length > 0) {
+        const { saveExtractedLeagueTimings } = await import("./item-timings.js");
+        await saveExtractedLeagueTimings(timingRows);
+        logger.info({ rows: timingRows.length }, "Item timings extracted from BPCL matches and saved");
+      } else {
+        logger.info("No item timing data in match purchase_logs (matches may not be parsed by OpenDota yet)");
+      }
+    } catch (err) {
+      logger.warn({ err }, "Failed to save extracted item timings");
+    }
 
     const next = await state.patchState({
       tournamentHeroIndex: currentIndex,

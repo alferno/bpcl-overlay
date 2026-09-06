@@ -310,9 +310,18 @@ export function StatsWorkspace({
               lc?.aggregationStatus === "running" ||
               aggBusy
             }
-            onClick={() => {
+            onClick={async () => {
               setAggBusy(true);
-              void post("/api/league/aggregate").then(() => void pollStatus());
+              try {
+                await post("/api/league/config", { 
+                  leagueIds: leagueIdsInput.split(",").map(s => Number(s.trim())).filter(n => !isNaN(n))
+                });
+                await post("/api/league/aggregate", {});
+              } catch (err) {
+                // ignore
+              } finally {
+                setAggBusy(false);
+              }
             }}
           >
             {lc?.aggregationStatus === "running" || aggBusy

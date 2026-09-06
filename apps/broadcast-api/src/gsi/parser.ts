@@ -777,6 +777,16 @@ export function parseGsiToDraft(
   }
 
   // ── Apply Series Context Draft Insights ──────────────────────────────────
+  // Validate that the series context actually matches the current teams.
+  // If a new lobby started with different teams, the old series context is invalid.
+  if (
+    seriesContext &&
+    !((seriesContext.radiantTeam === radiantSide.name && seriesContext.direTeam === direSide.name) ||
+      (seriesContext.radiantTeam === direSide.name && seriesContext.direTeam === radiantSide.name))
+  ) {
+    seriesContext = null;
+  }
+
   if (seriesContext?.lastDraft) {
     const { lastDraft } = seriesContext;
     
@@ -851,10 +861,10 @@ export function parseGsiToDraft(
     series: {
       teamA: radiantSide.name,
       teamB: direSide.name,
-      scoreA: seriesContext ? seriesContext.radiantWins : (prev?.series.scoreA ?? 0),
-      scoreB: seriesContext ? seriesContext.direWins : (prev?.series.scoreB ?? 0),
-      bestOf: prev?.series.bestOf,
-      gameNumber: seriesContext ? seriesContext.gameNumber : (prev?.series.gameNumber),
+      scoreA: matchSetup?.forceManualScore ? (matchSetup.scoreA ?? 0) : (seriesContext ? seriesContext.radiantWins : (matchSetup?.scoreA ?? prev?.series.scoreA ?? 0)),
+      scoreB: matchSetup?.forceManualScore ? (matchSetup.scoreB ?? 0) : (seriesContext ? seriesContext.direWins : (matchSetup?.scoreB ?? prev?.series.scoreB ?? 0)),
+      bestOf: matchSetup?.seriesBestOf ?? prev?.series.bestOf,
+      gameNumber: matchSetup?.forceManualScore ? (matchSetup.seriesGame ?? 1) : (seriesContext ? seriesContext.gameNumber : (matchSetup?.seriesGame ?? prev?.series.gameNumber ?? 1)),
       logoUrlA: radiantSide.logoUrl ?? prev?.series.logoUrlA,
       logoUrlB: direSide.logoUrl ?? prev?.series.logoUrlB,
     },

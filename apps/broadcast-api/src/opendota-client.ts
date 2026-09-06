@@ -61,6 +61,8 @@ export type OpenDotaMatchPlayer = {
   // Aghanim upgrades (1 = owned)
   aghanims_scepter?: number;
   aghanims_shard?: number;
+  /** Item purchase log — array of { key: string; time: number } (parsed matches only) */
+  purchase_log?: Array<{ key: string; time: number }>;
 };
 
 

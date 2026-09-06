@@ -480,5 +480,6 @@ function buildCardFromCandidate(
     items: c.raw.items,
     hasScepter: c.raw.hasScepter,
     hasShard: c.raw.hasShard,
+    winningTeam: serverCard.winningTeam,
   };
 }

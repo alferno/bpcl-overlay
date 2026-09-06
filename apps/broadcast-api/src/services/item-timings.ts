@@ -248,6 +248,40 @@ export function getLeagueItemTiming(heroId: number, itemKey: string): { time: nu
   return leagueTimingsCache[cleanKey]?.[heroId] ?? null;
 }
 
+/**
+ * Primary timing lookup — returns BPCL league data only.
+ * Returns null if no BPCL data exists for this hero/item combo (show "First time in BPCL").
+ * Global data is NOT returned here — use getAverageItemTiming() for diagnostics only.
+ */
+export function getItemTiming(heroId: number, itemKey: string): { time: number; count: number; source: "league" } | null {
+  const league = getLeagueItemTiming(heroId, itemKey);
+  if (league) return { ...league, source: "league" };
+  return null;
+}
+
+/**
+ * Save timing rows extracted directly from OpenDota match purchase_log data during aggregation.
+ * This replaces the old Explorer SQL approach (which doesn't work for private BPCL leagues).
+ */
+export async function saveExtractedLeagueTimings(
+  rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number }>,
+): Promise<void> {
+  // Update in-memory cache
+  for (const { heroId, item, avgTimeSec, count } of rows) {
+    if (!leagueTimingsCache[item]) leagueTimingsCache[item] = {};
+    leagueTimingsCache[item][heroId] = { time: avgTimeSec, count };
+  }
+
+  // Persist to CSV
+  try {
+    await ensureDataDir();
+    await writeFile(LEAGUE_CSV, serializeTimingsCsv(rows), "utf8");
+    logger.info({ rows: rows.length, path: LEAGUE_CSV }, "[ItemTimings] Extracted league timings saved to CSV");
+  } catch (err) {
+    logger.warn({ err }, "[ItemTimings] Failed to save extracted league timings CSV");
+  }
+}
+
 /** How many heroes have global timing data loaded (useful for health checks). */
 export function getGlobalTimingsCacheSize(): number {
   return Object.values(averageTimingsCache).reduce((acc, h) => acc + Object.keys(h).length, 0);

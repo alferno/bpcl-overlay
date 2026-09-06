@@ -436,6 +436,47 @@ export function OverlayTestPanel({
           )}
         </div>
       </div>
+
+      {/* GSI Payload Injection */}
+      <div className="mt-8">
+        <h3 className="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2">Custom GSI Payload Injection</h3>
+        <p className="text-xs text-slate-400 mb-4">
+          Upload a saved GSI JSON payload (e.g., payload_dump.json) to simulate a live game tick. 
+          This will trigger all active GSI parsers, match event trackers (like First Tower and Mega Creeps), and socket alerts in development.
+        </p>
+        <div className="flex gap-4">
+          <label className={`flex-1 py-3 rounded-lg border border-dashed border-slate-500 hover:bg-slate-800 text-slate-300 font-bold text-sm transition-colors text-center cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
+            📂 Select Saved Payload JSON
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setBusy(true);
+                try {
+                  const text = await file.text();
+                  const json = JSON.parse(text);
+                  const payload = json.payload || json; // Handle wrapped dumps
+                  const r = await fetch(origin + "/gsi", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                  });
+                  if (!r.ok) throw new Error(await r.text());
+                  alert("Payload injected successfully! Check overlay for UI triggers.");
+                } catch (err: any) {
+                  alert("Injection failed: " + err.message);
+                } finally {
+                  setBusy(false);
+                  e.target.value = "";
+                }
+              }}
+            />
+          </label>
+        </div>
+      </div>
     </SectionPanel>
   );
 }

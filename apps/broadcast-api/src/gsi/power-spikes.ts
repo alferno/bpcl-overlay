@@ -2,7 +2,7 @@ import type { Server as IOServer } from "socket.io";
 import type { StateManager } from "@bpc/state-manager";
 import { logger } from "../logger.js";
 import { heroDisplayName } from "../services/hero-registry.js";
-import { getAverageItemTiming, getLeagueItemTiming } from "../services/item-timings.js";
+import { getAverageItemTiming, getLeagueItemTiming, getItemTiming } from "../services/item-timings.js";
 
 // Keep track of which items each player has seen so we only trigger on NEW purchases
 // Map<steamId or playerName, Set<string>>
@@ -133,10 +133,10 @@ export async function detectPowerSpikes(payload: any, io: IOServer, state: State
               }
             }
             
-            const leagueTimingObj = getLeagueItemTiming(heroData.id, item);
-            const averageTime = leagueTimingObj !== null ? leagueTimingObj.time : getAverageItemTiming(heroData.id, item);
-            const timesBought = leagueTimingObj !== null ? leagueTimingObj.count : null;
-            const isLeagueData = leagueTimingObj !== null;
+            const timingObj = getItemTiming(heroData.id, item);
+            const averageTime = timingObj ? timingObj.time : null;
+            const timesBought = timingObj ? timingObj.count : null;
+            const isLeagueData = timingObj !== null;
             
             let timingDiff = null;
             if (averageTime !== null && clockTime > 0) {

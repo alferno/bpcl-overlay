@@ -306,28 +306,58 @@ export default function StandoutPlayerPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: EASE }}
             >
-              <h1
-                className="font-black uppercase"
-                style={{
-                  fontSize: "3.4rem",
-                  color: "#ffffff",
-                  letterSpacing: "0.22em",
-                  textShadow: `0 0 40px ${EMERALD}, 0 2px 4px rgba(0,0,0,0.9)`,
-                }}
-              >
-                STANDOUT PLAYER
-              </h1>
-              <p
-                className="font-bold uppercase"
-                style={{
-                  fontSize: "0.82rem",
-                  color: EMERALD,
-                  letterSpacing: "0.4em",
-                  marginTop: 3,
-                }}
-              >
-                LAST MATCH
-              </p>
+              <div className="relative flex flex-col items-center">
+                {/* WINNING TEAM LOGO */}
+                {card.winningTeamLogoUrl && (
+                  <motion.div
+                    className="absolute right-full top-1/2 -translate-y-1/2 mr-8 drop-shadow-xl"
+                    initial={{ opacity: 0, scale: 0.5, rotate: -15 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
+                    style={{
+                      width: 72,
+                      height: 72,
+                      background: "rgba(0,0,0,0.4)",
+                      borderRadius: "50%",
+                      padding: 6,
+                      border: `1px solid rgba(16,185,129,0.5)`,
+                      boxShadow: `0 0 20px ${EMERALD_GLOW}`,
+                      backdropFilter: "blur(4px)"
+                    }}
+                  >
+                    <img 
+                      src={withBaseUrl(card.winningTeamLogoUrl)} 
+                      alt={card.winningTeamName || "Winner"}
+                      className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+                      onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                  </motion.div>
+                )}
+
+                <h1
+                  className="font-black uppercase"
+                  style={{
+                    fontSize: "3.4rem",
+                    color: "#ffffff",
+                    letterSpacing: "0.22em",
+                    textShadow: `0 0 40px ${EMERALD}, 0 2px 4px rgba(0,0,0,0.9)`,
+                    lineHeight: 1
+                  }}
+                >
+                  VICTORY
+                </h1>
+                <p
+                  className="font-bold uppercase"
+                  style={{
+                    fontSize: "0.82rem",
+                    color: EMERALD,
+                    letterSpacing: "0.4em",
+                    marginTop: 3,
+                  }}
+                >
+                  STANDOUT PLAYER: LAST MATCH
+                </p>
+              </div>
               <div
                 className="mt-4 rounded-full"
                 style={{
@@ -345,181 +375,96 @@ export default function StandoutPlayerPage() {
               className="absolute inset-x-0 flex flex-col items-center justify-start gap-10 px-10"
               style={{ top: 160, bottom: 36 }}
             >
-              {/* Top row with 3 columns */}
-              <div className="flex w-full max-w-[1300px] justify-between gap-16">
-                {/* ------------------------------------------- LEFT COLUMN */}
-                <motion.div
-                  className="flex flex-col gap-6"
-                  style={{ width: 280, flexShrink: 0, paddingTop: 60 }}
-                  initial={{ opacity: 0, x: -40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
-                >
-                  <StatTile value={fmt(card.xpm)} label="XPM" delay={0.25} />
-                  <StatTile value={fmt(card.gpm)} label="GPM" delay={0.32} />
-                  <StatTile
-                    value={fmt(card.networth)}
-                    label="Total Networth"
-                    delay={0.39}
-                  />
-                </motion.div>
-
-                {/* ------------------------------------------- CENTER COLUMN */}
-                <motion.div
-                  className="flex flex-col items-center flex-1"
-                  style={{ maxWidth: 420 }}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.65, delay: 0.1, ease: EASE }}
-                >
-                  {/* HERO NAME */}
-                  <div
-                    className="w-full flex items-center justify-center rounded-xl mb-3 backdrop-blur-lg"
-                    style={{
-                      height: 52,
-                      background:
-                        "linear-gradient(135deg, rgba(4,20,15,0.8), rgba(0,0,0,0.9))",
-                      border: `1px solid rgba(16,185,129,0.3)`,
-                      boxShadow: `0 8px 32px rgba(0,0,0,0.6), inset 0 0 15px rgba(16,185,129,0.1)`,
-                    }}
-                  >
-                    <span
-                      className="font-black uppercase tracking-wider text-white truncate px-4"
+              {/* Top row with 5 Winning Team Cards */}
+              <div className="flex items-center justify-center gap-8 w-full max-w-[1500px]" style={{ height: 420 }}>
+                {card.winningTeam?.map((teammate, i) => {
+                  const isMvp = teammate.steam32 === card.steam32 || teammate.heroId === card.heroId;
+                  
+                  return (
+                    <motion.div
+                      key={teammate.steam32 ?? i}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: isMvp ? 1 : 0.6, y: 0, scale: isMvp ? 1.05 : 0.85 }}
+                      transition={{ duration: 0.6, delay: 0.1 + i * 0.1, ease: EASE }}
+                      className="relative overflow-hidden rounded-xl backdrop-blur-md shrink-0 flex items-center justify-center"
                       style={{
-                        fontSize: "1.45rem",
-                        textShadow: `0 0 18px ${EMERALD}`,
+                        width: 240,
+                        height: 360,
+                        background: "linear-gradient(180deg, rgba(4,18,12,0.6) 0%, rgba(0,0,0,0.85) 100%)",
+                        border: isMvp ? `2px solid ${EMERALD}` : `1px solid rgba(16,185,129,0.2)`,
+                        boxShadow: isMvp ? `0 12px 40px rgba(0,0,0,0.8), 0 0 30px rgba(16,185,129,0.4)` : `0 8px 24px rgba(0,0,0,0.6)`,
+                        zIndex: isMvp ? 10 : 1,
+                        filter: isMvp ? "none" : "grayscale(50%) brightness(0.7)",
                       }}
                     >
-                      {card.heroName || "HERO"}
-                    </span>
-                  </div>
-
-                  {/* Player Card Image / HTML Render */}
-                  <div
-                    className="relative w-full overflow-hidden rounded-xl backdrop-blur-md flex items-center justify-center"
-                    style={{
-                      height: 470,
-                      background:
-                        "linear-gradient(180deg, rgba(4,18,12,0.6) 0%, rgba(0,0,0,0.85) 100%)",
-                      border: `1px solid rgba(16,185,129,0.2)`,
-                      boxShadow: `0 12px 40px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.6)`,
-                    }}
-                  >
-                    <NativeBpclCard
-                      steam32={card.steam32}
-                      playerName={card.playerLabel || card.heroName}
-                      className="absolute inset-0 flex items-center justify-center"
-                      fallback={!cardError && card.bpcId ? (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <CachedIframe 
-                          bpcId={card.bpcId}
-                          style={{
-                            width: "240px",
-                            height: "360px",
-                            border: "none",
-                            transform: "scale(1.3055)",
-                            transformOrigin: "center center"
-                          }}
-                        />
-                        </div>
-                      ) : cardError || (!card.steam32 && !card.bpcId) ? (
-                      <div className="absolute inset-0">
-                        <FallbackPlayerCard playerName={card.playerLabel || card.heroName || "UNKNOWN"} color="#10b981" />
-                      </div>
-                    ) : (
-                      <img
-                        src={withBaseUrl(`/cards/${card.steam32}.png`)}
-                        alt="Player/Hero"
-                        onError={() => setCardError(true)}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          objectPosition: "center top",
-                        }}
+                      <NativeBpclCard
+                        steam32={teammate.steam32}
+                        playerName={teammate.playerLabel || teammate.heroName}
+                        className="absolute inset-0 flex items-center justify-center"
+                        fallback={
+                          teammate.bpcId ? (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <CachedIframe 
+                                bpcId={teammate.bpcId}
+                                style={{
+                                  width: "240px",
+                                  height: "360px",
+                                  border: "none",
+                                  transform: "scale(1.3055)",
+                                  transformOrigin: "center center"
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="absolute inset-0">
+                              <FallbackPlayerCard playerName={teammate.playerLabel || teammate.heroName || "UNKNOWN"} color="#10b981" />
+                            </div>
+                          )
+                        }
                       />
+                      {isMvp && (
+                        <div className="absolute bottom-4 inset-x-0 flex justify-center z-20">
+                          <span className="bg-emerald-500 text-slate-950 px-4 py-1 font-black text-sm uppercase tracking-widest rounded shadow-[0_0_15px_rgba(16,185,129,1)]">
+                            MVP
+                          </span>
+                        </div>
                       )}
-                    />
-                    
-                    {/* WINNING TEAM LOGO */}
-                    {card.winningTeamLogoUrl && (
-                      <motion.div
-                        className="absolute top-4 left-4 drop-shadow-xl"
-                        initial={{ opacity: 0, scale: 0.5, rotate: -15 }}
-                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
-                        style={{
-                          width: 64,
-                          height: 64,
-                          background: "rgba(0,0,0,0.4)",
-                          borderRadius: "50%",
-                          padding: 6,
-                          border: `1px solid rgba(16,185,129,0.5)`,
-                          boxShadow: `0 0 20px ${EMERALD_GLOW}`,
-                          backdropFilter: "blur(4px)"
-                        }}
-                      >
-                        <img 
-                          src={withBaseUrl(card.winningTeamLogoUrl)} 
-                          alt={card.winningTeamName || "Winner"}
-                          className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-                          onError={(e) => (e.currentTarget.style.display = "none")}
-                        />
-                      </motion.div>
-                    )}
-                  </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
 
-                  {/* KDA */}
-                  <div className="mt-3 flex flex-col items-center">
-                    <span
-                      className="font-bold uppercase"
-                      style={{
-                        fontSize: "0.68rem",
-                        color: EMERALD,
-                        letterSpacing: "0.26em",
-                      }}
-                    >
-                      KDA
-                    </span>
-                    <span
-                      className="font-black"
-                      style={{
-                        fontSize: "1.95rem",
-                        color: "#fff",
-                        letterSpacing: "0.05em",
-                        textShadow: `0 0 18px ${EMERALD}`,
-                      }}
-                    >
+              {/* Row of stats */}
+              <motion.div
+                className="flex items-center justify-center gap-6 w-full max-w-[1400px] mt-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4, ease: EASE }}
+              >
+                <StatTile value={fmt(card.xpm)} label="XPM" delay={0.45} />
+                <StatTile value={fmt(card.gpm)} label="GPM" delay={0.5} />
+                <StatTile value={fmt(card.networth)} label="Networth" delay={0.55} />
+                
+                {/* KDA block in the middle */}
+                <div className="flex flex-col items-center mx-4 px-10 py-3 rounded-xl backdrop-blur-md"
+                  style={{
+                    background: "linear-gradient(145deg, rgba(4,20,15,0.7) 0%, rgba(0,0,0,0.85) 100%)",
+                    border: `1px solid rgba(16,185,129,0.35)`,
+                    boxShadow: `0 8px 32px rgba(0,0,0,0.6), inset 0 0 20px rgba(16,185,129,0.1)`,
+                  }}
+                >
+                    <span className="font-black leading-none" style={{ fontSize: "2.8rem", color: "#fff", textShadow: `0 0 25px ${EMERALD}` }}>
                       {card.kills}/{card.deaths}/{card.assists}
                     </span>
-                  </div>
-                </motion.div>
+                    <span className="font-bold uppercase tracking-widest mt-2" style={{ fontSize: "0.75rem", color: EMERALD, letterSpacing: "0.3em" }}>
+                      KDA
+                    </span>
+                </div>
 
-                {/* ------------------------------------------- RIGHT COLUMN */}
-                <motion.div
-                  className="flex flex-col gap-6"
-                  style={{ width: 280, flexShrink: 0, paddingTop: 60 }}
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
-                >
-                  <StatTile
-                    value={fmt(card.heroDamage)}
-                    label="Hero Damage"
-                    delay={0.25}
-                  />
-                  <StatTile
-                    value={fmt(card.lastHits)}
-                    label="Last Hits"
-                    delay={0.32}
-                  />
-                  <StatTile
-                    value={killParticipation(card)}
-                    label="Kill Participation"
-                    delay={0.39}
-                  />
-                </motion.div>
-              </div>
+                <StatTile value={fmt(card.heroDamage)} label="Damage" delay={0.6} />
+                <StatTile value={fmt(card.lastHits)} label="Last Hits" delay={0.65} />
+                <StatTile value={killParticipation(card)} label="Kill Part." delay={0.7} />
+              </motion.div>
 
               {/* ------------------------------------------- BOTTOM BAR (Hero Identity, Skills, Inventory) */}
               <motion.div

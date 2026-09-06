@@ -38,8 +38,9 @@ export function DraftHeroMedia({
     (variant === "intro" ? INTRO_MEDIA_CLASS : SLOT_MEDIA_CLASS);
 
   const still = staticFallback ?? staticUrl;
+  const videoUrl = animatedUrl;
 
-  if (!still) return null;
+  if (!still && !videoUrl) return null;
 
   return (
     <div
@@ -55,12 +56,24 @@ export function DraftHeroMedia({
           variant === "slot" ? "origin-[center_22%]" : ""
         }`}
       >
-        <img
-          src={still}
-          alt={alt ?? "hero"}
-          loading="lazy"
-          className={`draft-hero-portrait ${mediaClass}`}
-        />
+        {videoUrl && webmFirst && animate ? (
+          <video
+            src={videoUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className={`draft-hero-portrait ${mediaClass}`}
+            poster={still}
+          />
+        ) : still ? (
+          <img
+            src={still}
+            alt=""
+            loading="lazy"
+            className={`draft-hero-portrait ${mediaClass}`}
+          />
+        ) : null}
       </div>
     </div>
   );

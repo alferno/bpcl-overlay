@@ -12,6 +12,9 @@ import { BountyRuneCard } from "../components/BountyRuneCard";
 import { WisdomRuneCard } from "../components/WisdomRuneCard";
 import { SponsorFlipWidget } from "../components/SponsorFlipWidget";
 import { TopStatAlert } from "../components/TopStatAlert";
+import { MatchEventAlerts } from "../components/MatchEventAlerts";
+import { ScoreboardTeamLogos } from "../components/ScoreboardTeamLogos";
+import { AbilityAccuracyHUD } from "../components/AbilityAccuracyHUD";
 
 
 export default function GameCanvas() {
@@ -24,7 +27,8 @@ export default function GameCanvas() {
 
   return (
     <HudCanvas blend>
-
+      <ScoreboardTeamLogos />
+      <MatchEventAlerts />
       {showRankMedals && <RankMedalsHUD />}
       {showSponsorWidget && <SponsorFlipWidget {...sponsorCfg} />}
       <H2HMatchupGraphic />
@@ -38,6 +42,7 @@ export default function GameCanvas() {
       <TopStatAlert />
       <BountyRuneCard />
       <WisdomRuneCard />
+      <AbilityAccuracyHUD />
     </HudCanvas>
   );
 }

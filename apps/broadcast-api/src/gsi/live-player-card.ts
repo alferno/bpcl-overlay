@@ -15,6 +15,8 @@ export type FocusedPlayerMatch = {
   assists?: number;
   lastHits?: number;
   denies?: number;
+  items?: string[];
+  neutralItem?: string;
   /** Kills against each individual enemy hero (from payload.player.killed map) */
   enemyHeroKills?: EnemyHeroKill[];
 };
@@ -220,8 +222,12 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
         const killedMap = rootPlayer.kill_list;
 
         // Try to determine which team the focused player is on
+        let items: string[] | undefined;
+        let neutralItem: string | undefined;
+
         for (const teamKey of ["team2", "team3"] as const) {
           const teamPlayerData = payload?.player?.[teamKey];
+          const teamItemsData = payload?.items?.[teamKey];
           if (!teamPlayerData) continue;
           for (let i = 0; i <= 9; i++) {
             const p = teamPlayerData[`player${i}`];
@@ -230,6 +236,22 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
               const enemyHeroes = getEnemyTeamHeroes(payload, enemyTeam);
               // Use p.kill_list as a fallback if rootPlayer.kill_list is empty
               enemyHeroKills = parseEnemyHeroKills(killedMap || p.kill_list, enemyHeroes);
+              
+              // Extract items
+              const pItems = teamItemsData?.[`player${i}`];
+              if (pItems && typeof pItems === "object") {
+                items = [];
+                for (let slot = 0; slot < 6; slot++) {
+                  const itemName = pItems[`slot${slot}`]?.name;
+                  if (typeof itemName === "string" && itemName !== "empty") {
+                    items.push(itemName);
+                  }
+                }
+                const nItem = pItems.neutral0?.name;
+                if (typeof nItem === "string" && nItem !== "empty") {
+                  neutralItem = nItem;
+                }
+              }
               break;
             }
           }
@@ -247,6 +269,8 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
           lastHits,
           denies,
           enemyHeroKills,
+          items,
+          neutralItem,
         };
       }
     }
@@ -257,6 +281,7 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
     const teamHeroData = payload.hero?.[teamKey];
     const teamPlayerData = payload.player?.[teamKey];
     const teamAbilitiesData = payload.abilities?.[teamKey];
+    const teamItemsData = payload.items?.[teamKey];
 
     if (!teamHeroData || !teamPlayerData) return null;
 
@@ -265,6 +290,7 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
       const hero = teamHeroData[playerKey];
       const player = teamPlayerData[playerKey];
       const abilities = teamAbilitiesData?.[playerKey];
+      const pItems = teamItemsData?.[playerKey];
 
       if (hero && typeof hero === "object" && hero.selected_unit === true) {
         let heroId: number | null = null;
@@ -303,6 +329,22 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
           const enemyHeroes = getEnemyTeamHeroes(payload, enemyTeam);
           const enemyHeroKills = parseEnemyHeroKills(player?.kill_list, enemyHeroes);
 
+          // Extract items
+          const items: string[] = [];
+          let neutralItem: string | undefined;
+          if (pItems && typeof pItems === "object") {
+            for (let slot = 0; slot < 6; slot++) {
+              const itemName = pItems[`slot${slot}`]?.name;
+              if (typeof itemName === "string" && itemName !== "empty") {
+                items.push(itemName);
+              }
+            }
+            const nItem = pItems.neutral0?.name;
+            if (typeof nItem === "string" && nItem !== "empty") {
+              neutralItem = nItem;
+            }
+          }
+
           return { 
             steam32, 
             heroId, 
@@ -314,6 +356,8 @@ export function detectFocusedPlayer(payload: any): FocusedPlayerMatch | null {
             lastHits,
             denies,
             enemyHeroKills,
+            items,
+            neutralItem,
           };
         }
       }

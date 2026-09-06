@@ -42,6 +42,9 @@ const envSchema = z.object({
   ROSTER_CSV_PATH: z.string().default("data/roster/players_roster_prepared.csv"),
   COMMUNITY_CSV_PATH: z.string().default("data/roster/community_members.csv"),
   SETTINGS_FILE: z.string().default(path.resolve(process.cwd(), "../../data/system/settings.json")),
+  /** Path to Dota 2 combatlog file written by dota_combatlog_file console command (broadcaster/spectator only).
+   *  Default: standard Steam install path. Set to empty string to disable. */
+  DOTA_COMBATLOG_PATH: z.string().default("C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota\\combatlog.txt"),
 });
 
 export const env = envSchema.parse(process.env);

@@ -410,6 +410,15 @@ export const standoutPlayerCardSchema = z.object({
   hasShard: z.boolean().optional(),
   winningTeamName: z.string().optional(),
   winningTeamLogoUrl: z.string().optional(),
+  winningTeam: z.array(
+    z.object({
+      steam32: z.number().optional(),
+      heroId: z.number().optional(),
+      heroName: z.string().optional(),
+      bpcId: z.string().optional(),
+      playerLabel: z.string().optional(),
+    })
+  ).optional(),
 });
 
 export type StandoutPlayerCard = z.infer<typeof standoutPlayerCardSchema>;
@@ -501,6 +510,8 @@ export const heroStatsCardSchema = z.object({
   liveAssists: z.number().optional(),
   liveLastHits: z.number().optional(),
   liveDenies: z.number().optional(),
+  liveItems: z.array(z.string()).optional(),
+  liveNeutralItem: z.string().optional(),
   /** Per-enemy-hero kill counts for the focused player */
   enemyHeroKills: z
     .array(
@@ -575,6 +586,7 @@ export const obsRemoteHintsSchema = z.object({
 export type OBSRemoteHints = z.infer<typeof obsRemoteHintsSchema>;
 
 export const minimapStateSchema = z.object({
+  gameState: z.string().optional(),
   roshanState: z.string().optional(),
   roshanRespawnTimer: z.coerce.number().optional(),
   tormentorRadiant: z.string().optional(),

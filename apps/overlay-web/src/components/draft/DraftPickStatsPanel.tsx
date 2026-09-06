@@ -11,9 +11,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import { resolvePickPlayerContext } from "../../draft/resolve-pick-player";
 import { findPickSlotForLastPick } from "../../draft/slot-utils";
+import { resolveLikelyPlayersForHero } from "../../draft/likely-players";
 import { HeroPortrait } from "../HeroPortrait";
 import { PlayerAvatar } from "../PlayerAvatar";
 import { StatTile } from "../StatTile";
+import { LikelyPlayersChip } from "./LikelyPlayersChip";
+import { HeroesPlayedRow } from "./HeroesPlayedRow";
 import {
   ensureOverlayHeroIndex,
   resolvePickStatsPortrait,
@@ -143,6 +146,20 @@ export function DraftPickStatsPanel({
                 No tournament data for this hero yet.
               </p>
             )}
+
+            {!isBan && showingPlayer && steam32 != null && playerHeroIndex ? (
+              <HeroesPlayedRow steam32={steam32} playerHeroIndex={playerHeroIndex} />
+            ) : null}
+
+            {!isBan && !showingPlayer && leagueConfig?.roster && playerHeroIndex ? (
+              <LikelyPlayersChip 
+                candidates={resolveLikelyPlayersForHero({
+                  heroId: pick.heroId,
+                  teamPlayers: leagueConfig.roster.filter(p => p.teamKey === (pick.side === "radiant" ? leagueConfig.matchSetup?.radiantTeamKey : leagueConfig.matchSetup?.direTeamKey)),
+                  playerHeroIndex
+                })} 
+              />
+            ) : null}
           </div>
         </div>
       </div>

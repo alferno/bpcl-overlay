@@ -69,9 +69,9 @@ export function buildDraftPlayerHeroSlides(
 
   return [
     {
-      label: "League record",
+      label: "On this hero",
       value: wlRecord(ph.wins, losses),
-      sublabel: `${formatPct(ph.winRate)} · ${gameLabel}`,
+      sublabel: `${formatPct(ph.winRate)} win rate in BPCL`,
     },
     {
       label: "Avg KDA",

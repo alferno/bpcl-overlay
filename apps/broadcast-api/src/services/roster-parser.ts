@@ -33,6 +33,7 @@ function parseRow(line: string): ParsedRow {
   let avatarUrl: string | undefined;
   let roles: string[] | undefined;
   let bpcId: string | undefined;
+  let mmr: number | undefined;
 
   if (parts.length >= 4) {
     teamName = parts[2] || undefined;
@@ -63,12 +64,19 @@ function parseRow(line: string): ParsedRow {
         bpcId = eighth;
       }
     }
+    if (parts.length >= 9) {
+      const ninth = parts[8] ?? "";
+      const parsed = parseInt(ninth, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        mmr = parsed;
+      }
+    }
   } else if (parts.length === 3) {
     teamKey = parts[2] || undefined;
     teamName = teamKey?.replace(/_/g, " ");
   }
 
-  const rest = { displayName, teamName, teamKey, teamColor, avatarUrl, roles, bpcId };
+  const rest = { displayName, teamName, teamKey, teamColor, avatarUrl, roles, bpcId, mmr };
 
   // Column 2 accepts: a bare Steam32 int, a bare Steam64 int, a
   // steamcommunity.com/profiles/<id> URL, or (async-only) a /id/<vanity> URL.
@@ -173,10 +181,10 @@ function escapeCsvField(value: string): string {
   return value;
 }
 
-/** CSV with avatarUrl, roles, and bpcId column: displayName,steam32,teamName,teamKey,teamColor,avatarUrl,roles,bpcId */
+/** CSV with avatarUrl, roles, bpcId, and mmr columns: displayName,steam32,teamName,teamKey,teamColor,avatarUrl,roles,bpcId,mmr */
 export function serializeRosterCsv(roster: RosterPlayer[]): string {
   const header =
-    "displayName,steam32,teamName,teamKey,teamColor,avatarUrl,roles,bpcId";
+    "displayName,steam32,teamName,teamKey,teamColor,avatarUrl,roles,bpcId,mmr";
   const rows = roster.map((p) =>
     [
       p.displayName,
@@ -187,6 +195,7 @@ export function serializeRosterCsv(roster: RosterPlayer[]): string {
       p.avatarUrl ?? "",
       p.roles ? p.roles.join("|") : "",
       p.bpcId ?? "",
+      p.mmr != null ? String(p.mmr) : "",
     ]
       .map(escapeCsvField)
       .join(","),

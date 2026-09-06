@@ -118,7 +118,7 @@ export function ObsBlock(props: { origin: string; token: string }) {
 
       <div className="mt-6 flex flex-wrap items-end gap-3 border-t border-white/5 pt-5">
         <div className="flex-1 min-w-[160px]">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Scene</label>
+          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Scene <span className="text-[8px] text-sky-400/70 ml-1 normal-case">(Manual Override)</span></label>
           <select className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-2.5 py-1.5 text-xs text-white" value={pick} onChange={(e) => setPick(e.target.value)}>
             <option value="">— select scene —</option>
             {scenes.map((s) => (

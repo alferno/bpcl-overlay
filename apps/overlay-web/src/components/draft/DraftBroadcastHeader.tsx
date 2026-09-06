@@ -2,7 +2,10 @@ import type { DraftState, LeagueConfig } from "@bpc/shared-types";
 import { BROADCAST_LEAGUE_TITLE } from "@bpc/shared-types";
 
 export function DraftBroadcastHeader({
+  draft,
   stageLabel,
+  teamColors,
+  leagueConfig,
 }: {
   draft: DraftState;
   stageLabel?: string;
@@ -10,6 +13,8 @@ export function DraftBroadcastHeader({
   leagueConfig?: LeagueConfig;
 }) {
   const stage = stageLabel?.trim() ?? "";
+  const teamNameA = draft.radiant?.name ?? draft.series.teamA;
+  const teamNameB = draft.dire?.name ?? draft.series.teamB;
 
   return (
     <div
@@ -19,12 +24,16 @@ export function DraftBroadcastHeader({
         boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
       }}
     >
-      <p className="truncate text-left font-dota text-sm font-semibold uppercase tracking-[0.12em] text-slate-300">
-        {BROADCAST_LEAGUE_TITLE}
+      <p className="flex-1 truncate text-left font-dota text-lg font-bold uppercase tracking-widest text-slate-100" style={{ textShadow: teamColors?.radiant ? `0 0 10px ${teamColors.radiant}80` : undefined }}>
+        {teamNameA || "RADIANT"}
       </p>
 
-      <p className="truncate text-right font-dota text-sm font-semibold uppercase tracking-[0.14em] text-slate-300">
-        {stage || "\u00a0"}
+      <p className="flex-1 truncate text-center font-dota text-sm font-semibold uppercase tracking-[0.12em] text-slate-300">
+        {BROADCAST_LEAGUE_TITLE} {stage ? `- ${stage}` : ""}
+      </p>
+
+      <p className="flex-1 truncate text-right font-dota text-lg font-bold uppercase tracking-widest text-slate-100" style={{ textShadow: teamColors?.dire ? `0 0 10px ${teamColors.dire}80` : undefined }}>
+        {teamNameB || "DIRE"}
       </p>
     </div>
   );

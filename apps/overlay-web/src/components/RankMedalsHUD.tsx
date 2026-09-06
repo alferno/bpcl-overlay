@@ -40,7 +40,7 @@ export function RankMedalsHUD() {
     const medalUrl = withBaseUrl(`/medals/${rankTier}.png`);
     
     return (
-      <div key={`slot-${index}-${steam32 || 'empty'}`} className="w-[62px] flex items-center justify-center shrink-0">
+      <div key={`slot-${index}-${steam32 || 'empty'}`} className="w-[68px] flex items-center justify-center shrink-0">
         <img 
           src={medalUrl} 
           alt={rankTier} 
@@ -54,12 +54,12 @@ export function RankMedalsHUD() {
     <div className="absolute top-[72px] left-0 w-full flex justify-center pointer-events-none z-50">
       <div className="flex items-start">
         {/* Radiant Side */}
-        <div className="flex gap-[0px] mr-[165px]">
+        <div className="flex gap-1.5 mr-[165px]">
           {radiantPlayers.map((steam32, i) => renderMedal(steam32, i))}
         </div>
         
         {/* Dire Side */}
-        <div className="flex gap-[0px]">
+        <div className="flex gap-1.5">
           {direPlayers.map((steam32, i) => renderMedal(steam32, i))}
         </div>
       </div>

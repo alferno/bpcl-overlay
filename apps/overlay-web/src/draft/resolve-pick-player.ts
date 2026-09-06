@@ -43,14 +43,28 @@ export function resolvePickPlayerContext(
     return { side, slotOrder, steam32: undefined, playerName: undefined };
   }
 
-  const steam32 =
+  const manualSteam32 =
     slotOrder !== undefined
       ? manualPickSteam32(leagueConfig?.matchSetup, side, slotOrder)
       : undefined;
-  const playerName =
+
+  let steam32 = manualSteam32;
+  if (steam32 == null && draft) {
+    const slots = side === "radiant" ? draft.radiant?.slots : draft.dire?.slots;
+    const slot = slots?.find((s) => s.type === "pick" && s.order === slotOrder);
+    if (slot && slot.steam32) {
+      steam32 = slot.steam32;
+    }
+  }
+
+  let playerName =
     slotOrder !== undefined
       ? manualPickDisplayName(leagueConfig, side, slotOrder)
       : undefined;
+
+  if (steam32 != null && steam32 > 0 && !playerName) {
+    playerName = leagueConfig?.roster?.find((p) => p.steam32 === steam32)?.displayName;
+  }
 
   const avatarUrl =
     steam32 != null && steam32 > 0

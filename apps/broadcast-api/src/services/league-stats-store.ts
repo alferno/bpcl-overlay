@@ -31,7 +31,7 @@ export type LeaguePlayerHeroRow = {
 };
 
 export type LeagueStatsMeta = {
-  leagueId: number;
+  leagueId: number | string;
   matchTotal: number;
   matchDone: number;
   aggregatedAt: string;
@@ -99,7 +99,7 @@ export function leagueStatsCsvLoadFailedPayload(
   };
 }
 
-export function leagueStatsPaths(leagueId: number) {
+export function leagueStatsPaths(leagueId: number | string) {
   const dir = leagueStatsDir();
   return {
     dir,
@@ -239,7 +239,7 @@ export function buildPlayerHeroIndex(
 }
 
 export async function loadLeagueStatsFromDisk(
-  leagueId: number,
+  leagueId: number | string,
 ): Promise<LeagueStatsSnapshot | null> {
   const paths = leagueStatsPaths(leagueId);
   if (!(await fileExists(paths.heroes))) {

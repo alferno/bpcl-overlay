@@ -15,6 +15,7 @@ import { loadHeroPortraitManifest } from "../hero-portrait-manifest";
 import { warmHeroFlatPortraitCache } from "../hero-portrait";
 import { routeVisible } from "../visibility";
 import { resolveDraftTeamColors } from "../draft/team-colors";
+import { resolveBroadcastTheme } from "../draft/theme-colors";
 
 export default function DraftPage() {
   useEffect(() => {
@@ -34,15 +35,21 @@ export default function DraftPage() {
   );
 
   const teamColors = resolveDraftTeamColors(draft, state.leagueConfig);
+  const theme = resolveBroadcastTheme(state.production);
 
   return (
     <HudCanvas blend>
       <FadePanel show={visible}>
-        <div className="relative h-full w-full max-w-none font-body overflow-hidden bg-emerald-950">
+        <div 
+          className="relative h-full w-full max-w-none font-body overflow-hidden bg-black"
+        >
           {/* Top Half Trophy Background */}
           <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[65%] w-full overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/40 via-emerald-900/10 to-transparent mix-blend-screen" />
-            <img src={`${import.meta.env.BASE_URL}emerald-trophy.png`} alt="BPCL Trophy" className="h-full w-full object-cover opacity-100" style={{ objectPosition: 'center 20%' }} />
+            <div 
+              className="absolute inset-0 mix-blend-screen" 
+              style={{ background: `linear-gradient(180deg, ${theme.primary}66 0%, ${theme.primary}1A 50%, transparent 100%)` }}
+            />
+            <img src={`${import.meta.env.BASE_URL}emerald-trophy.png`} alt="BPCL Trophy" className="h-full w-full object-cover opacity-100 mix-blend-luminosity" style={{ objectPosition: 'center 20%' }} />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
           </div>
 

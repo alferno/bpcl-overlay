@@ -1,25 +1,21 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useOverlayState } from "../OverlaySocketLayer";
 import { useRouteVisible } from "../hooks/useRouteVisible";
 import { withBaseUrl } from "../asset-paths";
+
 import {
   ensureOverlayHeroIndex,
   resolveOverlayPortraitForHero,
 } from "../hero-portrait";
 import { leagueTitleFromSlug } from "@bpc/shared-types";
-
-// ── Mini Hero Portrait ────────────────────────────────────────────────────────
+import { resolveBroadcastTheme } from "../draft/theme-colors";
 
 function MiniHeroPortrait({
   heroId,
-  heroClass,
   portraitUrl: initialPortraitUrl,
-  kills,
 }: {
   heroId: number;
-  heroClass: string;
   portraitUrl?: string;
-  kills: number;
 }) {
   const [portraitUrl, setPortraitUrl] = useState<string | undefined>(
     () => initialPortraitUrl || resolveOverlayPortraitForHero(heroId, undefined, {}),
@@ -35,64 +31,37 @@ function MiniHeroPortrait({
     });
   }, [heroId]);
 
-  const hasKills = kills > 0;
-
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div className="relative flex-shrink-0" style={{ width: 30, height: 30 }}>
-      {/* Hero portrait circle */}
-      <div
-        className="w-full h-full rounded-sm overflow-hidden border"
-        style={{
-          borderColor: hasKills ? "rgba(239,68,68,0.8)" : "rgba(255,255,255,0.15)",
-          boxShadow: hasKills
-            ? "0 0 6px rgba(239,68,68,0.5)"
-            : "0 2px 6px rgba(0,0,0,0.6)",
-          filter: hasKills ? "none" : "grayscale(40%) brightness(0.65)",
-        }}
-      >
-        {portraitUrl && !imgError ? (
-          <img
-            src={withBaseUrl(portraitUrl)}
-            alt=""
-            className="w-full h-full object-cover object-top"
-            style={{ transform: "scale(1.15) translateY(4px)" }}
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="w-full h-full bg-slate-800" />
-        )}
-      </div>
-
-      {/* Kill count badge */}
-      <div
-        className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full font-bold"
-        style={{
-          width: 14,
-          height: 14,
-          fontSize: 8,
-          lineHeight: 1,
-          background: hasKills
-            ? "linear-gradient(135deg, #ef4444, #b91c1c)"
-            : "rgba(15,23,42,0.95)",
-          color: hasKills ? "#fff" : "rgba(148,163,184,0.8)",
-          border: hasKills ? "1px solid rgba(239,68,68,0.6)" : "1px solid rgba(255,255,255,0.1)",
-          boxShadow: hasKills ? "0 0 4px rgba(239,68,68,0.4)" : "none",
-        }}
-      >
-        {kills}
-      </div>
+    <div
+      className="relative flex-shrink-0 overflow-hidden"
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: 2,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.8)",
+      }}
+    >
+      {portraitUrl && !imgError ? (
+        <img
+          src={withBaseUrl(portraitUrl)}
+          alt=""
+          className="w-full h-full object-cover object-center scale-[1.15]"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <div className="w-full h-full bg-slate-800" />
+      )}
     </div>
   );
 }
 
-// ── Focused Hero Portrait ─────────────────────────────────────────────────────
-
-function FocusedHeroPortrait({ heroId, heroName, portraitUrl: initialPortraitUrl }: {
+function FocusedHeroPortrait({ heroId, heroName, portraitUrl: initialPortraitUrl, themeColor }: {
   heroId: number;
   heroName?: string;
   portraitUrl?: string;
+  themeColor: string;
 }) {
   const [portraitUrl, setPortraitUrl] = useState<string | undefined>(
     () => initialPortraitUrl || resolveOverlayPortraitForHero(heroId, heroName, {}),
@@ -114,78 +83,25 @@ function FocusedHeroPortrait({ heroId, heroName, portraitUrl: initialPortraitUrl
     <div
       className="relative flex-shrink-0 overflow-hidden"
       style={{
-        width: 46,
-        height: 46,
-        borderRadius: 4,
-        border: "1px solid rgba(251,191,36,0.4)",
-        boxShadow: "0 0 12px rgba(0,0,0,0.8), inset 0 0 8px rgba(0,0,0,0.5)",
+        width: 72,
+        borderRadius: 2,
+        border: `1px solid ${themeColor}`,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.8)",
       }}
     >
       {portraitUrl && !imgError ? (
         <img
           src={withBaseUrl(portraitUrl)}
           alt=""
-          className="w-full h-full object-cover object-top"
-          style={{ transform: "scale(1.15) translateY(4px)" }}
+          className="w-full h-full object-cover object-center scale-[1.15]"
           onError={() => setImgError(true)}
         />
       ) : (
         <div className="w-full h-full bg-slate-800" />
       )}
-      {/* Subtle bottom gradient overlay */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: "linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%)",
-        }}
-      />
     </div>
   );
 }
-
-// ── Stat Label + Value ────────────────────────────────────────────────────────
-
-function StatRow({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  accent?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-[3px]">
-      <span
-        style={{
-          fontSize: 8,
-          lineHeight: 1,
-          color: "rgba(148,163,184,0.8)",
-          textTransform: "uppercase",
-          letterSpacing: "0.06em",
-          fontFamily: "'Rajdhani', 'Segoe UI', sans-serif",
-          fontWeight: 600,
-          minWidth: 18,
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          fontSize: 13,
-          lineHeight: 1,
-          fontWeight: 700,
-          fontFamily: "'Rajdhani', 'Segoe UI', sans-serif",
-          color: accent ? "#fbbf24" : "#f1f5f9",
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-// ── Main Component ────────────────────────────────────────────────────────────
 
 export function LiveStatsHud() {
   const { state } = useOverlayState();
@@ -194,7 +110,8 @@ export function LiveStatsHud() {
 
   if (!visible || !card) return null;
 
-  const leagueTitle = leagueTitleFromSlug(state.leagueConfig?.seasonSlug);
+  const rawLeagueTitle = state.leagueConfig?.seasonSlug ? leagueTitleFromSlug(state.leagueConfig.seasonSlug) : "";
+  const leagueTitle = `BPC LEAGUE ${rawLeagueTitle}`;
   const stageLabel = state.leagueConfig?.matchSetup?.stageLabel;
 
   const kills = card.liveKills ?? 0;
@@ -206,9 +123,12 @@ export function LiveStatsHud() {
   const enemyKills = card.enemyHeroKills ?? [];
 
   const layout = state.production?.layoutConfig?.kdaCard;
-  const top = layout?.y ?? 1;
-  const left = layout?.x ?? 1;
+  // If the user hasn't explicitly moved it (x=1, y=1), leave 2px margin top and left
+  const top = (layout?.y === 1 ? 2 : layout?.y) ?? 2;
+  const left = (layout?.x === 1 ? 2 : layout?.x) ?? 2;
   const scale = layout?.scale ?? 1;
+
+  const theme = resolveBroadcastTheme(state.production);
 
   return (
     <div
@@ -216,182 +136,140 @@ export function LiveStatsHud() {
       style={{
         top,
         left,
-        width: 260,
+        width: 380,
         zIndex: 50,
         transform: `scale(${scale})`,
         transformOrigin: "top left",
-        // Entrance animation
         animation: "hudSlideIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
+        filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.8))",
       }}
     >
-      {/* ── Banner Row ─────────────────────────────────────────────────── */}
+      {/* ── Banner Row ── */}
       <div
         style={{
-          background: "linear-gradient(135deg, rgb(10,14,26) 0%, rgb(16,20,38) 100%)",
-          borderRadius: "6px 6px 0 0",
-          borderBottom: "1px solid rgba(251,191,36,0.25)",
-          border: "1px solid rgba(251,191,36,0.2)",
-          padding: "4px 10px",
+          background: `linear-gradient(90deg, color-mix(in srgb, ${theme.primary} 15%, #050505) 0%, color-mix(in srgb, ${theme.primary} 5%, #050505) 60%, transparent 100%)`,
+          padding: "4px 12px",
           display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          backdropFilter: "blur(12px)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.7)",
+          alignItems: "center",
+          borderTop: "2px solid transparent",
+          borderImageSource: `linear-gradient(90deg, color-mix(in srgb, ${theme.primary} 80%, white) 0%, color-mix(in srgb, ${theme.primary} 80%, white) 60%, transparent 100%)`,
+          borderImageSlice: "1",
         }}
       >
-        {/* League title */}
         <div
           style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
+            fontSize: 13,
+            fontWeight: 800,
+            letterSpacing: "0.08em",
             textTransform: "uppercase",
-            fontFamily: "'Bebas Neue', 'Arial Narrow', sans-serif",
-            background: "linear-gradient(90deg, #fbbf24 0%, #f59e0b 60%, #fcd34d 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
+            fontFamily: "'Segoe UI', sans-serif",
+            color: theme.accent,
+            textShadow: "0 1px 3px rgba(0,0,0,0.8)",
             lineHeight: 1.1,
           }}
         >
-          {leagueTitle}
+          {leagueTitle.toUpperCase()}{stageLabel ? ` - ${stageLabel.toUpperCase()}` : ""}
         </div>
-
-        {/* Stage label (optional) */}
-        {stageLabel && (
-          <div
-            style={{
-              fontSize: 8,
-              fontWeight: 500,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "rgba(148,163,184,0.7)",
-              fontFamily: "'Rajdhani', 'Segoe UI', sans-serif",
-              lineHeight: 1,
-            }}
-          >
-            {stageLabel}
-          </div>
-        )}
       </div>
 
-      {/* ── Stats + Hero Row ─────────────────────────────────────────── */}
+      {/* ── Main Block ── */}
       <div
         style={{
-          background: "linear-gradient(135deg, rgb(8,12,22) 0%, rgb(12,16,30) 100%)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderTop: "none",
-          borderRadius: enemyKills.length > 0 ? 0 : "0 0 6px 6px",
-          padding: "5px 10px",
+          background: `linear-gradient(90deg, color-mix(in srgb, ${theme.primary} 8%, #030303) 0%, color-mix(in srgb, ${theme.primary} 2%, #030303) 60%, transparent 100%)`,
+          padding: "6px 12px",
           display: "flex",
-          alignItems: "center",
-          gap: 8,
-          backdropFilter: "blur(12px)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.6)",
+          alignItems: "stretch",
+          gap: 12,
         }}
       >
-        {/* Hero portrait */}
+        {/* Left: Hero Portrait */}
         <FocusedHeroPortrait
           heroId={card.heroId}
           heroName={card.heroName}
           portraitUrl={card.heroPortraitUrl}
+          themeColor={`color-mix(in srgb, ${theme.primary} 60%, white)`}
         />
 
-        {/* Stats block */}
-        <div className="flex flex-col gap-[5px] flex-1 min-w-0">
-          {/* KDA row */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 0,
-            }}
-          >
-            <span style={{ fontSize: 8, color: "rgba(148,163,184,0.7)", letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, marginRight: 4 }}>K/D/A</span>
-            <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Rajdhani', 'Segoe UI', sans-serif", color: "#f1f5f9", lineHeight: 1 }}>
-              {kills}
+        {/* Right: Stats and Enemy Kills */}
+        <div className="flex flex-col gap-1 mt-[1px]">
+          {/* Row 1: KDA */}
+          <div className="flex items-center">
+            <span style={{ 
+              width: 68, 
+              fontSize: 11, 
+              color: theme.primary, 
+              fontWeight: 800, 
+              letterSpacing: "0.1em",
+              fontFamily: "'Segoe UI', sans-serif",
+              textShadow: "1px 1px 2px #000",
+              whiteSpace: "nowrap"
+            }}>
+              K / D / A
             </span>
-            <span style={{ fontSize: 11, color: "rgba(100,116,139,0.8)", margin: "0 1px", lineHeight: 1 }}>/</span>
-            <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Rajdhani', 'Segoe UI', sans-serif", color: "#f87171", lineHeight: 1 }}>
-              {deaths}
-            </span>
-            <span style={{ fontSize: 11, color: "rgba(100,116,139,0.8)", margin: "0 1px", lineHeight: 1 }}>/</span>
-            <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Rajdhani', 'Segoe UI', sans-serif", color: "#f1f5f9", lineHeight: 1 }}>
-              {assists}
+            <span style={{ 
+              fontSize: 13, 
+              color: "#ffffff", 
+              fontWeight: 800, 
+              letterSpacing: "0.15em",
+              fontFamily: "'Segoe UI', sans-serif",
+              textShadow: "1px 1px 2px #000"
+            }}>
+              {kills} / {deaths} / {assists}
             </span>
           </div>
 
-          {/* LH / DN row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-              <span style={{ fontSize: 8, color: "rgba(148,163,184,0.6)", letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'Rajdhani', sans-serif", fontWeight: 600 }}>LH</span>
-              <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Rajdhani', 'Segoe UI', sans-serif", color: "#94a3b8", lineHeight: 1 }}>{lastHits}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-              <span style={{ fontSize: 8, color: "rgba(148,163,184,0.6)", letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'Rajdhani', sans-serif", fontWeight: 600 }}>DN</span>
-              <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Rajdhani', 'Segoe UI', sans-serif", color: "#64748b", lineHeight: 1 }}>{denies}</span>
-            </div>
+          {/* Row 2: LH / DN */}
+          <div className="flex items-center">
+            <span style={{ 
+              width: 68, 
+              fontSize: 11, 
+              color: theme.primary, 
+              fontWeight: 800, 
+              letterSpacing: "0.1em",
+              fontFamily: "'Segoe UI', sans-serif",
+              textShadow: "1px 1px 2px #000",
+              whiteSpace: "nowrap"
+            }}>
+              LH / DN
+            </span>
+            <span style={{ 
+              fontSize: 13, 
+              color: "#ffffff", 
+              fontWeight: 800, 
+              letterSpacing: "0.15em",
+              fontFamily: "'Segoe UI', sans-serif",
+              textShadow: "1px 1px 2px #000"
+            }}>
+              {lastHits} / {denies}
+            </span>
           </div>
+
+          {/* Row 3: Enemy Kills inline */}
+          {enemyKills.length > 0 && (
+            <div className="flex items-center gap-3 mt-1">
+              {enemyKills.map((e, idx) => (
+                <div key={e.heroId > 0 ? e.heroId : `unknown-${idx}`} className="flex items-center gap-[4px]">
+                  <MiniHeroPortrait
+                    heroId={e.heroId}
+                    portraitUrl={e.heroPortraitUrl}
+                  />
+                  <span style={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: "#ffffff",
+                    fontFamily: "'Segoe UI', sans-serif",
+                    textShadow: "1px 1px 2px #000"
+                  }}>
+                    {e.kills}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Enemy Kill Tracker Row ──────────────────────────────────── */}
-      {enemyKills.length > 0 && (
-        <div
-          style={{
-            background: "linear-gradient(135deg, rgb(6,9,20) 0%, rgb(10,13,28) 100%)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            borderRadius: "0 0 6px 6px",
-            padding: "4px 10px",
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 6px 24px rgba(0,0,0,0.7)",
-          }}
-        >
-          {/* VS label */}
-          <span
-            style={{
-              fontSize: 7,
-              fontWeight: 700,
-              letterSpacing: "0.12em",
-              color: "rgba(100,116,139,0.6)",
-              textTransform: "uppercase",
-              fontFamily: "'Rajdhani', sans-serif",
-              marginRight: 2,
-            }}
-          >
-            vs
-          </span>
 
-          {/* Enemy hero icons with kill badges */}
-          {enemyKills.map((e, idx) => (
-            <MiniHeroPortrait
-              key={e.heroId > 0 ? e.heroId : `unknown-${idx}`}
-              heroId={e.heroId}
-              heroClass={e.heroClass}
-              portraitUrl={e.heroPortraitUrl}
-              kills={e.kills}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Subtle left accent bar */}
-      <div
-        className="absolute"
-        style={{
-          left: 0,
-          top: 0,
-          width: 2,
-          height: "100%",
-          borderRadius: "6px 0 0 6px",
-          background: "linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, rgba(251,191,36,0.2) 100%)",
-          boxShadow: "0 0 8px rgba(251,191,36,0.4)",
-        }}
-      />
     </div>
   );
 }

@@ -29,11 +29,21 @@ export async function bootstrapBroadcastServer() {
 
   const ctx = await createBroadcastServer({ state, obs, opendota });
 
-  await bootstrapLeagueFromEnv({
-    state,
-    opendota,
-    broadcast: ctx.broadcast,
-  });
+  if (env.NODE_ENV === "production") {
+    // In production (Desktop app), block the startup until league data is fully bootstrapped
+    await bootstrapLeagueFromEnv({
+      state,
+      opendota,
+      broadcast: ctx.broadcast,
+    });
+  } else {
+    // In dev, run it in the background so it doesn't delay the server listening
+    void bootstrapLeagueFromEnv({
+      state,
+      opendota,
+      broadcast: ctx.broadcast,
+    }).catch(err => logger.warn(err, "league bootstrap deferred"));
+  }
 
   // Refresh league-specific item timings once league config is resolved
   void (async () => {

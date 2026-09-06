@@ -10,8 +10,8 @@ import {
 /** Hero cinematic overlay visible duration (fade starts at end) */
 export const DRAFT_INTRO_VISIBLE_MS = 4000;
 /** Tournament stats panel duration */
-export const DRAFT_STATS_VISIBLE_MS = 8000;
-const MAX_STATS_VISIBLE = 4;
+export const DRAFT_STATS_VISIBLE_MS = 7000;
+const MAX_STATS_VISIBLE = 1;
 const STATS_TICK_MS = 250;
 
 export type StatsQueueItem = {
@@ -126,11 +126,14 @@ export function useDraftPickReveal(
     cinematicQueueRef.current.push(pick);
     playNextCinematic();
 
-    const statsUntil = Date.now() + DRAFT_STATS_VISIBLE_MS;
-    setStatsQueue((prev) => [
-      ...prev,
-      { key: pickKey, pick, statsUntil },
-    ]);
+    setStatsQueue((prev) => {
+      const now = Date.now();
+      const hasActive = prev.some((item) => item.statsUntil > now);
+      if (hasActive) {
+        return prev;
+      }
+      return [...prev, { key: pickKey, pick, statsUntil: now + DRAFT_STATS_VISIBLE_MS }];
+    });
   }, [pickKey, playNextCinematic]);
 
   // ─── Ban detection (stats only, no cinematic) ───

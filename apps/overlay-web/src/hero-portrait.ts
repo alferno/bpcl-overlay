@@ -16,6 +16,7 @@ import {
 import {
   loadHeroRenderManifest,
   resolveOverlayHeroRenderPosterUrl,
+  resolveOverlayHeroRenderVideoUrl,
 } from './hero-render-manifest'
 import {
   getLocalHeroPortraitSlugs,
@@ -27,6 +28,7 @@ export type HeroMedia = {
   slug?: string
   static?: string
   staticFallback?: string
+  animated?: string
 }
 
 let heroSlugIndex: HeroSlugIndex | null = null
@@ -245,10 +247,12 @@ export function resolveSlotMedia(slot: DraftSlot): HeroMedia {
 
   // const flat = slug ? resolveOverlayHeroRenderPosterUrl(slug) : undefined;
   const flat = slug ? resolveOverlayHeroPortraitUrl(slug) : undefined
+  const webm = slug ? resolveOverlayHeroRenderVideoUrl(slug) : undefined
   return {
     slug,
     static: flat,
     staticFallback: flat,
+    animated: webm,
   }
 }
 

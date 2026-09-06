@@ -49,3 +49,14 @@ export function resolveOverlayHeroRenderPosterUrl(slug: string): string | undefi
     ? `${import.meta.env.BASE_URL}${rawUrl.slice(1)}`
     : `${import.meta.env.BASE_URL}${rawUrl}`;
 }
+/** Local WebM matching Steam render WebM; maps canonical slug → actual filename. */
+export function resolveOverlayHeroRenderVideoUrl(slug: string): string | undefined {
+  const clean = normalizeHeroSlug(slug);
+  if (!clean) return undefined;
+  const manifest = localRenderSlugs;
+  if (manifest.size > 0 && !manifest.has(clean)) return undefined;
+  
+  // Try to use canonicalToFileSlug if it exists, otherwise fallback to clean
+  const onDisk = canonicalToFileSlug.get(clean) ?? clean;
+  return `${import.meta.env.BASE_URL}heroes/renders/${onDisk}.webm`;
+}

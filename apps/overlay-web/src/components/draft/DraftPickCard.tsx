@@ -85,6 +85,10 @@ export function DraftPickCard({
         } ${sweep ? "energy-sweep" : ""}`}
         style={{
           transformStyle: "preserve-3d",
+          ...(active ? {
+            "--pick-glow": colorAlpha(accent, 0.8),
+            "--pick-glow-soft": colorAlpha(accent, 0.3),
+          } as CSSProperties : {}),
         }}
         initial={false}
         animate={{
@@ -99,22 +103,26 @@ export function DraftPickCard({
           className="absolute inset-0 overflow-hidden rounded-md draft-pick-card--empty flex flex-col items-center justify-center p-2"
           style={{
             backfaceVisibility: "hidden",
-            border: `1px solid ${colorAlpha(accent, active ? 0.8 : 0.4)}`,
-            background: "rgba(0,0,0,0.3)",
-            boxShadow: active ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
+            border: `1px solid ${colorAlpha(accent, active ? 1 : 0.25)}`,
+            background: `linear-gradient(180deg, ${colorAlpha(accent, 0.05)} 0%, ${colorAlpha(accent, 0.15)} 100%)`,
+            boxShadow: active ? `0 0 20px ${colorAlpha(accent, 0.3)}` : "none",
           }}
         >
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-3/5"
             style={{ background: slotFloorBackground(accent) }}
           />
-          <div className="relative z-[1] flex h-full flex-col items-center justify-center">
-            <span 
-              className="font-heading text-2xl font-bold uppercase tracking-widest text-white/50"
-              style={{ textShadow: `0 0 12px ${colorAlpha(accent, 0.4)}` }}
-            >
-              BPCL S2
-            </span>
+          <div className="relative z-[1] flex h-full flex-col items-center justify-center opacity-30">
+            {teamLogoUrl ? (
+              <img src={teamLogoUrl} alt="Team Logo" className="w-16 h-16 object-contain filter grayscale opacity-50 mix-blend-overlay" />
+            ) : (
+              <span 
+                className="font-heading text-xl font-bold uppercase tracking-widest text-white/50"
+                style={{ textShadow: `0 0 12px ${colorAlpha(accent, 0.4)}` }}
+              >
+                BPCL S2
+              </span>
+            )}
           </div>
         </div>
 
@@ -124,9 +132,8 @@ export function DraftPickCard({
           style={{
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
-            border: `1px solid ${colorAlpha(accent, active ? 0.8 : 0.4)}`,
-            background: "rgba(0,0,0,0.3)",
-            boxShadow: active ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
+            background: "rgba(0,0,0,0.8)",
+            boxShadow: `0 0 15px ${colorAlpha(accent, 0.4)}`,
           }}
         >
           {slot && media.static ? (
@@ -144,48 +151,25 @@ export function DraftPickCard({
               <DraftHeroMedia
                 staticUrl={media.static}
                 staticFallback={media.staticFallback}
+                animatedUrl={media.animated}
                 heroSlug={media.slug}
                 alt={slot.heroName ?? "hero"}
                 variant="slot"
+                webmFirst={true}
                 glowColor={colorAlpha(accent, 0.32)}
               />
               <div className="draft-hero-card-vignette pointer-events-none absolute inset-0 z-[3]" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[48%] bg-gradient-to-t from-black/95 via-black/70 to-transparent" />
-              {underHeroLabel ? (
-                <DraftPickCardLabel
-                  label={underHeroLabel}
-                  accent={accent}
-                  variant={labelVariant}
-                />
-              ) : null}
+              
+              {/* Explicit Border Layer ON TOP of everything */}
+              <div 
+                className="pointer-events-none absolute inset-0 z-[10] rounded-md"
+                style={{
+                  border: `2px solid ${colorAlpha(accent, 0.9)}`,
+                  boxShadow: `inset 0 0 20px ${colorAlpha(accent, 0.5)}`
+                }}
+              />
             </>
-          ) : slot ? (
-            <div className="flex h-full flex-col items-center justify-center bg-black px-1">
-              {underHeroLabel ? (
-                <DraftPickCardLabel
-                  label={underHeroLabel}
-                  accent={accent}
-                  variant={labelVariant}
-                />
-              ) : (
-                <p
-                  className="draft-pick-slot-label draft-pick-slot-label--hero draft-pick-slot-label--wrap px-2 text-center font-heading text-base font-bold leading-[1.12] tracking-[0.04em] text-white"
-                  style={{ textShadow: readableTextShadow(accent) }}
-                >
-                  {wrapCardLabelLines(
-                    formatCardLabelText(
-                      slot.heroName ?? `Hero ${slot.heroId ?? ""}`,
-                      "hero",
-                    ),
-                    "hero",
-                  ).map((line, i) => (
-                    <span key={`${line}-${i}`} className="block">
-                      {line}
-                    </span>
-                  ))}
-                </p>
-              )}
-            </div>
           ) : null}
         </div>
       </motion.div>

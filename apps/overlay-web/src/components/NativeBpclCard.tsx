@@ -30,7 +30,7 @@ export function NativeBpclCard({
   // Still loading — hold rendering so the fallback iframe doesn't flash
   if (!ready && isFetchInFlight()) return null;
 
-  if (!member || !cardData) return <>{fallback}</>;
+  if (!cardData) return <>{fallback}</>;
 
   return (
     <div className={className} style={style}>

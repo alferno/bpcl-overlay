@@ -17,6 +17,10 @@ import { attachRestRoutes } from "./routes.js";
 import { ReplayManager } from "./services/replay-manager.js";
 import { attachLeagueAndStatsRoutes } from "./league-stats-routes.js";
 import { attachGsiRoutes, attachGsiHeartbeat } from "./gsi/routes.js";
+import { OverlayConsumer } from "./production/OverlayConsumer.js";
+import { OverlayController } from "./production/OverlayController.js";
+import { OBSConsumer } from "./production/OBSConsumer.js";
+import { globalEventBus } from "./events/EventBus.js";
 
 export type BroadcastServerContext = {
   app: Express;
@@ -221,6 +225,11 @@ export async function createBroadcastServer(deps: {
     }, heartbeatMs);
     if (typeof t.unref === "function") t.unref();
   }
+
+  // Instantiate Consumers
+  new OverlayConsumer(globalEventBus, state, io);
+  new OverlayController(globalEventBus, state, broadcastFns);
+  new OBSConsumer(globalEventBus, replayManager, obs);
 
   return { app, httpServer, io, broadcast: broadcastFns };
 }

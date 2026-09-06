@@ -57,7 +57,7 @@ export async function recordMatchEnd(
 
   let radiantWins = 0;
   let direWins = 0;
-  let gameNumber = 1;
+  let gameNumber = 2; // Default to game 2 for a newly recorded match (Game 1 just ended)
 
   if (currentSeries && currentSeries.lastMatchId === matchId && matchId > 0) {
     logger.info({ matchId }, "Match end already recorded for this series; ignoring duplicate match ID (replay re-watch).");
@@ -70,22 +70,30 @@ export async function recordMatchEnd(
     ((currentSeries.radiantTeam === radName && currentSeries.direTeam === dirName) ||
      (currentSeries.radiantTeam === dirName && currentSeries.direTeam === radName))
   ) {
-    radiantWins = currentSeries.radiantWins;
-    direWins = currentSeries.direWins;
+    // Check if teams swapped sides compared to the last match in the series
+    const swappedSides = currentSeries.radiantTeam === dirName && currentSeries.direTeam === radName;
+    
+    if (swappedSides) {
+      radiantWins = currentSeries.direWins;
+      direWins = currentSeries.radiantWins;
+    } else {
+      radiantWins = currentSeries.radiantWins;
+      direWins = currentSeries.direWins;
+    }
+    
     gameNumber = currentSeries.gameNumber + 1;
 
-    // Increment based on winner and current orientation
+    // Increment based on the winner of THIS match (radiant or dire)
     if (winner === "radiant") {
-      if (currentSeries.radiantTeam === radName) radiantWins++;
-      else direWins++;
+      radiantWins++;
     } else if (winner === "dire") {
-      if (currentSeries.direTeam === dirName) direWins++;
-      else radiantWins++;
+      direWins++;
     }
   } else {
     // New series starting
     if (winner === "radiant") radiantWins++;
     else if (winner === "dire") direWins++;
+    gameNumber = 2; // First match of the series just concluded
   }
 
   currentSeries = {

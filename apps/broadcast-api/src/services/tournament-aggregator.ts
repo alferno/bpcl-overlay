@@ -78,6 +78,8 @@ export class TournamentAggregator {
   };
 
   private playerLeagueHeroes = new Map<number, Map<number, PlayerHeroAcc>>();
+  /** heroId → itemKey (without item_ prefix) → { totalTime, count } */
+  private itemTimingsAcc = new Map<number, Map<string, { totalTime: number; count: number }>>();
   private running = false;
 
   getProgress(): AggregationProgress {
@@ -213,6 +215,58 @@ export class TournamentAggregator {
     return rows;
   }
 
+  /** Export aggregated item timing rows for saving to item_timings_league.csv */
+  exportItemTimingRows(): Array<{ heroId: number; item: string; avgTimeSec: number; count: number }> {
+    const rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number }> = [];
+    for (const [heroId, itemMap] of this.itemTimingsAcc) {
+      for (const [item, acc] of itemMap) {
+        if (acc.count > 0) {
+          rows.push({
+            heroId,
+            item,
+            avgTimeSec: Math.round(acc.totalTime / acc.count),
+            count: acc.count,
+          });
+        }
+      }
+    }
+    return rows;
+  }
+
+  /** Track item purchase timings from a player's purchase_log (OpenDota parsed field). */
+  private trackItemTimings(heroId: number, purchaseLog: Array<{ key: string; time: number }>): void {
+    if (!purchaseLog?.length) return;
+    // Only track HYPE_ITEMS — strip item_ prefix
+    const HYPE_ITEM_KEYS = new Set([
+      "blink", "black_king_bar", "rapier", "gem", "radiance", "manta",
+      "ultimate_scepter", "bfury", "heart", "monkey_king_bar",
+      "bloodthorn", "refresher", "sheepstick",
+    ]);
+
+    let heroItemMap = this.itemTimingsAcc.get(heroId);
+    if (!heroItemMap) {
+      heroItemMap = new Map();
+      this.itemTimingsAcc.set(heroId, heroItemMap);
+    }
+
+    // Track only the FIRST purchase of each hype item in the game
+    const seenThisGame = new Set<string>();
+    for (const entry of purchaseLog) {
+      const key = entry.key;
+      if (!HYPE_ITEM_KEYS.has(key)) continue;
+      if (seenThisGame.has(key)) continue; // only first purchase
+      seenThisGame.add(key);
+
+      const timeSec = entry.time;
+      if (typeof timeSec !== "number" || timeSec <= 0) continue;
+
+      const cur = heroItemMap.get(key) ?? { totalTime: 0, count: 0 };
+      cur.totalTime += timeSec;
+      cur.count += 1;
+      heroItemMap.set(key, cur);
+    }
+  }
+
   async aggregateLeagues(
     leagueIds: number[],
     client: OpenDotaClient,
@@ -224,6 +278,7 @@ export class TournamentAggregator {
     }
     this.running = true;
     this.playerLeagueHeroes.clear();
+    this.itemTimingsAcc.clear();
 
     this.progress = {
       status: "running",
@@ -442,6 +497,11 @@ export class TournamentAggregator {
     if (kills > cur.maxKills) cur.maxKills = kills;
 
     phMap.set(heroId, cur);
+
+    // Also accumulate item timings from this player's purchase_log
+    if (Array.isArray(p.purchase_log) && p.purchase_log.length > 0) {
+      this.trackItemTimings(heroId, p.purchase_log);
+    }
   }
 
   /** OpenDota uses `picks_bans`; fall back to player hero slots when draft data is missing. */

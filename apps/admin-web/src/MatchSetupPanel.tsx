@@ -285,10 +285,11 @@ export function MatchSetupPanel({
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-xs uppercase text-slate-500">
-                Radiant team
+                Radiant team {(!forceManualScore) && <span className="text-[9px] text-amber-500/70 ml-1 lowercase">(automated)</span>}
               </label>
               <select
-                className={selectClass}
+                disabled={!forceManualScore}
+                className={`${selectClass} ${!forceManualScore ? 'opacity-50 cursor-not-allowed' : ''}`}
                 value={radiantKey}
                 onChange={(e) => {
                   matchSetupDirtyRef.current = true;
@@ -305,10 +306,11 @@ export function MatchSetupPanel({
             </div>
             <div>
               <label className="text-xs uppercase text-slate-500">
-                Dire team
+                Dire team {(!forceManualScore) && <span className="text-[9px] text-amber-500/70 ml-1 lowercase">(automated)</span>}
               </label>
               <select
-                className={selectClass}
+                disabled={!forceManualScore}
+                className={`${selectClass} ${!forceManualScore ? 'opacity-50 cursor-not-allowed' : ''}`}
                 value={direKey}
                 onChange={(e) => {
                   matchSetupDirtyRef.current = true;
@@ -331,7 +333,8 @@ export function MatchSetupPanel({
                 Series format
               </label>
               <select
-                className={selectClass}
+                disabled={!forceManualScore}
+                className={`${selectClass} ${!forceManualScore ? 'opacity-50 cursor-not-allowed' : ''}`}
                 value={seriesBestOf}
                 onChange={(e) => {
                   matchSetupDirtyRef.current = true;
@@ -348,7 +351,8 @@ export function MatchSetupPanel({
                 Game in series
               </label>
               <select
-                className={selectClass}
+                disabled={!forceManualScore}
+                className={`${selectClass} ${!forceManualScore ? 'opacity-50 cursor-not-allowed' : ''}`}
                 value={seriesGame}
                 onChange={(e) => {
                   matchSetupDirtyRef.current = true;
@@ -367,10 +371,11 @@ export function MatchSetupPanel({
                 Radiant series wins
               </label>
               <input
+                disabled={!forceManualScore}
                 type="number"
                 min={0}
                 max={seriesBestOf}
-                className={selectClass}
+                className={`${selectClass} ${!forceManualScore ? 'opacity-50 cursor-not-allowed' : ''}`}
                 value={scoreA}
                 onChange={(e) => {
                   matchSetupDirtyRef.current = true;
@@ -383,10 +388,11 @@ export function MatchSetupPanel({
                 Dire series wins
               </label>
               <input
+                disabled={!forceManualScore}
                 type="number"
                 min={0}
                 max={seriesBestOf}
-                className={selectClass}
+                className={`${selectClass} ${!forceManualScore ? 'opacity-50 cursor-not-allowed' : ''}`}
                 value={scoreB}
                 onChange={(e) => {
                   matchSetupDirtyRef.current = true;
@@ -408,7 +414,7 @@ export function MatchSetupPanel({
               className="accent-emerald-500 rounded bg-slate-900 border-white/10"
             />
             <label htmlFor="forceManualScore" className="text-xs text-slate-400 cursor-pointer select-none">
-              Force override GSI series score with manual score
+              Override automated match setup (Enable Manual Mode)
             </label>
           </div>
 

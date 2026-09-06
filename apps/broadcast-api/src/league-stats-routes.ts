@@ -232,7 +232,7 @@ export function attachLeagueAndStatsRoutes(opts: {
         steamApiKey: env.STEAM_WEB_API_KEY,
       });
 
-      // Preserve existing manual avatars from the CSV before enriching
+      // Preserve existing manual avatars and MMR from the CSV before enriching
       const rosterCsvPath = env.ROSTER_CSV_PATH;
       try {
         const existingCsv = await readFile(rosterCsvPath, "utf8");
@@ -241,6 +241,10 @@ export function attachLeagueAndStatsRoutes(opts: {
           const existing = existingRoster.find(p => p.steam32 === player.steam32);
           if (existing && existing.avatarUrl) {
             player.avatarUrl = existing.avatarUrl;
+          }
+          // Preserve CSV mmr as fallback if API didn't return mmr
+          if (existing?.mmr && !player.mmr) {
+            player.mmr = existing.mmr;
           }
         }
       } catch (err) {

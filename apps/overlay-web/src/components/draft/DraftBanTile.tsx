@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { DraftSlot } from "@bpc/shared-types";
 import { motion } from "framer-motion";
 
@@ -25,11 +26,15 @@ export function DraftBanTile({
   if (!filled) {
     return (
       <div
-        className={`${BAN_TILE_CLASS} transition-shadow`}
+        className={`${BAN_TILE_CLASS} transition-shadow ${isActive ? "draft-pick-pulse" : ""}`}
         style={{
-          border: `1px solid ${colorAlpha(accent, isActive ? 0.8 : 0.4)}`,
-          background: "rgba(0,0,0,0.3)",
-          boxShadow: isActive ? `0 0 16px ${colorAlpha(accent, 0.3)}` : "none",
+          border: `1px solid ${colorAlpha(accent, isActive ? 1 : 0.25)}`,
+          background: `linear-gradient(180deg, ${colorAlpha(accent, 0.05)} 0%, ${colorAlpha(accent, 0.15)} 100%)`,
+          boxShadow: isActive ? `0 0 20px ${colorAlpha(accent, 0.3)}` : "none",
+          ...(isActive ? {
+            "--pick-glow": colorAlpha(accent, 0.8),
+            "--pick-glow-soft": colorAlpha(accent, 0.4),
+          } as CSSProperties : {}),
         }}
       />
     );
@@ -48,7 +53,7 @@ export function DraftBanTile({
       <DraftHistoryTags currentSlot={slot} />
       <img
         src={portraitUrl}
-        alt={slot?.heroName ?? "banned hero"}
+        alt=""
         className="h-full w-full scale-[0.92] object-cover object-[center_12%] grayscale-[0.65] saturate-50 opacity-75"
       />
       <div className="pointer-events-none absolute inset-0 bg-red-950/25" />

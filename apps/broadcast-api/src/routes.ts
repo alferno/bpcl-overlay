@@ -18,6 +18,7 @@ import fs from "fs";
 import type { Server as IOServer } from "socket.io";
 import { z } from "zod";
 import { requireBroadcastAuth } from "./auth-middleware.js";
+import { globalEventBus } from "./events/EventBus.js";
 import { logger } from "./logger.js";
 import type { OBSController } from "./obs-controller.js";
 import type { OpenDotaClient } from "./opendota-client.js";
@@ -52,6 +53,18 @@ export function attachRestRoutes(opts: {
   replayManager: ReplayManager;
 }): void {
   const { app, state, io, broadcast, obs, opendota, replayManager } = opts;
+
+  // ── EventBus Consumers ──────────────────────────────────────────────────
+  globalEventBus.on("WISDOM_SHRINE_TAKEN", () => {
+    emitWisdomStats(io, state).catch(e => logger.error(e, "failed to emit wisdom stats"));
+  });
+  globalEventBus.on("WISDOM_SHRINE_RESPAWNED", () => {
+    emitWisdomStats(io, state).catch(e => logger.error(e, "failed to emit wisdom stats"));
+  });
+  globalEventBus.on("BOUNTY_RUNE_PICKED", () => {
+    emitBountyStats(io, state).catch(e => logger.error(e, "failed to emit bounty stats"));
+  });
+  // ────────────────────────────────────────────────────────────────────────
 
   app.get("/api/community", async (_req, res) => {
     try {
@@ -708,6 +721,20 @@ export function attachRestRoutes(opts: {
       ? heroPortraitFieldsForHero(winner.heroId, winner.heroName)
       : {};
 
+    // Build winning team cards
+    const winningTeam = (match.players || [])
+      .filter((p: any) => p.isRadiant === (winner.side === "radiant"))
+      .map((p: any) => {
+        const rp = p.account_id ? findRosterPlayer(roster, p.account_id) : undefined;
+        return {
+          steam32: p.account_id,
+          heroId: p.hero_id,
+          heroName: heroDisplayName(p.hero_id) || `Hero ${p.hero_id}`,
+          bpcId: rp?.bpcId,
+          playerLabel: rp?.displayName ?? p.personaname ?? `Player ${p.account_id ?? "?"}`,
+        };
+      });
+
     const standoutCard = {
       playerLabel: rosterPlayer?.displayName ?? winner.personaname ?? `Player ${winner.accountId ?? "?"}`,
       heroId:      winner.heroId,
@@ -727,6 +754,7 @@ export function attachRestRoutes(opts: {
       items:       winner.raw.items,
       hasScepter:  winner.raw.hasScepter,
       hasShard:    winner.raw.hasShard,
+      winningTeam,
     };
 
     if (persist) {
