@@ -384,17 +384,16 @@ export default function StandoutPlayerPage() {
                     <motion.div
                       key={teammate.steam32 ?? i}
                       initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: isMvp ? 1 : 0.6, y: 0, scale: isMvp ? 1.05 : 0.85 }}
+                      animate={{ opacity: 1, y: 0, scale: isMvp ? 1.05 : 0.85 }}
                       transition={{ duration: 0.6, delay: 0.1 + i * 0.1, ease: EASE }}
                       className="relative overflow-hidden rounded-xl backdrop-blur-md shrink-0 flex items-center justify-center"
                       style={{
                         width: 240,
                         height: 360,
                         background: "linear-gradient(180deg, rgba(4,18,12,0.6) 0%, rgba(0,0,0,0.85) 100%)",
-                        border: isMvp ? `2px solid ${EMERALD}` : `1px solid rgba(16,185,129,0.2)`,
+                        border: isMvp ? `2px solid ${EMERALD}` : `1px solid rgba(16,185,129,0.4)`,
                         boxShadow: isMvp ? `0 12px 40px rgba(0,0,0,0.8), 0 0 30px rgba(16,185,129,0.4)` : `0 8px 24px rgba(0,0,0,0.6)`,
                         zIndex: isMvp ? 10 : 1,
-                        filter: isMvp ? "none" : "grayscale(50%) brightness(0.7)",
                       }}
                     >
                       <NativeBpclCard
