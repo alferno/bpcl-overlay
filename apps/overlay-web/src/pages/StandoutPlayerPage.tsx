@@ -16,12 +16,12 @@ import type { StandoutPlayerCard } from "@bpc/shared-types";
 
 import { FallbackPlayerCard } from "../components/FallbackPlayerCard";
 import { NativeBpclCard } from "../components/NativeBpclCard";
-
+import { resolveBroadcastTheme } from "../draft/theme-colors";
 import { HERO_ABILITIES } from "../ability-constants";
 
-const EMERALD = "#10b981";
-const EMERALD_DARK = "#059669";
-const EMERALD_GLOW = "rgba(16,185,129,0.25)";
+const EMERALD = "var(--theme-primary)";
+const EMERALD_DARK = "var(--theme-accent)";
+const EMERALD_GLOW = "var(--theme-glow)";
 
 /** Valve CDN base for ability icons */
 const ABILITY_ICON_BASE =
@@ -66,8 +66,8 @@ function StatTile({
       style={{
         background:
           "linear-gradient(145deg, rgba(4,20,15,0.7) 0%, rgba(0,0,0,0.85) 100%)",
-        borderColor: "rgba(16,185,129,0.25)",
-        boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 0 20px rgba(16,185,129,0.05)`,
+        borderColor: EMERALD_GLOW,
+        boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 0 20px ${EMERALD_GLOW}`,
         padding: "14px 20px",
       }}
     >
@@ -102,7 +102,7 @@ function ItemSlot({ itemId, size = 52 }: { itemId: number; size?: number }) {
         height: Math.round(size * 0.74),
         background: "rgba(255,255,255,0.04)",
         border: url
-          ? `1px solid rgba(16,185,129,0.4)`
+          ? `1px solid ${EMERALD_GLOW}`
           : "1px solid rgba(255,255,255,0.1)",
         boxShadow: url ? `0 0 8px ${EMERALD_GLOW}` : "none",
         flexShrink: 0,
@@ -189,7 +189,7 @@ function SkillIconsRow({ heroSlug }: { heroSlug: string | undefined }) {
             style={{
               width: 46,
               height: 46,
-              border: `1px solid rgba(16,185,129,0.35)`,
+              border: `1px solid ${EMERALD_GLOW}`,
               boxShadow: `0 0 8px ${EMERALD_GLOW}`,
               background: "rgba(0,0,0,0.5)",
             }}
@@ -267,13 +267,22 @@ export default function StandoutPlayerPage() {
   const backpackItems = items.slice(7, 10);
 
   const EASE = [0.16, 1, 0.3, 1] as const;
+  const theme = resolveBroadcastTheme(state.production);
 
   return (
     <HudCanvas>
-      <FadePanel
-        show={delayedVisible}
-        panelKey={`standout-${card?.steam32 ?? card?.heroId ?? "empty"}`}
+      <div 
+        className="absolute inset-0 pointer-events-none" 
+        style={{ 
+          "--theme-primary": theme.primary, 
+          "--theme-accent": theme.accent, 
+          "--theme-glow": theme.glow 
+        } as React.CSSProperties}
       >
+        <FadePanel
+          show={delayedVisible}
+          panelKey={`standout-${card?.steam32 ?? card?.heroId ?? "empty"}`}
+        >
         {/* -- Background ------------------------------------------------- */}
         <div className="absolute inset-0 bg-slate-950 pointer-events-none" />
         <div
@@ -310,17 +319,17 @@ export default function StandoutPlayerPage() {
                 {/* WINNING TEAM LOGO */}
                 {card.winningTeamLogoUrl && (
                   <motion.div
-                    className="absolute right-full top-1/2 -translate-y-1/2 mr-8 drop-shadow-xl"
-                    initial={{ opacity: 0, scale: 0.5, rotate: -15 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    className="drop-shadow-xl mb-3"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
                     style={{
-                      width: 72,
-                      height: 72,
+                      width: 80,
+                      height: 80,
                       background: "rgba(0,0,0,0.4)",
                       borderRadius: "50%",
-                      padding: 6,
-                      border: `1px solid rgba(16,185,129,0.5)`,
+                      padding: 8,
+                      border: `1px solid ${EMERALD}`,
                       boxShadow: `0 0 20px ${EMERALD_GLOW}`,
                       backdropFilter: "blur(4px)"
                     }}
@@ -346,13 +355,28 @@ export default function StandoutPlayerPage() {
                 >
                   VICTORY
                 </h1>
+                
+                {card.winningTeamName && (
+                  <h2
+                    className="font-black uppercase mt-1"
+                    style={{
+                      fontSize: "1.6rem",
+                      color: "#fff",
+                      letterSpacing: "0.15em",
+                      textShadow: `0 2px 4px rgba(0,0,0,0.8)`
+                    }}
+                  >
+                    {card.winningTeamName}
+                  </h2>
+                )}
+
                 <p
                   className="font-bold uppercase"
                   style={{
                     fontSize: "0.82rem",
                     color: EMERALD,
                     letterSpacing: "0.4em",
-                    marginTop: 3,
+                    marginTop: card.winningTeamName ? 8 : 3,
                   }}
                 >
                   STANDOUT PLAYER: LAST MATCH
@@ -391,8 +415,8 @@ export default function StandoutPlayerPage() {
                         width: 240,
                         height: 360,
                         background: "linear-gradient(180deg, rgba(4,18,12,0.6) 0%, rgba(0,0,0,0.85) 100%)",
-                        border: isMvp ? `2px solid ${EMERALD}` : `1px solid rgba(16,185,129,0.4)`,
-                        boxShadow: isMvp ? `0 12px 40px rgba(0,0,0,0.8), 0 0 30px rgba(16,185,129,0.4)` : `0 8px 24px rgba(0,0,0,0.6)`,
+                        border: isMvp ? `2px solid ${EMERALD}` : `1px solid ${EMERALD_GLOW}`,
+                        boxShadow: isMvp ? `0 12px 40px rgba(0,0,0,0.8), 0 0 30px ${EMERALD_GLOW}` : `0 8px 24px rgba(0,0,0,0.6)`,
                         zIndex: isMvp ? 10 : 1,
                       }}
                     >
@@ -423,7 +447,10 @@ export default function StandoutPlayerPage() {
                       />
                       {isMvp && (
                         <div className="absolute bottom-4 inset-x-0 flex justify-center z-20">
-                          <span className="bg-emerald-500 text-slate-950 px-4 py-1 font-black text-sm uppercase tracking-widest rounded shadow-[0_0_15px_rgba(16,185,129,1)]">
+                          <span 
+                            className="text-slate-950 px-4 py-1 font-black text-sm uppercase tracking-widest rounded"
+                            style={{ backgroundColor: EMERALD, boxShadow: `0 0 15px ${EMERALD}` }}
+                          >
                             MVP
                           </span>
                         </div>
@@ -448,8 +475,8 @@ export default function StandoutPlayerPage() {
                 <div className="flex flex-col items-center mx-4 px-10 py-3 rounded-xl backdrop-blur-md"
                   style={{
                     background: "linear-gradient(145deg, rgba(4,20,15,0.7) 0%, rgba(0,0,0,0.85) 100%)",
-                    border: `1px solid rgba(16,185,129,0.35)`,
-                    boxShadow: `0 8px 32px rgba(0,0,0,0.6), inset 0 0 20px rgba(16,185,129,0.1)`,
+                    border: `1px solid ${EMERALD_GLOW}`,
+                    boxShadow: `0 8px 32px rgba(0,0,0,0.6), inset 0 0 20px ${EMERALD_GLOW}`,
                   }}
                 >
                     <span className="font-black leading-none" style={{ fontSize: "2.8rem", color: "#fff", textShadow: `0 0 25px ${EMERALD}` }}>
@@ -470,7 +497,7 @@ export default function StandoutPlayerPage() {
                 className="w-full max-w-[1300px] mt-2 rounded-2xl flex items-stretch overflow-hidden backdrop-blur-md"
                 style={{
                   background: "linear-gradient(90deg, rgba(4,20,15,0.8), rgba(0,0,0,0.6))",
-                  border: `1px solid rgba(16,185,129,0.25)`,
+                  border: `1px solid ${EMERALD_GLOW}`,
                   boxShadow: `0 8px 32px rgba(0,0,0,0.5)`,
                   height: 180,
                 }}
@@ -481,7 +508,7 @@ export default function StandoutPlayerPage() {
                 {/* Hero Portrait Left */}
                 <div 
                   className="flex flex-col items-center justify-center p-4 border-r"
-                  style={{ width: 240, borderColor: "rgba(16,185,129,0.15)" }}
+                  style={{ width: 240, borderColor: EMERALD_GLOW }}
                 >
                   <div 
                     className="w-24 h-24 rounded-full overflow-hidden mb-2"
@@ -577,7 +604,7 @@ export default function StandoutPlayerPage() {
                               width: 36,
                               height: 28,
                               border: id
-                                ? `1px solid rgba(16,185,129,0.3)`
+                                ? `1px solid ${EMERALD_GLOW}`
                                 : "1px dashed rgba(255,255,255,0.1)",
                               background: "rgba(0,0,0,0.4)",
                               marginTop: 7,
@@ -614,13 +641,14 @@ export default function StandoutPlayerPage() {
           <div className="absolute inset-0 flex items-center justify-center">
             <span
               className="font-bold uppercase tracking-widest"
-              style={{ fontSize: "1.5rem", color: "rgba(16,185,129,0.3)" }}
+              style={{ fontSize: "1.5rem", color: EMERALD_GLOW }}
             >
               Awaiting standout player data�
             </span>
           </div>
         )}
       </FadePanel>
+      </div>
     </HudCanvas>
   );
 }
