@@ -191,6 +191,15 @@ ipcMain.handle('download-and-install', async (_event, { downloadUrl, version }) 
       }
     })
 
+    // Forcefully kill any running instances of the Streamer Desktop to prevent file-locking
+    try {
+      if (process.platform === 'win32') {
+        await execPromise(`taskkill /F /IM "BPCL Streamer Desktop.exe" /T`, { windowsHide: true })
+      }
+    } catch (e) {
+      // taskkill throws if process isn't found, which is fine
+    }
+
     // Clean up old files in the install directory to avoid conflicting versions
     try {
       const items = fs.readdirSync(INSTALL_DIR)
@@ -201,10 +210,11 @@ ipcMain.handle('download-and-install', async (_event, { downloadUrl, version }) 
       }
     } catch (e) {
       console.error('Failed to clean up install directory:', e)
+      throw new Error(`Please close all BPCL apps before updating. Windows locked the files: ${e.message}`)
     }
 
     // Extract over existing install dir
-    await execPromise(`powershell -command "Expand-Archive -Force -Path '${zipPath}' -DestinationPath '${INSTALL_DIR}'"`, { windowsHide: true })
+    await execPromise(`powershell -command "$ErrorActionPreference = 'Stop'; Expand-Archive -Force -Path '${zipPath}' -DestinationPath '${INSTALL_DIR}'"`, { windowsHide: true })
 
     // Persist new version
     fs.writeFileSync(LOCAL_VERSION_FILE, version, 'utf8')
