@@ -1,7 +1,7 @@
 {
-    "version":  "1.3.17",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.17/BPCL-Streamer-v1.3.17-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.17/BPCL-Streamer-v1.3.17-Full.zip",
-    "notes":  "Fix MatchStateDetector bug and update mid matchup timing",
-    "publishedAt":  "2026-09-30T18:40:38.9501257+05:30"
+    "version":  "1.3.18",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.18/BPCL-Streamer-v1.3.18-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.18/BPCL-Streamer-v1.3.18-Full.zip",
+    "notes":  "Fix GameStateStore dropping first payload to resolve Draft auto-show bug",
+    "publishedAt":  "2026-09-30T19:03:28.5827956+05:30"
 }
