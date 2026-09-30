@@ -1,7 +1,7 @@
 {
-    "version":  "1.3.14",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.14/BPCL-Streamer-v1.3.14-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.14/BPCL-Streamer-v1.3.14-Full.zip",
-    "notes":  "Automated overlay and API update",
-    "publishedAt":  "2026-09-30T18:13:41.0491766+05:30"
+    "version":  "1.3.17",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.17/BPCL-Streamer-v1.3.17-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.17/BPCL-Streamer-v1.3.17-Full.zip",
+    "notes":  "Fix MatchStateDetector bug and update mid matchup timing",
+    "publishedAt":  "2026-09-30T18:40:38.9501257+05:30"
 }
