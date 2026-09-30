@@ -2,6 +2,9 @@ import Bottleneck from "bottleneck";
 import { Redis } from "ioredis";
 import { env } from "./env.js";
 import { logger } from "./logger.js";
+import { existsSync } from "node:fs";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import path from "node:path";
 
 const OPEN_DOTA_BASE = "https://api.opendota.com/api";
 
@@ -233,9 +236,6 @@ export class OpenDotaClient {
   }
 
   async matchDetails(matchId: number | string): Promise<CachedResponse<OpenDotaMatch>> {
-    const { existsSync } = await import("node:fs");
-    const { readFile, writeFile, mkdir } = await import("node:fs/promises");
-    const path = await import("node:path");
 
     const diskPath = path.resolve(process.cwd(), `data/matches/${matchId}.json`);
     try {
