@@ -1,7 +1,7 @@
 {
-    "version":  "1.3.21",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.21/BPCL-Streamer-v1.3.21-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.21/BPCL-Streamer-v1.3.21-Full.zip",
-    "notes":  "Revert H2H graphic to show lifetime league stats instead of live stats",
-    "publishedAt":  "2026-09-30T19:32:57.1670224+05:30"
+    "version":  "1.3.23",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.23/BPCL-Streamer-v1.3.23-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v1.3.23/BPCL-Streamer-v1.3.23-Full.zip",
+    "notes":  "Clean up Standout Player header and perfectly align Match Context widget",
+    "publishedAt":  "2026-09-30T20:42:51.6205272+05:30"
 }
