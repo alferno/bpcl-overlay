@@ -628,6 +628,17 @@ export function attachGsiRoutes(opts: {
     const apply = async () => {
       const current = await state.getState();
 
+      if (parsed.draftPatch && parsed.draftPatch.phase !== current.draft?.phase) {
+        globalEventBus.emit({
+          type: "DRAFT_STATE_CHANGED",
+          metadata: {
+            newPhase: parsed.draftPatch.phase,
+            prevPhase: current.draft?.phase,
+            inDraft: parsed.inDraft,
+          },
+        } as any);
+      }
+
       // Sync active hero unit names to AbilityAccuracyTracker
       const activeHeroes: string[] = [];
       ["team2", "team3"].forEach((teamKey) => {
@@ -1077,6 +1088,9 @@ export function attachGsiRoutes(opts: {
                     heroName: p.heroId ? heroDisplayName(p.heroId) : p.heroName,
                     bpcId: r?.bpcId,
                     playerLabel: pLabel,
+                    kills: p.raw?.kills ?? 0,
+                    deaths: p.raw?.deaths ?? 0,
+                    assists: p.raw?.assists ?? 0,
                   };
                 });
 
@@ -1105,6 +1119,7 @@ export function attachGsiRoutes(opts: {
                 winningTeamName,
                 winningTeamLogoUrl,
                 winningTeam,
+                duration: (payload?.map as any)?.clock_time ?? 0,
               };
 
               // Resolve player label from GSI player name if roster match failed
@@ -1231,17 +1246,55 @@ export function attachGsiRoutes(opts: {
     }, 150);
 
     const clockTime = (payload?.map as any)?.clock_time ?? 0;
-    if (clockTime > 0) {
+    const gameState = (payload?.map as any)?.game_state;
+    if (clockTime > 0 && gameState === "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS") {
       // [LEGACY BOUNTY MILESTONE LOOP REMOVED]
 
       // [LEGACY WISDOM MILESTONE LOOP REMOVED]
       // Top Stats: 24 (1440) -> hero_damage, 42 (2520) -> tower_damage
-      const statMilestones = [1440, 2520];
-      for (const m of statMilestones) {
-        if (clockTime >= m && clockTime < m + 30 && !globalStatMilestonesTriggered.has(m)) {
-          globalStatMilestonesTriggered.add(m);
-          
-          const statType = m === 1440 ? "hero_damage" : "tower_damage";
+      const statMilestones = [91, 1440, 2520];
+        for (const m of statMilestones) {
+          if (clockTime >= m && clockTime < m + 30 && !globalStatMilestonesTriggered.has(m)) {
+            globalStatMilestonesTriggered.add(m);
+            
+            if (m === 91) {
+              try {
+                const getMidlanerSteam32 = (teamPrefix: "team2" | "team3") => {
+                  let midSteam32 = 0;
+                  let minDistance = Infinity;
+                  const startIdx = teamPrefix === "team2" ? 0 : 5;
+                  for (let i = startIdx; i < startIdx + 5; i++) {
+                    const playerHero = (payload?.hero as any)?.[teamPrefix]?.[`player${i}`];
+                    const playerObj = (payload?.player as any)?.[teamPrefix]?.[`player${i}`];
+                    if (playerHero && playerObj && playerObj.accountid) {
+                      const x = playerHero.xpos || 0;
+                      const y = playerHero.ypos || 0;
+                      const distance = (x * x) + (y * y);
+                      if (distance < minDistance) {
+                        minDistance = distance;
+                        midSteam32 = parseInt(playerObj.accountid.toString(), 10);
+                      }
+                    }
+                  }
+                  return midSteam32;
+                };
+
+                const radiantMid = getMidlanerSteam32("team2");
+                const direMid = getMidlanerSteam32("team3");
+                
+                if (radiantMid && direMid) {
+                  const port = process.env.PORT || 8080;
+                  fetch(`http://127.0.0.1:${port}/api/producer/h2h`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.BROADCAST_SECRET}` },
+                    body: JSON.stringify({ player1Steam32: radiantMid, player2Steam32: direMid })
+                  }).catch(()=>{});
+                }
+              } catch (e) {}
+              continue;
+            }
+
+            const statType = m === 1440 ? "hero_damage" : "tower_damage";
           const title = m === 1440 ? "Hero Damage" : "Tower Damage";
           
           let highestValue = -1;
@@ -1335,3 +1388,8 @@ export function attachGsiHeartbeat(
 }
 
 // [LEGACY COMBATLOG WISDOM DETECTOR REMOVED]
+
+
+
+
+

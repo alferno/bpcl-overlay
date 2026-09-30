@@ -111,11 +111,11 @@ export async function resolveSteamProfileToSteam32(
       return steam32Cache[vanity];
     }
 
-    const apiKey = process.env.STEAM_API_KEY;
+    const apiKey = process.env.STEAM_WEB_API_KEY;
     if (!apiKey) {
       logger.warn(
         { vanity },
-        "STEAM_API_KEY not set — cannot resolve vanity URL to Steam32"
+        "STEAM_WEB_API_KEY not set — cannot resolve vanity URL to Steam32"
       );
       return null;
     }

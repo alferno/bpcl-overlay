@@ -9,12 +9,12 @@
   --draft-panel-deep: 10 10 12;
   --draft-card: 24 24 28;
   --draft-border: 42 42 48;
-  --draft-accent: 255 255 255;
-  --draft-accent-soft: 212 212 216;
-  --draft-highlight: 161 161 170;
+  --draft-accent: 218 165 32; /* Goldenrod */
+  --draft-accent-soft: 238 232 170; /* Pale Goldenrod */
+  --draft-highlight: 255 215 0; /* Pure Gold */
   --draft-muted: 113 113 122;
   --draft-text: 250 250 250;
-  --draft-timer-label: 212 212 216;
+  --draft-timer-label: 238 232 170;
   --broadcast-glass: rgba(12, 12, 14, 0.92);
   --broadcast-glass-edge: rgba(255, 255, 255, 0.07);
 }

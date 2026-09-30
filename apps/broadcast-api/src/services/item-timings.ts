@@ -13,8 +13,8 @@ const LEAGUE_CSV  = path.join(DATA_DIR, "item_timings_league.csv");
 // ── In-memory caches ─────────────────────────────────────────────────────────
 // itemKey (without "item_" prefix) → heroId → avgTimeSec
 const averageTimingsCache: Record<string, Record<number, number>> = {};
-// itemKey (without "item_" prefix) → heroId → { time, count }
-const leagueTimingsCache:  Record<string, Record<number, { time: number; count: number }>> = {};
+// itemKey (without "item_" prefix) → heroId → { time, count, minTime, maxTime }
+const leagueTimingsCache:  Record<string, Record<number, { time: number; count: number; minTime: number; maxTime: number }>> = {};
 
 let isPreloading = false;
 
@@ -24,26 +24,30 @@ async function ensureDataDir() {
   await mkdir(DATA_DIR, { recursive: true });
 }
 
-/** Parse a simple 4-column CSV: heroId,item,avgTimeSec,count */
-function parseTimingsCsv(raw: string): Array<{ heroId: number; item: string; avgTimeSec: number; count: number }> {
-  const rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number }> = [];
+/** Parse a simple 6-column CSV: heroId,item,avgTimeSec,count,minTimeSec,maxTimeSec */
+function parseTimingsCsv(raw: string): Array<{ heroId: number; item: string; avgTimeSec: number; count: number; minTimeSec: number; maxTimeSec: number }> {
+  const rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number; minTimeSec: number; maxTimeSec: number }> = [];
   const lines = raw.trim().split("\n");
   for (let i = 1; i < lines.length; i++) {  // skip header
-    const [heroIdStr, item, timeStr, countStr] = lines[i].split(",");
-    const heroId = Number(heroIdStr);
-    const avgTimeSec = Number(timeStr);
-    const count = Number(countStr) || 1;
+    const parts = lines[i].split(",");
+    const heroId = Number(parts[0]);
+    const item = parts[1];
+    const avgTimeSec = Number(parts[2]);
+    const count = Number(parts[3]) || 1;
+    const minTimeSec = parts[4] !== undefined ? Number(parts[4]) : avgTimeSec;
+    const maxTimeSec = parts[5] !== undefined ? Number(parts[5]) : avgTimeSec;
+    
     if (!item || isNaN(heroId) || isNaN(avgTimeSec)) continue;
-    rows.push({ heroId, item, avgTimeSec, count });
+    rows.push({ heroId, item, avgTimeSec, count, minTimeSec, maxTimeSec });
   }
   return rows;
 }
 
 function serializeTimingsCsv(
-  data: Array<{ heroId: number; item: string; avgTimeSec: number; count: number }>,
+  data: Array<{ heroId: number; item: string; avgTimeSec: number; count: number; minTimeSec: number; maxTimeSec: number }>,
 ): string {
-  const header = "heroId,item,avgTimeSec,count";
-  const rows = data.map((r) => `${r.heroId},${r.item},${r.avgTimeSec},${r.count}`);
+  const header = "heroId,item,avgTimeSec,count,minTimeSec,maxTimeSec";
+  const rows = data.map((r) => `${r.heroId},${r.item},${r.avgTimeSec},${r.count},${r.minTimeSec},${r.maxTimeSec}`);
   return [header, ...rows].join("\n");
 }
 
@@ -70,9 +74,9 @@ export async function loadTimingsFromCsv(): Promise<void> {
   if (existsSync(LEAGUE_CSV)) {
     try {
       const raw = await readFile(LEAGUE_CSV, "utf8");
-      for (const { heroId, item, avgTimeSec, count } of parseTimingsCsv(raw)) {
+      for (const { heroId, item, avgTimeSec, count, minTimeSec, maxTimeSec } of parseTimingsCsv(raw)) {
         if (!leagueTimingsCache[item]) leagueTimingsCache[item] = {};
-        leagueTimingsCache[item][heroId] = { time: avgTimeSec, count };
+        leagueTimingsCache[item][heroId] = { time: avgTimeSec, count, minTime: minTimeSec, maxTime: maxTimeSec };
         leagueLoaded++;
       }
     } catch (err) {
@@ -104,7 +108,7 @@ export async function preloadItemTimings(): Promise<void> {
   const itemKeys = Object.keys(HYPE_ITEMS).map((k) => k.replace("item_", ""));
   logger.info({ items: itemKeys.length }, "[ItemTimings] Preloading global averages from OpenDota...");
 
-  const rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number }> = [];
+  const rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number; minTimeSec: number; maxTimeSec: number }> = [];
 
   for (const item of itemKeys) {
     try {
@@ -136,7 +140,9 @@ export async function preloadItemTimings(): Promise<void> {
         if (agg.totalGames > 0) {
           const avg = Math.round(agg.sum / agg.totalGames);
           averageTimingsCache[item][Number(heroIdStr)] = avg;
-          rows.push({ heroId: Number(heroIdStr), item, avgTimeSec: avg, count: agg.totalGames });
+          // For global data, min and max don't make sense because they include Turbo mode
+          // We just default them to the average so the CSV schema stays identical
+          rows.push({ heroId: Number(heroIdStr), item, avgTimeSec: avg, count: agg.totalGames, minTimeSec: avg, maxTimeSec: avg });
         }
       }
 
@@ -170,71 +176,7 @@ export function resetLeagueTimingsMatchState() {
   // Kept for API compatibility.
 }
 
-/** Fetch league-specific item timings from OpenDota Explorer and persist to CSV.
- *  Safe to call multiple times — deduplicates on leagueIds key. */
-export async function fetchAndSaveLeagueTimingsCsv(leagueIds: number[]): Promise<void> {
-  if (!leagueIds.length) return;
-  const key = leagueIds.slice().sort().join(",");
-  if (leagueTimingsFetchedForLeagueKey === key) {
-    logger.info({ leagueIds }, "[ItemTimings] League timings already fetched for this set — skipping");
-    return;
-  }
-  leagueTimingsFetchedForLeagueKey = key;
 
-  const itemKeys = Object.keys(HYPE_ITEMS).map((k) => `'${k.replace("item_", "")}'`);
-  const sql = `
-    SELECT
-      player_matches.hero_id,
-      pl->>'key' as item,
-      avg((pl->>'time')::int) as avg_time,
-      count(*) as times_bought
-    FROM player_matches
-    JOIN matches USING(match_id)
-    CROSS JOIN unnest(purchase_log) as pl
-    WHERE matches.leagueid IN (${leagueIds.join(",")})
-    AND pl->>'key' IN (${itemKeys.join(",")})
-    GROUP BY player_matches.hero_id, pl->>'key'
-  `;
-
-  logger.info({ leagueIds }, "[ItemTimings] Fetching league item timings from OpenDota Explorer...");
-
-  try {
-    const url = "https://api.opendota.com/api/explorer?sql=" + encodeURIComponent(sql);
-    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
-    if (!res.ok) {
-      logger.warn({ status: res.status }, "[ItemTimings] League timings fetch failed");
-      return;
-    }
-    const data = await res.json();
-    if (!data.rows?.length) {
-      logger.warn("[ItemTimings] League timings returned 0 rows");
-      return;
-    }
-
-    const rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number }> = [];
-
-    for (const row of data.rows) {
-      if (!row.hero_id || !row.item || !row.avg_time) continue;
-      const heroId    = Number(row.hero_id);
-      const avgTimeSec = Math.round(Number(row.avg_time));
-      const count     = Number(row.times_bought) || 1;
-      const item      = row.item as string;
-
-      if (!leagueTimingsCache[item]) leagueTimingsCache[item] = {};
-      leagueTimingsCache[item][heroId] = { time: avgTimeSec, count };
-      rows.push({ heroId, item, avgTimeSec, count });
-    }
-
-    logger.info({ rows: rows.length }, "[ItemTimings] League timings loaded into cache");
-
-    // Persist
-    await ensureDataDir();
-    await writeFile(LEAGUE_CSV, serializeTimingsCsv(rows), "utf8");
-    logger.info({ rows: rows.length, path: LEAGUE_CSV }, "[ItemTimings] League timings CSV saved");
-  } catch (err) {
-    logger.warn({ err: String(err) }, "[ItemTimings] Error fetching league timings");
-  }
-}
 
 // ── Lookup helpers ────────────────────────────────────────────────────────────
 
@@ -243,7 +185,7 @@ export function getAverageItemTiming(heroId: number, itemKey: string): number | 
   return averageTimingsCache[cleanKey]?.[heroId] ?? null;
 }
 
-export function getLeagueItemTiming(heroId: number, itemKey: string): { time: number; count: number } | null {
+export function getLeagueItemTiming(heroId: number, itemKey: string): { time: number; count: number; minTime: number; maxTime: number } | null {
   const cleanKey = itemKey.replace("item_", "");
   return leagueTimingsCache[cleanKey]?.[heroId] ?? null;
 }
@@ -253,7 +195,7 @@ export function getLeagueItemTiming(heroId: number, itemKey: string): { time: nu
  * Returns null if no BPCL data exists for this hero/item combo (show "First time in BPCL").
  * Global data is NOT returned here — use getAverageItemTiming() for diagnostics only.
  */
-export function getItemTiming(heroId: number, itemKey: string): { time: number; count: number; source: "league" } | null {
+export function getItemTiming(heroId: number, itemKey: string): { time: number; count: number; minTime: number; maxTime: number; source: "league" } | null {
   const league = getLeagueItemTiming(heroId, itemKey);
   if (league) return { ...league, source: "league" };
   return null;
@@ -264,12 +206,12 @@ export function getItemTiming(heroId: number, itemKey: string): { time: number; 
  * This replaces the old Explorer SQL approach (which doesn't work for private BPCL leagues).
  */
 export async function saveExtractedLeagueTimings(
-  rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number }>,
+  rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number; minTimeSec: number; maxTimeSec: number }>,
 ): Promise<void> {
   // Update in-memory cache
-  for (const { heroId, item, avgTimeSec, count } of rows) {
+  for (const { heroId, item, avgTimeSec, count, minTimeSec, maxTimeSec } of rows) {
     if (!leagueTimingsCache[item]) leagueTimingsCache[item] = {};
-    leagueTimingsCache[item][heroId] = { time: avgTimeSec, count };
+    leagueTimingsCache[item][heroId] = { time: avgTimeSec, count, minTime: minTimeSec, maxTime: maxTimeSec };
   }
 
   // Persist to CSV

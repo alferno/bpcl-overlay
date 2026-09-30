@@ -11,9 +11,12 @@ import {
   saveLeagueStatsToDisk,
   buildPlayerHeroIndex,
 } from "./league-stats-store.js";
+import { saveExtractedLeagueTimings } from "./item-timings.js";
 import { fetchRosterFromBpcLeague } from "./bpcleague-sync.js";
 import { enrichRosterAvatars } from "./steam-profile.js";
-import { teamColorsFromRoster } from "./roster-parser.js";
+import { teamColorsFromRoster, serializeRosterCsv } from "./roster-parser.js";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 async function applyLeagueSnapshot(opts: {
   leagueId: number;
@@ -179,7 +182,6 @@ export async function runLeagueAggregation(opts: {
     try {
       const timingRows = tournamentAggregator.exportItemTimingRows();
       if (timingRows.length > 0) {
-        const { saveExtractedLeagueTimings } = await import("./item-timings.js");
         await saveExtractedLeagueTimings(timingRows);
         logger.info({ rows: timingRows.length }, "Item timings extracted from BPCL matches and saved");
       } else {
@@ -260,6 +262,15 @@ export async function bootstrapLeagueFromEnv(opts: {
       leagueConfig: { ...currentSnap.leagueConfig, roster, teamColors, leagueId: activeLeagueId },
     });
     await broadcast.broadcastFull(next);
+    
+    try {
+      const csvPath = env.ROSTER_CSV_PATH;
+      await mkdir(path.dirname(csvPath), { recursive: true });
+      await writeFile(csvPath, serializeRosterCsv(roster), "utf8");
+    } catch (csvErr) {
+      logger.warn({ err: csvErr }, "Failed to save auto-fetched roster to CSV");
+    }
+    
     logger.info({ count: roster.length }, "Auto-fetched and applied roster.");
   } catch (err) {
     logger.error({ err }, "Failed to auto-fetch roster");
@@ -271,20 +282,14 @@ export async function bootstrapLeagueFromEnv(opts: {
     broadcast,
   });
 
-  if (csvLoaded) return;
-
-  const after = await state.getState();
-  const stateReady = after.leagueConfig?.aggregationStatus === "ready";
-  const memReady = tournamentAggregator.getProgress().status === "ready";
   const shouldAggregate =
     env.LEAGUE_AUTO_AGGREGATE &&
-    (!stateReady || !memReady) &&
     tournamentAggregator.getProgress().status !== "running";
 
   if (shouldAggregate) {
-    logger.info({ leagueId: activeLeagueId }, "Starting league aggregation (Steam match list + OpenDota details)");
+    logger.info({ leagueId: activeLeagueId }, "Starting league aggregation on boot (fetching new matches)");
     void runLeagueAggregation({ leagueId: activeLeagueId, state, opendota, broadcast });
-  } else {
+  } else if (!csvLoaded) {
     logger.info(
       { leagueId: activeLeagueId, dir: leagueStatsDir() },
       "No league CSV found — place stats CSV or run manual aggregate in admin",

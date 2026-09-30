@@ -78,8 +78,8 @@ export class TournamentAggregator {
   };
 
   private playerLeagueHeroes = new Map<number, Map<number, PlayerHeroAcc>>();
-  /** heroId → itemKey (without item_ prefix) → { totalTime, count } */
-  private itemTimingsAcc = new Map<number, Map<string, { totalTime: number; count: number }>>();
+  /** heroId → itemKey (without item_ prefix) → { totalTime, count, minTime, maxTime } */
+  private itemTimingsAcc = new Map<number, Map<string, { totalTime: number; count: number; minTime: number; maxTime: number }>>();
   private running = false;
 
   getProgress(): AggregationProgress {
@@ -216,8 +216,8 @@ export class TournamentAggregator {
   }
 
   /** Export aggregated item timing rows for saving to item_timings_league.csv */
-  exportItemTimingRows(): Array<{ heroId: number; item: string; avgTimeSec: number; count: number }> {
-    const rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number }> = [];
+  exportItemTimingRows(): Array<{ heroId: number; item: string; avgTimeSec: number; count: number; minTimeSec: number; maxTimeSec: number }> {
+    const rows: Array<{ heroId: number; item: string; avgTimeSec: number; count: number; minTimeSec: number; maxTimeSec: number }> = [];
     for (const [heroId, itemMap] of this.itemTimingsAcc) {
       for (const [item, acc] of itemMap) {
         if (acc.count > 0) {
@@ -226,6 +226,8 @@ export class TournamentAggregator {
             item,
             avgTimeSec: Math.round(acc.totalTime / acc.count),
             count: acc.count,
+            minTimeSec: acc.minTime,
+            maxTimeSec: acc.maxTime,
           });
         }
       }
@@ -260,9 +262,11 @@ export class TournamentAggregator {
       const timeSec = entry.time;
       if (typeof timeSec !== "number" || timeSec <= 0) continue;
 
-      const cur = heroItemMap.get(key) ?? { totalTime: 0, count: 0 };
+      const cur = heroItemMap.get(key) ?? { totalTime: 0, count: 0, minTime: Infinity, maxTime: -Infinity };
       cur.totalTime += timeSec;
       cur.count += 1;
+      if (timeSec < cur.minTime) cur.minTime = timeSec;
+      if (timeSec > cur.maxTime) cur.maxTime = timeSec;
       heroItemMap.set(key, cur);
     }
   }

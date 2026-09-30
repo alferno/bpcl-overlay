@@ -93,9 +93,9 @@ export const rosterPlayerSchema = z.object({
 export type RosterPlayer = z.infer<typeof rosterPlayerSchema>;
 
 /** Shown on the left of the draft overlay title bar */
-export const BROADCAST_LEAGUE_TITLE = "BPC League Season 2";
+export const BROADCAST_LEAGUE_TITLE = "BPC League Season 3";
 
-/** Derive a human-readable league title from a seasonSlug (e.g. "season-2" → "BPC League Season 2") */
+/** Derive a human-readable league title from a seasonSlug (e.g. "season-3" → "BPC League Season 3") */
 export function leagueTitleFromSlug(slug?: string): string {
   if (!slug) return BROADCAST_LEAGUE_TITLE;
   const match = /season[- _](\d+)/i.exec(slug);
@@ -403,6 +403,8 @@ export const standoutPlayerCardSchema = z.object({
   lastHits: z.number(),
   /** Total team kills — used client-side to compute kill participation % */
   teamKills: z.number(),
+  /** Match duration in seconds */
+  duration: z.number().optional(),
   /** 10-slot item id array: indices 0-5 = main inventory, 6 = neutral,
    *  7-9 = backpack.  Use 0 for empty slots. */
   items: z.array(z.number()).length(10).optional(),
@@ -417,6 +419,9 @@ export const standoutPlayerCardSchema = z.object({
       heroName: z.string().optional(),
       bpcId: z.string().optional(),
       playerLabel: z.string().optional(),
+      kills: z.number().optional(),
+      deaths: z.number().optional(),
+      assists: z.number().optional(),
     })
   ).optional(),
 });

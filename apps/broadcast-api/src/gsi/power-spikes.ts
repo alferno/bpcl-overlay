@@ -135,26 +135,42 @@ export async function detectPowerSpikes(payload: any, io: IOServer, state: State
             
             const timingObj = getItemTiming(heroData.id, item);
             const averageTime = timingObj ? timingObj.time : null;
+            const minTime = timingObj ? timingObj.minTime : null;
+            const maxTime = timingObj ? timingObj.maxTime : null;
             const timesBought = timingObj ? timingObj.count : null;
             const isLeagueData = timingObj !== null;
             
             let timingDiff = null;
+            let fastestDiff = null;
+            let slowestDiff = null;
+
             if (averageTime !== null && clockTime > 0) {
               timingDiff = clockTime - averageTime; // negative means faster, positive means slower
             }
+            if (minTime !== null && clockTime > 0) {
+              fastestDiff = clockTime - minTime;
+            }
+            if (maxTime !== null && clockTime > 0) {
+              slowestDiff = clockTime - maxTime;
+            }
             
-            logger.info({ playerName, cleanHeroName, item, hypeData, clockTime, averageTime, timingDiff, isLeagueData, isFirstTime, timesBought }, "Power Spike Detected!");
+            logger.info({ playerName, cleanHeroName, item, hypeData, clockTime, averageTime, minTime, timingDiff, fastestDiff, isLeagueData, isFirstTime, timesBought }, "Power Spike Detected!");
             
             // Emit to overlays
             io.of("/overlay").emit("POWER_SPIKE", {
               playerName,
               heroName: cleanHeroName,
+              rawHeroName: heroData.name,
               item,
               cleanItemName: hypeData.name,
               categoryText: hypeData.category,
               clockTime,
               averageTime,
+              minTime,
+              maxTime,
               timingDiff,
+              fastestDiff,
+              slowestDiff,
               isLeagueData,
               isFirstTime,
               timesBought

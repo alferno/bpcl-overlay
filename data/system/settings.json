@@ -1,0 +1,23 @@
+{
+  "obs": {
+    "port": "4455",
+    "password": "bpcls2"
+  },
+  "layoutConfig": {
+    "kdaCard": {
+      "x": 1,
+      "y": 1,
+      "scale": 1
+    },
+    "livePlayerCard": {
+      "x": -15,
+      "y": 95,
+      "scale": 0.8
+    },
+    "minimapIcons": {
+      "x": 1,
+      "y": 280,
+      "scale": 1
+    }
+  }
+}

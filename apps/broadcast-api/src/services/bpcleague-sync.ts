@@ -1,6 +1,7 @@
 import https from "node:https";
 import fs from "node:fs";
 import path from "node:path";
+import { resolveSteamProfileToSteam32 } from "./steam32-resolver.js";
 import type { RosterPlayer } from "@bpc/shared-types";
 import { normalizeTeamColorHex } from "./roster-parser.js";
 import { logger } from "../logger.js";
@@ -17,40 +18,14 @@ export async function fetchActiveSeasonSlug(): Promise<string> {
     const seasons: Array<{ slug: string; name: string; isActive?: boolean }> =
       payload.seasons || payload || [];
     const active = seasons.find((s) => s.isActive);
-    const slug = active?.slug ?? "season-2";
+    const slug = active?.slug ?? "season-3";
     logger.info({ slug }, "[BPCLeague] Active season slug resolved");
     return slug;
   } catch (err) {
-    logger.warn({ err }, "[BPCLeague] Failed to fetch seasons list — falling back to season-2");
-    return "season-2";
+    logger.warn({ err }, "[BPCLeague] Failed to fetch seasons list — falling back to season-3");
+    return "season-3";
   }
 }
-
-// ---- Persistent vanity → steam32 cache --------------------------------
-const CACHE_FILE = path.join(process.cwd(), "steam32-vanity-cache.json");
-let _vanityCache: Record<string, number> | null = null;
-
-function loadVanityCache(): Record<string, number> {
-  if (_vanityCache) return _vanityCache;
-  try {
-    if (fs.existsSync(CACHE_FILE)) {
-      _vanityCache = JSON.parse(fs.readFileSync(CACHE_FILE, "utf-8"));
-      logger.info({ count: Object.keys(_vanityCache!).length }, "[steam32] Loaded vanity cache from disk");
-      return _vanityCache!;
-    }
-  } catch { /* ignore */ }
-  _vanityCache = {};
-  return _vanityCache;
-}
-
-function saveVanityCache(cache: Record<string, number>): void {
-  try {
-    fs.writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
-  } catch (err) {
-    logger.warn({ err }, "[steam32] Failed to persist vanity cache");
-  }
-}
-// -----------------------------------------------------------------------
 
 type RawPlayer = {
   id?: string;
@@ -72,70 +47,6 @@ type RawTeam = {
   logoUrl?: string;
   players?: RawPlayer[];
 };
-
-export function resolveVanityUrl(vanity: string, apiKey: string): Promise<number | null> {
-  return new Promise((resolve) => {
-    const url = `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${apiKey}&vanityurl=${vanity}`;
-    https.get(url, (res) => {
-      if (res.statusCode !== 200) { resolve(null); return; }
-      let data = "";
-      res.on("data", (chunk) => { data += chunk; });
-      res.on("end", () => {
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.response?.success === 1 && parsed.response.steamid) {
-            const steam32 = Number(BigInt(parsed.response.steamid) - BigInt("76561197960265728"));
-            resolve(steam32);
-          } else {
-            resolve(null);
-          }
-        } catch { resolve(null); }
-      });
-    }).on("error", () => resolve(null));
-  });
-}
-
-export async function extractSteam32FromUrl(steamProfileUrl: string, steamApiKey?: string): Promise<number | null> {
-  if (!steamProfileUrl) return null;
-
-  // Try matching /profiles/(\d+) — direct math, no API call needed
-  const matchProfiles = steamProfileUrl.match(/\/profiles\/(\d+)/);
-  if (matchProfiles?.[1]) {
-    return Number(BigInt(matchProfiles[1]) - BigInt("76561197960265728"));
-  }
-
-  // Try matching /id/vanity — check cache first, then Steam API
-  const matchId = steamProfileUrl.match(/\/id\/([^/?#]+)/);
-  if (matchId?.[1]) {
-    const vanity = matchId[1].trim().toLowerCase();
-    const cache = loadVanityCache();
-
-    if (cache[vanity] != null) {
-      logger.debug({ vanity, steam32: cache[vanity] }, "[steam32] Cache hit");
-      return cache[vanity];
-    }
-
-    if (!steamApiKey) {
-      logger.warn({ vanity }, "[steam32] Vanity URL found but STEAM_WEB_API_KEY not configured");
-      return null;
-    }
-
-    const steam32 = await resolveVanityUrl(vanity, steamApiKey);
-    if (steam32 != null && steam32 > 0) {
-      cache[vanity] = steam32;
-      saveVanityCache(cache);
-      logger.info({ vanity, steam32 }, "[steam32] Resolved & cached vanity → steam32");
-    } else {
-      logger.warn({ vanity }, "[steam32] Steam API could not resolve vanity URL");
-    }
-    return steam32;
-  }
-
-  logger.warn({ url: steamProfileUrl }, "[steam32] Unrecognized Steam profile URL format");
-  return null;
-}
-
-
 
 export async function fetchRosterFromBpcLeague(opts: {
   seasonSlug?: string;
@@ -180,13 +91,15 @@ export async function fetchRosterFromBpcLeague(opts: {
     }
   }
 
-  // Batch-resolve all Steam32 IDs in parallel (cached vanity lookups resolve instantly)
-  logger.info({ total: allEntries.length }, "[steam32] Resolving Steam32 IDs in parallel");
-  const steam32Results = await Promise.all(
-    allEntries.map(({ player }) =>
-      extractSteam32FromUrl(player.steamProfile || "", opts.steamApiKey)
-    )
-  );
+  // Batch-resolve all Steam32 IDs sequentially to avoid hammering Steam API rate limits
+  logger.info({ total: allEntries.length }, "[steam32] Resolving Steam32 IDs sequentially");
+  const steam32Results: (number | null)[] = [];
+  for (const { player } of allEntries) {
+    const steam32 = await resolveSteamProfileToSteam32(player.steamProfile || "");
+    steam32Results.push(steam32);
+    // Add a tiny delay between requests to avoid rate limit HTTP 429
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
 
   const roster: RosterPlayer[] = [];
   for (let i = 0; i < allEntries.length; i++) {

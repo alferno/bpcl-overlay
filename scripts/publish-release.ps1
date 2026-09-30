@@ -115,13 +115,16 @@ Remove-Item $TempDelta -Recurse -Force
 Write-Host "      Created Delta Zip: $ZipUpdateOutPath" -ForegroundColor Green
 
 # Build and Zip Launcher
-Write-Host "`n[3.5/5] Building Launcher (v1.1.0)…" -ForegroundColor Yellow
+Write-Host "`n[3.5/5] Building Launcher…" -ForegroundColor Yellow
 $LauncherDir = Join-Path $RepoRoot 'apps\launcher'
 Push-Location $LauncherDir
 & npm run build
 Pop-Location
 $LauncherReleaseInput = Join-Path $LauncherDir 'release\*'
-$ZipLauncher = "BPCL-Launcher-v1.1.0.zip"
+# Extract launcher version
+$LauncherPkgJson = Get-Content (Join-Path $LauncherDir 'package.json') | ConvertFrom-Json
+$LauncherVer = $LauncherPkgJson.version
+$ZipLauncher = "BPCL-Launcher-v$LauncherVer.zip"
 $ZipLauncherOutPath = Join-Path $ZipOutDir $ZipLauncher
 if (Test-Path $ZipLauncherOutPath) { Remove-Item $ZipLauncherOutPath -Force }
 Compress-Archive -Path $LauncherReleaseInput -DestinationPath $ZipLauncherOutPath -CompressionLevel Optimal

@@ -140,7 +140,7 @@ function findExe (dir, depth = 0) {
 
   // Check subdirectories after files
   for (const entry of entries) {
-    if (entry.isDirectory()) {
+    if (entry.isDirectory() && !entry.name.endsWith('.asar')) {
       const found = findExe(path.join(dir, entry.name), depth + 1)
       if (found) return found
     }
@@ -191,23 +191,40 @@ ipcMain.handle('download-and-install', async (_event, { downloadUrl, version }) 
       }
     })
 
-    // Forcefully kill any running instances of the Streamer Desktop to prevent file-locking
+    // Forcefully kill any running instances of the Streamer Desktop and cloudflared to prevent file-locking
     try {
       if (process.platform === 'win32') {
-        await execPromise(`taskkill /F /IM "BPCL Streamer Desktop.exe" /T`, { windowsHide: true })
+        const exesToKill = [
+          'BPCL Streamer Desktop.exe',
+          'BPCLStreamer.exe',
+          'streamer-desktop.exe',
+          'cloudflared-win.exe',
+          'cloudflared.exe'
+        ]
+        for (const exe of exesToKill) {
+          try {
+            await execPromise(`taskkill /F /IM "${exe}" /T`, { windowsHide: true })
+          } catch (e) {} // ignore if process not found
+        }
+        // Give Windows a moment to release file handles
+        await new Promise(resolve => setTimeout(resolve, 1500))
       }
     } catch (e) {
-      // taskkill throws if process isn't found, which is fine
+      // fallback catch
     }
 
     // Clean up old files in the install directory to avoid conflicting versions
     try {
+      const prevNoAsar = process.noAsar
+      process.noAsar = true
       const items = fs.readdirSync(INSTALL_DIR)
       for (const item of items) {
         if (item === 'version.txt') continue
         const itemPath = path.join(INSTALL_DIR, item)
-        fs.rmSync(itemPath, { recursive: true, force: true })
+        // maxRetries helps with ENOTEMPTY/EBUSY caused by Windows Defender or lingering handles
+        fs.rmSync(itemPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
       }
+      process.noAsar = prevNoAsar
     } catch (e) {
       console.error('Failed to clean up install directory:', e)
       throw new Error(`Please close all BPCL apps before updating. Windows locked the files: ${e.message}`)

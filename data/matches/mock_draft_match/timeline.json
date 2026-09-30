@@ -1,0 +1,47 @@
+[
+  {
+    "time": 0,
+    "type": "MATCH_INITIALIZED",
+    "description": "Timeline Event: MATCH_INITIALIZED",
+    "metadata": {
+      "id": "match_initialized_mock_draft_match_1787242813525",
+      "type": "MATCH_INITIALIZED",
+      "matchId": "mock_draft_match",
+      "gameTime": 0,
+      "receivedAt": 1787242813525,
+      "confidence": 1,
+      "source": "GSI_STATE_DIFF"
+    }
+  },
+  {
+    "time": 0,
+    "type": "MATCH_INITIALIZED",
+    "description": "Timeline Event: MATCH_INITIALIZED",
+    "metadata": {
+      "id": "match_initialized_mock_draft_match_1787248326129",
+      "type": "MATCH_INITIALIZED",
+      "matchId": "mock_draft_match",
+      "gameTime": 0,
+      "receivedAt": 1787248326129,
+      "confidence": 1,
+      "source": "GSI_STATE_DIFF"
+    }
+  },
+  {
+    "time": 0,
+    "type": "MATCH_STATE_CHANGED",
+    "description": "Timeline Event: MATCH_STATE_CHANGED",
+    "metadata": {
+      "id": "match_state_changed_mock_draft_match_0_DOTA_GAMERULES_STATE_GAME_IN_PROGRESS",
+      "type": "MATCH_STATE_CHANGED",
+      "gameTime": 0,
+      "receivedAt": 1787248334271,
+      "confidence": 1,
+      "source": "GSI_STATE_DIFF",
+      "metadata": {
+        "previousState": "DOTA_GAMERULES_STATE_HERO_SELECTION",
+        "newState": "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS"
+      }
+    }
+  }
+]

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOverlayState } from "../OverlaySocketLayer";
+import { resolveOverlayPortraitForHero } from "../hero-portrait";
 
 function formatTime(seconds: number) {
   const m = Math.floor(Math.abs(seconds) / 60);
@@ -50,8 +51,24 @@ export function PowerSpikeAlert() {
               <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">{spike.heroName}</div>
             </div>
 
-            <div className="flex items-center gap-3 z-10">
-              <div className="w-16 h-12 bg-slate-900 border border-yellow-500/30 rounded flex items-center justify-center overflow-hidden shadow-inner">
+            <div className="flex items-center gap-4 z-10 my-2">
+              <div className="relative w-16 h-16 rounded-full border-2 border-yellow-400/80 shadow-[0_0_15px_rgba(234,179,8,0.5)] overflow-hidden bg-slate-900 shrink-0">
+                <img 
+                  src={resolveOverlayPortraitForHero(undefined, spike.rawHeroName || spike.heroName) || ""}
+                  alt={spike.heroName}
+                  className="w-full h-full object-cover transform scale-110 object-[center_25%]"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              </div>
+
+              <div className="text-yellow-500/50 flex-shrink-0 animate-pulse">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </div>
+
+              <div className="relative w-20 h-14 bg-slate-900 border-2 border-yellow-500/40 rounded-lg overflow-hidden shadow-[0_0_15px_rgba(234,179,8,0.2)] shrink-0">
                 <img 
                   src={`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${
                     spike.item.replace('item_', '') === 'banner' || spike.item.replace('item_', '') === 'aghanims_banner'
@@ -85,13 +102,21 @@ export function PowerSpikeAlert() {
                   
 
 
-                  {spike.timingDiff !== null && spike.timingDiff !== undefined && (
+                  {spike.fastestDiff !== null && spike.fastestDiff !== undefined && spike.fastestDiff < 0 ? (
+                    <div className="text-[11px] font-bold mt-1 text-green-400 animate-pulse drop-shadow-md">
+                      🏆 NEW RECORD! {formatTime(Math.abs(spike.fastestDiff))} faster than fastest!
+                    </div>
+                  ) : spike.slowestDiff !== null && spike.slowestDiff !== undefined && spike.slowestDiff > 0 ? (
+                    <div className="text-[11px] font-bold mt-1 text-red-500">
+                      🐌 {formatTime(Math.abs(spike.slowestDiff))} slower than slowest record
+                    </div>
+                  ) : spike.timingDiff !== null && spike.timingDiff !== undefined ? (
                     <div className={`text-[11px] font-bold mt-1 ${spike.timingDiff < 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {spike.timingDiff < 0 
                         ? `🚀 ${formatTime(Math.abs(spike.timingDiff))} faster than average`
                         : `🐢 ${formatTime(Math.abs(spike.timingDiff))} slower than average`}
                     </div>
-                  )}
+                  ) : null}
 
                   {spike.isLeagueData ? (
                     <div className="text-[9px] text-yellow-500/70 uppercase font-bold tracking-wider mt-1.5 flex items-center gap-1">

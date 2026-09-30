@@ -269,6 +269,28 @@ export default function StandoutPlayerPage() {
   const EASE = [0.16, 1, 0.3, 1] as const;
   const theme = resolveBroadcastTheme(state.production);
 
+  const ms = state.leagueConfig?.matchSetup;
+  const scoreA = ms?.scoreA ?? 0;
+  const scoreB = ms?.scoreB ?? 0;
+  const bo = ms?.seriesBestOf ?? 3;
+
+  const roster = state.leagueConfig?.roster ?? [];
+  let radiantName = ms?.radiantTeamKey ? ms.radiantTeamKey.toUpperCase() : "RADIANT";
+  let direName = ms?.direTeamKey ? ms.direTeamKey.toUpperCase() : "DIRE";
+  if (ms?.radiantTeamKey) {
+    const p = roster.find(r => r.teamKey === ms.radiantTeamKey);
+    if (p?.teamName) radiantName = p.teamName.toUpperCase();
+  }
+  if (ms?.direTeamKey) {
+    const p = roster.find(r => r.teamKey === ms.direTeamKey);
+    if (p?.teamName) direName = p.teamName.toUpperCase();
+  }
+  
+  const matchDuration = card?.duration ?? 0;
+  const durM = Math.floor(matchDuration / 60);
+  const durS = Math.floor(matchDuration % 60);
+  const durStr = `${durM}:${durS.toString().padStart(2, "0")}`;
+
   return (
     <HudCanvas>
       <div 
@@ -397,7 +419,7 @@ export default function StandoutPlayerPage() {
             {/* -- MAIN LAYOUT ----------------------------------- */}
             <div
               className="absolute inset-x-0 flex flex-col items-center justify-start gap-10 px-10"
-              style={{ top: 160, bottom: 36 }}
+              style={{ top: 250, bottom: 36 }}
             >
               {/* Top row with 5 Winning Team Cards */}
               <div className="flex items-center justify-center gap-8 w-full max-w-[1500px]" style={{ height: 420 }}>
@@ -410,51 +432,64 @@ export default function StandoutPlayerPage() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0, scale: isMvp ? 1.05 : 0.85 }}
                       transition={{ duration: 0.6, delay: 0.1 + i * 0.1, ease: EASE }}
-                      className="relative overflow-hidden rounded-xl backdrop-blur-md shrink-0 flex items-center justify-center"
-                      style={{
-                        width: 240,
-                        height: 360,
-                        background: "linear-gradient(180deg, rgba(4,18,12,0.6) 0%, rgba(0,0,0,0.85) 100%)",
-                        border: isMvp ? `2px solid ${EMERALD}` : `1px solid ${EMERALD_GLOW}`,
-                        boxShadow: isMvp ? `0 12px 40px rgba(0,0,0,0.8), 0 0 30px ${EMERALD_GLOW}` : `0 8px 24px rgba(0,0,0,0.6)`,
-                        zIndex: isMvp ? 10 : 1,
-                      }}
+                      className="flex flex-col items-center gap-3"
+                      style={{ zIndex: isMvp ? 10 : 1 }}
                     >
-                      <NativeBpclCard
-                        steam32={teammate.steam32}
-                        playerName={teammate.playerLabel || teammate.heroName}
-                        className="absolute inset-0 flex items-center justify-center"
-                        fallback={
-                          teammate.bpcId ? (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <CachedIframe 
-                                bpcId={teammate.bpcId}
-                                style={{
-                                  width: "240px",
-                                  height: "360px",
-                                  border: "none",
-                                  transform: "scale(1.3055)",
-                                  transformOrigin: "center center"
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="absolute inset-0">
-                              <FallbackPlayerCard playerName={teammate.playerLabel || teammate.heroName || "UNKNOWN"} color="#10b981" />
-                            </div>
-                          )
-                        }
-                      />
-                      {isMvp && (
-                        <div className="absolute bottom-4 inset-x-0 flex justify-center z-20">
-                          <span 
-                            className="text-slate-950 px-4 py-1 font-black text-sm uppercase tracking-widest rounded"
-                            style={{ backgroundColor: EMERALD, boxShadow: `0 0 15px ${EMERALD}` }}
-                          >
-                            MVP
-                          </span>
-                        </div>
-                      )}
+                      <div
+                        className="relative overflow-hidden rounded-xl backdrop-blur-md shrink-0 flex items-center justify-center"
+                        style={{
+                          width: 240,
+                          height: 360,
+                          background: "linear-gradient(180deg, rgba(4,18,12,0.6) 0%, rgba(0,0,0,0.85) 100%)",
+                          border: isMvp ? `2px solid ${EMERALD}` : `1px solid ${EMERALD_GLOW}`,
+                          boxShadow: isMvp ? `0 12px 40px rgba(0,0,0,0.8), 0 0 30px ${EMERALD_GLOW}` : `0 8px 24px rgba(0,0,0,0.6)`,
+                        }}
+                      >
+                        <NativeBpclCard
+                          steam32={teammate.steam32}
+                          playerName={teammate.playerLabel || teammate.heroName}
+                          className="absolute inset-0 flex items-center justify-center"
+                          fallback={
+                            teammate.bpcId ? (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <CachedIframe 
+                                  bpcId={teammate.bpcId}
+                                  style={{
+                                    width: "240px",
+                                    height: "360px",
+                                    border: "none",
+                                    transform: "scale(1.3055)",
+                                    transformOrigin: "center center"
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="absolute inset-0">
+                                <FallbackPlayerCard playerName={teammate.playerLabel || teammate.heroName || "UNKNOWN"} color="#10b981" />
+                              </div>
+                            )
+                          }
+                        />
+                        {isMvp && (
+                          <div className="absolute bottom-4 inset-x-0 flex justify-center z-20">
+                            <span 
+                              className="text-slate-950 px-4 py-1 font-black text-sm uppercase tracking-widest rounded"
+                              style={{ backgroundColor: EMERALD, boxShadow: `0 0 15px ${EMERALD}` }}
+                            >
+                              MVP
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div 
+                        className="flex flex-col items-center bg-black/50 border border-emerald-900/50 rounded-lg px-4 py-2"
+                        style={{ boxShadow: `0 0 10px rgba(0,0,0,0.5)`, opacity: isMvp ? 1 : 0.85 }}
+                      >
+                        <span className="font-bold text-white text-[0.8rem] tracking-widest uppercase">{teammate.heroName || "Hero"}</span>
+                        <span className="font-mono text-emerald-400 font-black tracking-widest text-[0.95rem] mt-0.5 shadow-sm">
+                          {teammate.kills ?? 0}/{teammate.deaths ?? 0}/{teammate.assists ?? 0}
+                        </span>
+                      </div>
                     </motion.div>
                   );
                 })}
@@ -524,14 +559,8 @@ export default function StandoutPlayerPage() {
                     )}
                   </div>
                   <span
-                    className="font-bold uppercase tracking-widest text-center"
-                    style={{ fontSize: "0.6rem", color: EMERALD, letterSpacing: "0.2em" }}
-                  >
-                    HERO IDENTITY
-                  </span>
-                  <span
-                    className="font-black uppercase tracking-wider text-white text-center truncate w-full"
-                    style={{ fontSize: "1rem" }}
+                    className="font-black uppercase tracking-wider text-white text-center truncate w-full mt-1"
+                    style={{ fontSize: "1.1rem" }}
                   >
                     {card.heroName || "HERO"}
                   </span>
@@ -626,6 +655,39 @@ export default function StandoutPlayerPage() {
                 </div>
               </motion.div>
             </div>
+
+            {/* -- MATCH CONTEXT WIDGET ------------------------------------ */}
+            <motion.div
+              className="absolute bottom-10 right-10 flex flex-col items-end gap-1 px-5 py-3 rounded-xl border backdrop-blur-md"
+              style={{
+                background: "linear-gradient(145deg, rgba(4,20,15,0.7) 0%, rgba(0,0,0,0.85) 100%)",
+                borderColor: EMERALD_GLOW,
+                boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 0 20px ${EMERALD_GLOW}`,
+              }}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.6, ease: EASE }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-bold uppercase tracking-wider text-white" style={{ fontSize: "1.1rem" }}>
+                  {radiantName}
+                </span>
+                <span className="font-black text-xl text-emerald-500/50">
+                  VS
+                </span>
+                <span className="font-bold uppercase tracking-wider text-white" style={{ fontSize: "1.1rem" }}>
+                  {direName}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="font-bold uppercase tracking-widest text-emerald-500" style={{ fontSize: "0.65rem", letterSpacing: "0.15em" }}>
+                  MATCH DURATION
+                </span>
+                <span className="font-mono font-bold text-white text-lg">
+                  {durStr}
+                </span>
+              </div>
+            </motion.div>
 
             {/* -- Bottom accent line -------------------------------------- */}
             <div

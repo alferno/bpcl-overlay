@@ -514,7 +514,7 @@
 }
 
 .card--basic .card__tilt {
-  filter: drop-shadow(0 0 1.1rem rgba(255, 255, 255, 0.14));
+  /* Removed filter: drop-shadow to fix low-res blurriness bug in Chrome when parent is scaled */
 }
 
 .card--gold .card__tilt {

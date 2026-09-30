@@ -15,7 +15,7 @@ export class MatchStateDetector implements EventDetector {
     const wasPaused = (prev?.map as any)?.paused === true;
     
     // Check for game state changes
-    if (currGameState && prevGameState && currGameState !== prevGameState) {
+    if (currGameState && currGameState !== prevGameState) {
         let type: CanonicalEvent["type"] | null = null;
         
         if (currGameState === "DOTA_GAMERULES_STATE_PRE_GAME" && prevGameState !== "DOTA_GAMERULES_STATE_PRE_GAME") {

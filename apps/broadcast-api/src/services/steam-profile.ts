@@ -1,5 +1,6 @@
 import type { OpenDotaClient } from "../opendota-client.js";
 import { logger } from "../logger.js";
+import https from "node:https";
 
 const avatarCache = new Map<number, string>();
 
@@ -29,7 +30,6 @@ export async function fetchSteamAvatarUrl(
   if (apiKey) {
     try {
       const steam64 = BigInt(steam32) + BigInt("76561197960265728");
-      const https = await import("node:https");
       url = await new Promise<string | undefined>((resolve) => {
         https.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${steam64}`, (res) => {
           let data = "";

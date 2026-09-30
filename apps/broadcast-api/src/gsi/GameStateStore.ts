@@ -40,7 +40,7 @@ export class GameStateStore {
     this.previousState = this.currentState;
     this.currentState = payload;
 
-    if (this.previousState && this.currentState) {
+    if (this.currentState) {
       try {
         this.eventEngine.process(this.previousState, this.currentState, this.session);
       } catch (err) {

@@ -6,7 +6,7 @@ import { createBroadcastServer } from "./server.js";
 import { createAppState } from "./state-setup.js";
 import { ensureHeroRegistry } from "./services/hero-registry.js";
 import { bootstrapLeagueFromEnv } from "./services/league-bootstrap.js";
-import { loadTimingsFromCsv, preloadItemTimings, fetchAndSaveLeagueTimingsCsv } from "./services/item-timings.js";
+import { loadTimingsFromCsv, preloadItemTimings } from "./services/item-timings.js";
 
 export async function bootstrapBroadcastServer() {
   const state = await createAppState();
@@ -44,21 +44,6 @@ export async function bootstrapBroadcastServer() {
       broadcast: ctx.broadcast,
     }).catch(err => logger.warn(err, "league bootstrap deferred"));
   }
-
-  // Refresh league-specific item timings once league config is resolved
-  void (async () => {
-    try {
-      const snap = await state.getState();
-      const leagueIds = snap.leagueConfig?.leagueIds ?? (snap.leagueConfig?.leagueId ? [snap.leagueConfig.leagueId] : []);
-      if (leagueIds.length > 0) {
-        void fetchAndSaveLeagueTimingsCsv(leagueIds).catch((err) =>
-          logger.warn(err, "league timings refresh deferred"),
-        );
-      }
-    } catch (err) {
-      logger.warn(err, "league timings bootstrap deferred");
-    }
-  })();
 
   ctx.httpServer.listen(env.PORT, () => {
     logger.info(

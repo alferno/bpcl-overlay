@@ -99,7 +99,7 @@ export function MatchSetupPanel({
           setAvailableSeasons(list);
           if (!matchSeason && !state?.leagueConfig?.seasonSlug) {
             const active = list.find((s) => s.isActive);
-            setMatchSeason(active?.slug || list[0]?.slug || "season-2");
+            setMatchSeason(active?.slug || list[0]?.slug || "season-3");
           }
         }
       })
@@ -111,7 +111,7 @@ export function MatchSetupPanel({
       setBpcMatches([]);
       return;
     }
-    const currentSeason = matchSeason || state?.leagueConfig?.seasonSlug || "season-2";
+    const currentSeason = matchSeason || state?.leagueConfig?.seasonSlug || "season-3";
     void apiFetch(origin, token, `/api/league/bpc-matches?seasonSlug=${currentSeason}`)
       .then((r) => r.json())
       .then((list) => {
@@ -229,8 +229,8 @@ export function MatchSetupPanel({
                     ))
                   ) : (
                     <>
-                      <option value="season-1">Season 1</option>
                       <option value="season-2">Season 2</option>
+                      <option value="season-3">Season 3</option>
                     </>
                   )}
                 </select>
@@ -465,13 +465,13 @@ export function MatchSetupPanel({
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-xs text-slate-500 uppercase tracking-wider font-bold">Unique Match Slug:</span>
                 <code className="text-xs text-violet-300 bg-violet-950/50 px-2 py-0.5 rounded border border-violet-500/20 select-all">
-                  bpcl_s2_{matchSetup.radiantTeamKey}_vs_{matchSetup.direTeamKey}_game_{matchSetup.seriesGame ?? 1}
+                  bpcl_s3_{matchSetup.radiantTeamKey}_vs_{matchSetup.direTeamKey}_game_{matchSetup.seriesGame ?? 1}
                 </code>
                 <button
                   type="button"
                   className="text-[10px] uppercase font-bold tracking-wider text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors"
                   onClick={(e) => {
-                    const slug = `bpcl_s2_${matchSetup.radiantTeamKey}_vs_${matchSetup.direTeamKey}_game_${matchSetup.seriesGame ?? 1}`;
+                    const slug = `bpcl_s3_${matchSetup.radiantTeamKey}_vs_${matchSetup.direTeamKey}_game_${matchSetup.seriesGame ?? 1}`;
                     navigator.clipboard.writeText(slug);
                     const btn = e.currentTarget;
                     btn.textContent = "COPIED!";

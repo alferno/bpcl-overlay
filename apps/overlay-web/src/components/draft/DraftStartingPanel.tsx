@@ -27,7 +27,7 @@ export function DraftStartingPanel({
   const serverStart = draft.startSecondsRemaining;
   const seconds = useDraftCountdown(serverStart, "draft-starting");
   const teamColors = resolveDraftTeamColors(draft, leagueConfig);
-  const sides = draftTeamSides(draft);
+  const sides = draftTeamSides(draft, leagueConfig, production?.hideDraftScore ?? false);
   const seriesLabel = formatSeriesLabel(draft, leagueConfig);
 
   const teamSides = {

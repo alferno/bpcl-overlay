@@ -86,98 +86,112 @@ app.on('window-all-closed', () => {
 let apiInstances: { obs: any; opendota: any; state: any; broadcast?: any; shutdown: any } | null = null
 let apiStartupError: string | null = null
 
-app.whenReady().then(async () => {
-  // Cleanup legacy installation folders
-  try {
-    const installDir = path.join(app.getPath('appData'), 'BPCLStreamer')
-    if (fs.existsSync(installDir)) {
-      const items = fs.readdirSync(installDir, { withFileTypes: true })
-      for (const item of items) {
-        if (item.isDirectory() && (item.name.toLowerCase().includes('bpcl') || item.name.toLowerCase().includes('streamer'))) {
-          const fullPath = path.join(installDir, item.name)
-          if (!process.execPath.startsWith(fullPath)) {
-            console.log(`Cleaning up old installation folder: ${fullPath}`)
-            fs.rmSync(fullPath, { recursive: true, force: true })
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Failed to cleanup old installation folders:', err)
-  }
+const gotTheLock = app.requestSingleInstanceLock()
 
-  // Register hotkey to toggle draft score
-  globalShortcut.register('CommandOrControl+Shift+H', async () => {
-    if (apiInstances?.state && apiInstances?.broadcast) {
-      const currentState = await apiInstances.state.getState();
-      const isHidden = currentState.production?.hideDraftScore || false;
-      const next = await apiInstances.state.patchState({
-        production: { hideDraftScore: !isHidden }
-      });
-      await apiInstances.broadcast.broadcastFull(next);
-      win?.webContents.send('log', `Toggled draft score visibility: ${!isHidden ? 'Hidden' : 'Visible'}`);
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
     }
   })
 
-  createWindow()
+  app.whenReady().then(async () => {
+    // Cleanup legacy installation folders
+    try {
+      const installDir = path.join(app.getPath('appData'), 'BPCLStreamer')
+      if (fs.existsSync(installDir)) {
+        const items = fs.readdirSync(installDir, { withFileTypes: true })
+        for (const item of items) {
+          if (item.isDirectory() && (item.name.toLowerCase().includes('bpcl') || item.name.toLowerCase().includes('streamer'))) {
+            const fullPath = path.join(installDir, item.name)
+            if (!process.execPath.startsWith(fullPath)) {
+              console.log(`Cleaning up old installation folder: ${fullPath}`)
+              fs.rmSync(fullPath, { recursive: true, force: true })
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to cleanup old installation folders:', err)
+    }
 
-  if (logEmitter) {
-    logEmitter.on('log', (msg: string) => {
-      win?.webContents.send('log', msg)
-    })
-  }
-
-  // Start the Broadcast API locally
-  try {
-    apiInstances = await bootstrapBroadcastServer()
-    win?.webContents.send('log', 'Broadcast API started successfully on port 8080')
-    win?.webContents.send('api-status', { ok: true })
-  } catch (err) {
-    apiStartupError = String(err)
-    win?.webContents.send('log', 'Error starting API: ' + err)
-    win?.webContents.send('api-status', { ok: false, error: apiStartupError })
-  }
-
-  // Auto-install Dota 2 GSI
-  try {
-    installDotaGSI()
-    win?.webContents.send('log', 'Checked/Installed Dota 2 GSI config.')
-  } catch (err) {
-    win?.webContents.send('log', 'Failed to install Dota 2 GSI: ' + err)
-  }
-
-  // Start Cloudflare Tunnel
-  try {
-    const cloudflaredExe = app.isPackaged
-      ? path.join(process.resourcesPath, 'cloudflared-windows-amd64.exe')
-      : path.join(app.getAppPath(), 'resources', 'cloudflared-windows-amd64.exe')
-      
-    win?.webContents.send('log', 'Starting Cloudflare Tunnel...')
-    
-    cloudflaredProcess = spawn(cloudflaredExe, ['tunnel', '--url', 'http://localhost:8080'])
-    
-    cloudflaredProcess.stderr?.on('data', (data) => {
-      const output = data.toString()
-      // Extract the trycloudflare URL
-      const match = output.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/)
-      if (match && !tunnelUrl) {
-        tunnelUrl = match[0]
-        win?.webContents.send('tunnel-url', tunnelUrl)
-        win?.webContents.send('log', 'Cloudflare tunnel established: ' + tunnelUrl)
+    // Register hotkey to toggle draft score
+    globalShortcut.register('CommandOrControl+Shift+H', async () => {
+      if (apiInstances?.state && apiInstances?.broadcast) {
+        const currentState = await apiInstances.state.getState();
+        const isHidden = currentState.production?.hideDraftScore || false;
+        const next = await apiInstances.state.patchState({
+          production: { hideDraftScore: !isHidden }
+        });
+        await apiInstances.broadcast.broadcastFull(next);
+        win?.webContents.send('log', `Toggled draft score visibility: ${!isHidden ? 'Hidden' : 'Visible'}`);
       }
     })
-    
-    cloudflaredProcess.on('error', (err) => {
-      win?.webContents.send('log', 'Error starting Cloudflare Tunnel: ' + err)
-    })
-    
-    cloudflaredProcess.on('exit', (code) => {
-      win?.webContents.send('log', 'Cloudflare Tunnel exited with code: ' + code)
-    })
-  } catch (err) {
-    win?.webContents.send('log', 'Error spawning Cloudflare Tunnel: ' + err)
-  }
-})
+
+    createWindow()
+
+    if (logEmitter) {
+      logEmitter.on('log', (msg: string) => {
+        win?.webContents.send('log', msg)
+      })
+    }
+
+    // Start the Broadcast API locally
+    try {
+      apiInstances = await bootstrapBroadcastServer()
+      win?.webContents.send('log', 'Broadcast API started successfully on port 8080')
+      win?.webContents.send('api-status', { ok: true })
+    } catch (err) {
+      apiStartupError = String(err)
+      win?.webContents.send('log', 'Error starting API: ' + err)
+      win?.webContents.send('api-status', { ok: false, error: apiStartupError })
+    }
+
+    // Auto-install Dota 2 GSI
+    try {
+      installDotaGSI()
+      win?.webContents.send('log', 'Checked/Installed Dota 2 GSI config.')
+    } catch (err) {
+      win?.webContents.send('log', 'Failed to install Dota 2 GSI: ' + err)
+    }
+
+    // Start Cloudflare Tunnel
+    try {
+      const cloudflaredExe = app.isPackaged
+        ? path.join(process.resourcesPath, 'cloudflared-windows-amd64.exe')
+        : path.join(app.getAppPath(), 'resources', 'cloudflared-windows-amd64.exe')
+        
+      win?.webContents.send('log', 'Starting Cloudflare Tunnel...')
+      
+      cloudflaredProcess = spawn(cloudflaredExe, ['tunnel', '--url', 'http://localhost:8080'])
+      
+      cloudflaredProcess.stderr?.on('data', (data) => {
+        const output = data.toString()
+        // Extract the trycloudflare URL
+        const match = output.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/)
+        if (match && !tunnelUrl) {
+          tunnelUrl = match[0]
+          win?.webContents.send('tunnel-url', tunnelUrl)
+          win?.webContents.send('log', 'Cloudflare tunnel established: ' + tunnelUrl)
+        }
+      })
+      
+      cloudflaredProcess.on('error', (err) => {
+        win?.webContents.send('log', 'Error starting Cloudflare Tunnel: ' + err)
+      })
+      
+      cloudflaredProcess.on('exit', (code) => {
+        win?.webContents.send('log', 'Cloudflare Tunnel exited with code: ' + code)
+      })
+    } catch (err) {
+      win?.webContents.send('log', 'Error spawning Cloudflare Tunnel: ' + err)
+    }
+  })
+}
 
 ipcMain.handle('get-tunnel-url', () => tunnelUrl)
 ipcMain.handle('get-broadcast-secret', () => process.env.BROADCAST_SECRET)

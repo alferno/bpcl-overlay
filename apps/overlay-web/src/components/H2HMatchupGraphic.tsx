@@ -104,12 +104,12 @@ export function H2HMatchupGraphic() {
 
                 {/* Back side (Stats) */}
                 <div 
-                  className="absolute inset-0 rounded-2xl bg-slate-900 border-2 border-cyan-500/50 p-8 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(6,182,212,0.4)]"
+                  className="absolute inset-0 rounded-2xl bg-slate-900 border-2 border-amber-500/50 p-8 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(245,158,11,0.4)]"
                   style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
                 >
                   <div className="flex flex-col items-center mb-10 w-full relative">
-                    <div className="absolute inset-0 bg-cyan-500/20 blur-3xl -z-10 rounded-full" />
-                    <div className="w-32 h-32 rounded-full border-4 border-cyan-500 overflow-hidden shadow-[0_0_25px_rgba(6,182,212,0.6)] mb-6">
+                    <div className="absolute inset-0 bg-amber-500/20 blur-3xl -z-10 rounded-full" />
+                    <div className="w-32 h-32 rounded-full border-4 border-amber-500 overflow-hidden shadow-[0_0_25px_rgba(245,158,11,0.6)] mb-6">
                       {data.player1.avatarUrl ? (
                         <img src={data.player1.avatarUrl} className="w-full h-full object-cover" />
                       ) : (
@@ -117,14 +117,14 @@ export function H2HMatchupGraphic() {
                       )}
                     </div>
                     <h3 className="text-3xl font-black text-white text-center drop-shadow-md">{data.player1.displayName}</h3>
-                    <p className="text-lg text-cyan-400 uppercase tracking-[0.2em] font-bold mt-2 text-center">{data.player1.teamName || "Pos 1"}</p>
+                    <p className="text-lg text-amber-400 uppercase tracking-[0.2em] font-bold mt-2 text-center">{data.player1.teamName || "Pos 1"}</p>
                   </div>
                   
                   <div className="flex flex-col gap-4 w-full px-4">
-                    <StatRow label="GPM" value={data.player1.live?.gpm || 0} color="text-cyan-400" />
-                    <StatRow label="XPM" value={data.player1.live?.xpm || 0} color="text-cyan-400" />
-                    <StatRow label="Hero Damage" value={data.player1.live?.heroDamage || 0} color="text-cyan-400" />
-                    <StatRow label="LH / D" value={`${data.player1.live?.lastHits || 0} / ${data.player1.live?.denies || 0}`} color="text-cyan-400" />
+                    <StatRow label="League Matches" value={data.player1.stats?.games || 0} color="text-amber-400" />
+                    <StatRow label="Avg GPM" value={Math.round(data.player1.stats?.avgGpm || 0)} color="text-amber-400" />
+                    <StatRow label="Avg Kills" value={(data.player1.stats?.avgKills || 0).toFixed(1)} color="text-amber-400" />
+                    <StatRow label="Avg Assists" value={(data.player1.stats?.avgAssists || 0).toFixed(1)} color="text-amber-400" />
                   </div>
                 </div>
               </motion.div>
@@ -139,8 +139,8 @@ export function H2HMatchupGraphic() {
               className="absolute z-10 flex items-center justify-center"
             >
               <div className="relative">
-                <div className="absolute inset-0 blur-lg bg-gradient-to-br from-emerald-400 to-emerald-600 opacity-30 rounded-full scale-110" />
-                <div className="text-[80px] font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-600 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] relative z-10">
+                <div className="absolute inset-0 blur-lg bg-gradient-to-br from-yellow-400 to-yellow-600 opacity-30 rounded-full scale-110" />
+                <div className="text-[80px] font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-600 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] relative z-10">
                   V/S
                 </div>
               </div>
@@ -191,12 +191,12 @@ export function H2HMatchupGraphic() {
 
                 {/* Back side (Stats) */}
                 <div 
-                  className="absolute inset-0 rounded-2xl bg-slate-900 border-2 border-emerald-500/50 p-8 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.4)]"
+                  className="absolute inset-0 rounded-2xl bg-slate-900 border-2 border-yellow-500/50 p-8 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(234,179,8,0.4)]"
                   style={{ backfaceVisibility: "hidden", transform: "rotateY(-180deg)" }}
                 >
                   <div className="flex flex-col items-center mb-10 w-full relative">
-                    <div className="absolute inset-0 bg-emerald-500/20 blur-3xl -z-10 rounded-full" />
-                    <div className="w-32 h-32 rounded-full border-4 border-emerald-500 overflow-hidden shadow-[0_0_25px_rgba(16,185,129,0.6)] mb-6">
+                    <div className="absolute inset-0 bg-yellow-500/20 blur-3xl -z-10 rounded-full" />
+                    <div className="w-32 h-32 rounded-full border-4 border-yellow-500 overflow-hidden shadow-[0_0_25px_rgba(234,179,8,0.6)] mb-6">
                       {data.player2.avatarUrl ? (
                         <img src={data.player2.avatarUrl} className="w-full h-full object-cover" />
                       ) : (
@@ -204,14 +204,14 @@ export function H2HMatchupGraphic() {
                       )}
                     </div>
                     <h3 className="text-3xl font-black text-white text-center drop-shadow-md">{data.player2.displayName}</h3>
-                    <p className="text-lg text-emerald-400 uppercase tracking-[0.2em] font-bold mt-2 text-center">{data.player2.teamName || "Pos 1"}</p>
+                    <p className="text-lg text-yellow-400 uppercase tracking-[0.2em] font-bold mt-2 text-center">{data.player2.teamName || "Pos 1"}</p>
                   </div>
                   
                   <div className="flex flex-col gap-4 w-full px-4">
-                    <StatRow label="GPM" value={data.player2.live?.gpm || 0} color="text-emerald-400" />
-                    <StatRow label="XPM" value={data.player2.live?.xpm || 0} color="text-emerald-400" />
-                    <StatRow label="Hero Damage" value={data.player2.live?.heroDamage || 0} color="text-emerald-400" />
-                    <StatRow label="LH / D" value={`${data.player2.live?.lastHits || 0} / ${data.player2.live?.denies || 0}`} color="text-emerald-400" />
+                    <StatRow label="League Matches" value={data.player2.stats?.games || 0} color="text-yellow-400" />
+                    <StatRow label="Avg GPM" value={Math.round(data.player2.stats?.avgGpm || 0)} color="text-yellow-400" />
+                    <StatRow label="Avg Kills" value={(data.player2.stats?.avgKills || 0).toFixed(1)} color="text-yellow-400" />
+                    <StatRow label="Avg Assists" value={(data.player2.stats?.avgAssists || 0).toFixed(1)} color="text-yellow-400" />
                   </div>
                 </div>
               </motion.div>
@@ -232,3 +232,4 @@ function StatRow({ label, value, color }: { label: string; value: string | numbe
     </div>
   );
 }
+

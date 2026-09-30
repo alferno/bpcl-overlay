@@ -90,14 +90,12 @@ export function attachRestRoutes(opts: {
 
   app.post("/api/timings/refresh", requireBroadcastAuth, async (_req, res) => {
     try {
-      const { fetchAndSaveLeagueTimingsCsv, preloadItemTimings } = await import("./services/item-timings.js");
+      const { preloadItemTimings } = await import("./services/item-timings.js");
       const snap = await state.getState();
       const leagueIds = snap.leagueConfig?.leagueIds ?? (snap.leagueConfig?.leagueId ? [snap.leagueConfig.leagueId] : []);
-      // Run both in parallel in background
-      void Promise.all([
-        preloadItemTimings(),
-        leagueIds.length > 0 ? fetchAndSaveLeagueTimingsCsv(leagueIds) : Promise.resolve(),
-      ]);
+      // Preload global timings in background
+      // Note: League item timings are synced exclusively via the local BPCL match parser during "Sync League Stats"
+      void preloadItemTimings();
       res.json({ success: true, leagueIds });
     } catch (err) {
       logger.warn({ err }, "Timings refresh failed");
@@ -723,7 +721,10 @@ export function attachRestRoutes(opts: {
 
     // Build winning team cards
     const winningTeam = (match.players || [])
-      .filter((p: any) => p.isRadiant === (winner.side === "radiant"))
+      .filter((p: any) => {
+        const isRad = p.is_radiant ?? ((p.player_slot ?? 0) < 128);
+        return isRad === (winner.side === "radiant");
+      })
       .map((p: any) => {
         const rp = p.account_id ? findRosterPlayer(roster, p.account_id) : undefined;
         return {
@@ -732,6 +733,9 @@ export function attachRestRoutes(opts: {
           heroName: heroDisplayName(p.hero_id) || `Hero ${p.hero_id}`,
           bpcId: rp?.bpcId,
           playerLabel: rp?.displayName ?? p.personaname ?? `Player ${p.account_id ?? "?"}`,
+          kills: p.kills ?? 0,
+          deaths: p.deaths ?? 0,
+          assists: p.assists ?? 0,
         };
       });
 
@@ -751,6 +755,7 @@ export function attachRestRoutes(opts: {
       heroDamage:  winner.raw.heroDamage,
       lastHits:    winner.raw.lastHits,
       teamKills:   winner.raw.teamKills,
+      duration:    match.duration,
       items:       winner.raw.items,
       hasScepter:  winner.raw.hasScepter,
       hasShard:    winner.raw.hasShard,

@@ -43,6 +43,6 @@ export const BROADCAST_THEMES: Record<string, ThemePalette> = {
 };
 
 export function resolveBroadcastTheme(production?: ProductionSettings | null): ThemePalette {
-  const themeName = (production as any)?.themeColor ?? "purple";
-  return BROADCAST_THEMES[themeName] ?? BROADCAST_THEMES["purple"];
+  const themeName = (production as any)?.themeColor ?? "golden";
+  return BROADCAST_THEMES[themeName] ?? BROADCAST_THEMES["golden"];
 }

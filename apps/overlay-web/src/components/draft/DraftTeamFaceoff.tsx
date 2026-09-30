@@ -4,7 +4,7 @@ import { withBaseUrl } from "../../asset-paths";
 import { formatSeriesLabel } from "../../draft/broadcast-theme";
 import { colorAlpha } from "../../draft/team-colors";
 
-export function draftTeamSides(draft: DraftState, leagueConfig?: LeagueConfig) {
+export function draftTeamSides(draft: DraftState, leagueConfig?: LeagueConfig, hideScore = false) {
   let radiantName = draft.radiant?.name ?? draft.series.teamA ?? "Radiant";
   let direName = draft.dire?.name ?? draft.series.teamB ?? "Dire";
   let radiantLogo = withBaseUrl(draft.radiant?.logoUrl ?? draft.series.logoUrlA);
@@ -32,8 +32,8 @@ export function draftTeamSides(draft: DraftState, leagueConfig?: LeagueConfig) {
     radiantLogo,
     direLogo,
     scoreLabel:
-      draft.series.scoreA > 0 || draft.series.scoreB > 0
-        ? `${draft.series.scoreA} – ${draft.series.scoreB}`
+      !hideScore && (draft.series.scoreA > 0 || draft.series.scoreB > 0)
+        ? `${draft.series.scoreA} - ${draft.series.scoreB}`
         : null,
   };
 }
@@ -44,6 +44,7 @@ export function DraftTeamFaceoff({
   teamColors,
   leagueConfig,
   spread = false,
+  hideScore = false,
 }: {
   draft: DraftState;
   size?: "medium" | "large";
@@ -51,9 +52,10 @@ export function DraftTeamFaceoff({
   leagueConfig?: LeagueConfig;
   /** Wider logo separation for pre-draft countdown */
   spread?: boolean;
+  hideScore?: boolean;
 }) {
   const { radiantName, direName, radiantLogo, direLogo, scoreLabel } =
-    draftTeamSides(draft, leagueConfig);
+    draftTeamSides(draft, leagueConfig, hideScore);
 
   const logoBox = size === "large" ? "h-[120px] w-[120px]" : "h-[76px] w-[76px]";
   const nameClass =
