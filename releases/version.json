@@ -1,7 +1,7 @@
 {
-    "version":  "2.0.8",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.8/BPCL-Streamer-v2.0.8-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.8/BPCL-Streamer-v2.0.8-Full.zip",
-    "notes":  "Apply 2px glow only to picked, picking, and banning cards",
-    "publishedAt":  "2026-10-03T22:42:36.0038898+05:30"
+    "version":  "2.0.11",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.11/BPCL-Streamer-v2.0.11-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.11/BPCL-Streamer-v2.0.11-Full.zip",
+    "notes":  "UI overhaul: fixed bottom overflow, golden bg, sleek center hub layout",
+    "publishedAt":  "2026-10-03T23:38:42.7661222+05:30"
 }
