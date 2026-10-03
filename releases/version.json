@@ -1,7 +1,7 @@
 {
-    "version":  "2.0.11",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.11/BPCL-Streamer-v2.0.11-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.11/BPCL-Streamer-v2.0.11-Full.zip",
-    "notes":  "UI overhaul: fixed bottom overflow, golden bg, sleek center hub layout",
-    "publishedAt":  "2026-10-03T23:38:42.7661222+05:30"
+    "version":  "2.0.12",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.12/BPCL-Streamer-v2.0.12-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.12/BPCL-Streamer-v2.0.12-Full.zip",
+    "notes":  "Fix ban tile layout and hero portrait scaling",
+    "publishedAt":  "2026-10-04T00:11:15.7207213+05:30"
 }
