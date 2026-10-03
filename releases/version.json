@@ -1,7 +1,7 @@
 {
-    "version":  "2.0.2",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.2/BPCL-Streamer-v2.0.2-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.2/BPCL-Streamer-v2.0.2-Full.zip",
-    "notes":  "Automated overlay and API update",
-    "publishedAt":  "2026-10-03T18:20:59.1101333+05:30"
+    "version":  "2.0.3",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.3/BPCL-Streamer-v2.0.3-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.3/BPCL-Streamer-v2.0.3-Full.zip",
+    "notes":  "Center hub layout adjustments and glow visual updates",
+    "publishedAt":  "2026-10-03T19:55:15.4627708+05:30"
 }
