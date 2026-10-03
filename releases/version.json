@@ -1,7 +1,7 @@
 {
-    "version":  "2.0.5",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.5/BPCL-Streamer-v2.0.5-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.5/BPCL-Streamer-v2.0.5-Full.zip",
-    "notes":  "Move center hub to top bar bump and expand pick cards",
-    "publishedAt":  "2026-10-03T21:26:13.3553455+05:30"
+    "version":  "2.0.7",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.7/BPCL-Streamer-v2.0.7-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.7/BPCL-Streamer-v2.0.7-Full.zip",
+    "notes":  "Inline Center Hub within DraftBroadcastHeader and restore UI layout consistency",
+    "publishedAt":  "2026-10-03T22:16:24.5972012+05:30"
 }
