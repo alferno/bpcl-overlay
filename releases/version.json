@@ -1,7 +1,7 @@
 {
-    "version":  "2.0.17",
-    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.17/BPCL-Streamer-v2.0.17-Full.zip",
-    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.17/BPCL-Streamer-v2.0.17-Full.zip",
-    "notes":  "Automated overlay and API update",
-    "publishedAt":  "2026-10-04T22:21:36.3883347+05:30"
+    "version":  "2.0.18",
+    "url":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.18/BPCL-Streamer-v2.0.18-Full.zip",
+    "updateUrl":  "https://github.com/alferno/bpcl-overlay/releases/download/v2.0.18/BPCL-Streamer-v2.0.18-Full.zip",
+    "notes":  "Updated teamfight graphics timeline sequence",
+    "publishedAt":  "2026-10-04T23:52:10.0389503+05:30"
 }
