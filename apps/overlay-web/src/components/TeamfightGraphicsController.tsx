@@ -20,22 +20,28 @@ export function TeamfightGraphicsController() {
 
       setWinProbHistory((prev) => [...prev, newEntry].slice(-2));
 
-      // 1. Wait 5 seconds after fight ends
-      const t1 = setTimeout(() => {
+      // 1. Wait 10 seconds after fight ends
+      setTimeout(() => {
         setActiveGraphic("damage"); // Show Damage Breakdown
         
-        // 2. Keep Damage on screen for 5 seconds, then switch to Win %
-        const t2 = setTimeout(() => {
-          setActiveGraphic("winprob");
+        // 2. Keep Damage on screen for 10 seconds, then hide
+        setTimeout(() => {
+          setActiveGraphic("none");
           
-          // 3. Keep Win % on screen for 5 seconds, then hide
-          const t3 = setTimeout(() => {
-            setActiveGraphic("none");
+          // 3. Wait 5 seconds before showing Win %
+          setTimeout(() => {
+            setActiveGraphic("winprob");
+
+            // 4. Keep Win % on screen for 5 seconds, then hide
+            setTimeout(() => {
+              setActiveGraphic("none");
+            }, 5000);
+            
           }, 5000);
           
-        }, 5000);
+        }, 10000);
         
-      }, 5000);
+      }, 10000);
 
       // Timeouts will just run their course assuming fights don't overlap within 15s.
     };
