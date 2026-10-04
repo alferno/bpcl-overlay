@@ -85,8 +85,8 @@ export class OverlayConsumer {
           drops: [], // We don't track drops strictly for the steal event in the new engine, overlay handles it
         };
 
-        this.io.of("/overlay").emit("AEGIS_SNATCHED", stealInfo);
-        logger.info({ killNumber: e.killNumber, team: e.team }, "[OverlayConsumer] Broadcasted AEGIS_SNATCHED to overlay");
+        this.io.of("/overlay").emit("AEGIS_STOLEN", stealInfo);
+        logger.info({ killNumber: e.killNumber, team: e.team }, "[OverlayConsumer] Broadcasted AEGIS_STOLEN to overlay");
       } catch (err) {
         logger.error({ err }, "Error processing AEGIS_SNATCHED for overlay");
       }

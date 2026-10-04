@@ -16,6 +16,7 @@ function getRoshanDropsByKillNumber(killNumber: number): string[] {
 export class RoshanDetector implements EventDetector {
   // To link Aegis to the correct kill without a timer window, we just track the current kill number
   private lastKillNumber: number = 0;
+  private lastProcessedEventIndex: number = 0;
 
   public process(prev: any, curr: any, session: MatchSession): CanonicalEvent | CanonicalEvent[] | null {
     const events: CanonicalEvent[] = [];
@@ -28,6 +29,8 @@ export class RoshanDetector implements EventDetector {
     if (clockTime < prevClockTime) {
       this.reset();
     }
+
+    const currentEvents = Array.isArray(curr?.events) ? curr.events : [];
 
     // Roshan Kill Detection
     if (
@@ -42,13 +45,12 @@ export class RoshanDetector implements EventDetector {
       let killerTeam: "radiant" | "dire" | "none" = "none";
       let killerPlayerId: number | undefined;
 
-      if (Array.isArray(curr?.events)) {
-        const rkEvent = curr.events.find((e: any) => e.event_type === "roshan_killed");
-        if (rkEvent) {
-          if (rkEvent.killed_by_team === "radiant") killerTeam = "radiant";
-          else if (rkEvent.killed_by_team === "dire") killerTeam = "dire";
-          killerPlayerId = typeof rkEvent.killer_player_id === "number" ? rkEvent.killer_player_id : undefined;
-        }
+      // Find the most recent roshan_killed event
+      const rkEvent = [...currentEvents].reverse().find((e: any) => e.event_type === "roshan_killed");
+      if (rkEvent) {
+        if (rkEvent.killed_by_team === "radiant") killerTeam = "radiant";
+        else if (rkEvent.killed_by_team === "dire") killerTeam = "dire";
+        killerPlayerId = typeof rkEvent.killer_player_id === "number" ? rkEvent.killer_player_id : undefined;
       }
 
       let killerPlayerName: string | undefined;
@@ -73,12 +75,10 @@ export class RoshanDetector implements EventDetector {
       };
 
       events.push(killEvent);
-
       this.lastKillNumber = killNumber;
     }
 
     // Roshan Respawn Detection
-    // GSI states: "alive", "respawn_base", "respawn_variable"
     if (
       finalRoshanState === "alive" &&
       prevRoshanState &&
@@ -96,12 +96,12 @@ export class RoshanDetector implements EventDetector {
       });
     }
 
-    // Aegis Pickup / Steal Detection (independent of kill timer)
-    if (Array.isArray(curr?.events)) {
-      const aegisEvent = curr.events.find((e: any) => e.event_type === "aegis_picked_up");
-      if (aegisEvent) {
-        const pickerPlayerId: number | undefined = typeof aegisEvent.player_id === "number" ? aegisEvent.player_id : undefined;
-        const isSteal: boolean = aegisEvent.snatched === true;
+    // Process new events for Aegis Pickup / Steal (independent of kill timer)
+    for (let i = this.lastProcessedEventIndex; i < currentEvents.length; i++) {
+      const e = currentEvents[i];
+      if (e.event_type === "aegis_picked_up") {
+        const pickerPlayerId: number | undefined = typeof e.player_id === "number" ? e.player_id : undefined;
+        const isSteal: boolean = e.snatched === true;
 
         let pickerPlayerName: string | undefined;
         let pickerTeam: "radiant" | "dire" | "none" = "none";
@@ -111,13 +111,12 @@ export class RoshanDetector implements EventDetector {
           pickerPlayerName = (curr?.player as any)?.[pickerTeamKey]?.[`player${pickerPlayerId}`]?.name;
         }
 
-        // If we don't have a killNumber yet (e.g. joined mid-game), assume 1
         const aegisKillNumber = Math.max(1, this.lastKillNumber);
 
         const pickupEvent: AegisPickedUpEvent = {
           id: `aegis_${isSteal ? "snatched" : "picked_up"}_${session.matchId}_${aegisKillNumber}`,
           type: isSteal ? "AEGIS_SNATCHED" : "AEGIS_PICKED_UP",
-          gameTime: clockTime,
+          gameTime: e.game_time || clockTime,
           receivedAt: Date.now(),
           confidence: 1.0,
           source: "GSI_EVENTS_ARRAY",
@@ -131,10 +130,16 @@ export class RoshanDetector implements EventDetector {
         events.push(pickupEvent);
       }
     }
+    
+    // Update the index to avoid reprocessing
+    this.lastProcessedEventIndex = currentEvents.length;
+
     return events.length > 0 ? events : null;
   }
 
   public reset(): void {
     this.lastKillNumber = 0;
+    this.lastProcessedEventIndex = 0;
   }
 }
+
