@@ -34,7 +34,9 @@ export type EventType =
   | "MATCH_RESUMED"
   | "MATCH_ENDED"
   | "MATCH_STATE_CHANGED"
-  | "DRAFT_STATE_CHANGED";
+  | "DRAFT_STATE_CHANGED"
+  | "TEAMFIGHT_STARTED"
+  | "TEAMFIGHT_ENDED";
 
 export interface BaseEvent {
   id: string; // unique deterministic id where possible
@@ -92,6 +94,16 @@ export interface TormentorRespawnedEvent extends TeamEvent {
   type: "TORMENTOR_RESPAWNED";
 }
 
+export interface TeamfightStartedEvent extends BaseEvent {
+  type: "TEAMFIGHT_STARTED";
+  damageBurst: number;
+}
+
+export interface TeamfightEndedEvent extends BaseEvent {
+  type: "TEAMFIGHT_ENDED";
+  radiantWinChance?: number;
+}
+
 export type CanonicalEvent =
   | BaseEvent
   | TeamEvent
@@ -101,4 +113,6 @@ export type CanonicalEvent =
   | RoshanKilledEvent
   | AegisPickedUpEvent
   | TormentorKilledEvent
-  | TormentorRespawnedEvent;
+  | TormentorRespawnedEvent
+  | TeamfightStartedEvent
+  | TeamfightEndedEvent;
