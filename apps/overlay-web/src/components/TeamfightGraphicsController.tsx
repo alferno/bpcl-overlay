@@ -37,10 +37,7 @@ export function TeamfightGraphicsController() {
         
       }, 5000);
 
-      // We won't clear timeouts for now unless component unmounts, assuming fights don't overlap within 15s.
-      return () => {
-        clearTimeout(t1);
-      };
+      // Timeouts will just run their course assuming fights don't overlap within 15s.
     };
 
     socket.on("TEAMFIGHT_ENDED", handleTeamfightEnded);
